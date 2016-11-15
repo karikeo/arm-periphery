@@ -1,0 +1,1105 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       09/Nov/2016  14:40:00
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\RTOSVect.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\RTOSVect.c -D
+#        STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\RTOSVect.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\RTOSVect.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\RTOSVect.c
+      1          /*********************************************************************
+      2          *               SEGGER MICROCONTROLLER GmbH & Co KG                  *
+      3          *       Solutions for real time microcontroller applications         *
+      4          **********************************************************************
+      5          *                                                                    *
+      6          *       (c) 1995 - 2014  SEGGER Microcontroller GmbH & Co KG         *
+      7          *                                                                    *
+      8          *       www.segger.com     Support: support@segger.com               *
+      9          *                                                                    *
+     10          **********************************************************************
+     11          *                                                                    *
+     12          *       embOS * Real time operating system for microcontrollers      *
+     13          *                                                                    *
+     14          *                                                                    *
+     15          *       Please note:                                                 *
+     16          *                                                                    *
+     17          *       Knowledge of this file may under no circumstances            *
+     18          *       be used to write a similar product or a real-time            *
+     19          *       operating system for in-house use.                           *
+     20          *                                                                    *
+     21          *       Thank you for your fairness !                                *
+     22          *                                                                    *
+     23          **********************************************************************
+     24          *                                                                    *
+     25          *       OS version: 4.02a                                            *
+     26          *                                                                    *
+     27          **********************************************************************
+     28          
+     29          ----------------------------------------------------------------------
+     30          File    : RTOSVect.c
+     31          Purpose : Vector table for STM32F103 (IAR STM32-SK), CMSIS compatible. 
+     32          --------  END-OF-HEADER  ---------------------------------------------
+     33          */
+     34          
+     35          #include "exceptions.h"    // CMSIS compatible exception handler definition
+     36          #include "RTOS.h"
+     37          
+     38          #ifdef __cplusplus
+     39            extern "C" {
+     40          #endif
+     41          
+     42          /*********************************************************************
+     43          *
+     44          *       Reference to other modules
+     45          *
+     46          **********************************************************************
+     47          */
+     48          
+     49          #ifdef __ICCARM__
+     50            #pragma language=extended
+     51            #if (__VER__ < 500)
+     52              #pragma segment="CSTACK"
+     53              extern void __program_start(void);
+     54            #else
+     55              #pragma section="CSTACK"
+     56              extern void __iar_program_start(void);
+     57            #endif  // #if (__VER__ < 500)
+     58          #endif    // #ifdef __ICCARM__
+     59          
+     60          #ifdef __CC_ARM
+     61            extern unsigned int Image$$CSTACK$$ZI$$Limit;
+     62            extern void __main(void);
+     63          #endif
+     64          
+     65          /*********************************************************************
+     66          *
+     67          *       Defines
+     68          *
+     69          **********************************************************************
+     70          */
+     71          #define NVIC_HFSR          *((volatile unsigned long *)(0xE000ED2CuL))
+     72          
+     73          /*********************************************************************
+     74          *
+     75          *       Local functions
+     76          *
+     77          **********************************************************************
+     78          */
+     79          
+     80          /*********************************************************************
+     81          *
+     82          *       _IllegalException()
+     83          *
+     84          *       Is called from any exception handler which is not implemented
+     85          *       by the application (not overwriiten by user).
+     86          *       We implemented an endless loop here, so the programm stops
+     87          *       when any of the exceptions is called.
+     88          *       Using a debugger and setting a breakpoint here allows to
+     89          *       analyze which exception / interrupt was called.
+     90          *       Normally, the CPU should not arrive here.
+     91          */
+
+   \                                 In section .text, align 2, keep-with-next
+     92          static void _IllegalException(void) {
+     93            while(1) {  // Unhandled exception
+   \                     _IllegalException: (+1)
+   \                     ??_IllegalException_0: (+1)
+   \   00000000   0xE7FE             B.N      ??_IllegalException_0
+     94            }
+     95          }
+     96          
+     97          /*********************************************************************
+     98          *
+     99          *       Dummy system exception handler
+    100          *
+    101          *       We implemented a call to _IllegalException(), so the program
+    102          *       calls this function when any of the exceptions is called.
+    103          *       Using a debugger and setting a breakpoint in _IllegelException()
+    104          *       allows to analyze which exception / interrupt was called.
+    105          */
+
+   \                                 In section .text, align 2, keep-with-next
+    106          WEAK void NMI_Handler         (void) { _IllegalException(); }
+   \                     NMI_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    107          WEAK void MemManage_Handler   (void) { _IllegalException(); }
+   \                     MemManage_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    108          WEAK void BusFault_Handler    (void) { _IllegalException(); }
+   \                     BusFault_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    109          WEAK void UsageFault_Handler  (void) { _IllegalException(); }
+   \                     UsageFault_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    110          WEAK void SVC_Handler         (void) { _IllegalException(); }
+   \                     SVC_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    111          WEAK void DebugMon_Handler    (void) { _IllegalException(); }
+   \                     DebugMon_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    112          WEAK void PendSV_Handler      (void) { _IllegalException(); }
+   \                     PendSV_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    113          WEAK void SysTick_Handler     (void) { _IllegalException(); }
+   \                     SysTick_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+    114          
+
+   \                                 In section .text, align 2, keep-with-next
+    115          WEAK void HardFault_Handler   (void) {
+   \                     HardFault_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    116            //
+    117            // In case we received a hard fault because
+    118            // of a breakpoint instruction, we return.
+    119            // This may happen when using semihosting for printf.
+    120            //
+    121            if (NVIC_HFSR & (1uL << 31)) {
+   \   00000002   0x....             LDR.N    R0,??DataTable0  ;; 0xe000ed2c
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0x2800             CMP      R0,#+0
+   \   00000008   0xD508             BPL.N    ??HardFault_Handler_0
+    122              NVIC_HFSR |=  (1uL << 31);   // Reset hardfault status
+   \   0000000A   0x....             LDR.N    R0,??DataTable0  ;; 0xe000ed2c
+   \   0000000C   0x6800             LDR      R0,[R0, #+0]
+   \   0000000E   0xF050 0x4000      ORRS     R0,R0,#0x80000000
+   \   00000012   0x....             LDR.N    R1,??DataTable0  ;; 0xe000ed2c
+   \   00000014   0x6008             STR      R0,[R1, #+0]
+    123              OS_HardFaultHandler();
+   \   00000016   0x.... 0x....      BL       OS_HardFaultHandler
+    124              return;                      // Return to interrupted application
+   \   0000001A   0xE001             B.N      ??HardFault_Handler_1
+    125            }
+    126            //
+    127            // In other cases call the dummy handler for unimplemented interrupts
+    128            //
+    129           _IllegalException();
+   \                     ??HardFault_Handler_0: (+1)
+   \   0000001C   0x.... 0x....      BL       _IllegalException
+    130          }
+   \                     ??HardFault_Handler_1: (+1)
+   \   00000020   0xBD01             POP      {R0,PC}          ;; return
+    131          
+    132          /*********************************************************************
+    133          *
+    134          *       Default dummy interrupt handler
+    135          *
+    136          *       We implemented a call to _IllegalException(), so the program
+    137          *       calls this function when any of the exceptions is called.
+    138          *       Using a debugger and setting a breakpoint in _IllegelException()
+    139          *       allows to analyze which exception / interrupt was called.
+    140          */
+
+   \                                 In section .text, align 2, keep-with-next
+    141          WEAK void WWDG_IRQHandler           (void) { _IllegalException(); }
+   \                     WWDG_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    142          WEAK void PVD_IRQHandler            (void) { _IllegalException(); }
+   \                     PVD_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    143          WEAK void TAMPER_IRQHandler         (void) { _IllegalException(); }
+   \                     TAMPER_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    144          WEAK void RTC_IRQHandler            (void) { _IllegalException(); }
+   \                     RTC_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    145          WEAK void FLASH_IRQHandler          (void) { _IllegalException(); }
+   \                     FLASH_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    146          WEAK void RCC_IRQHandler            (void) { _IllegalException(); }
+   \                     RCC_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    147          WEAK void EXTI0_IRQHandler          (void) { _IllegalException(); }
+   \                     EXTI0_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    148          WEAK void EXTI1_IRQHandler          (void) { _IllegalException(); }
+   \                     EXTI1_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    149          WEAK void EXTI2_IRQHandler          (void) { _IllegalException(); }
+   \                     EXTI2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    150          WEAK void EXTI3_IRQHandler          (void) { _IllegalException(); }
+   \                     EXTI3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    151          WEAK void EXTI4_IRQHandler          (void) { _IllegalException(); }
+   \                     EXTI4_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    152          WEAK void DMA1_Channel1_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel1_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    153          WEAK void DMA1_Channel2_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    154          WEAK void DMA1_Channel3_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    155          WEAK void DMA1_Channel4_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel4_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    156          WEAK void DMA1_Channel5_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel5_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    157          WEAK void DMA1_Channel6_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel6_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    158          WEAK void DMA1_Channel7_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA1_Channel7_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    159          WEAK void ADC1_2_IRQHandler         (void) { _IllegalException(); }
+   \                     ADC1_2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    160          WEAK void USB_HP_CAN1_TX_IRQHandler (void) { _IllegalException(); }
+   \                     USB_HP_CAN1_TX_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    161          WEAK void USB_LP_CAN1_RX0_IRQHandler(void) { _IllegalException(); }
+   \                     USB_LP_CAN1_RX0_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    162          WEAK void CAN1_RX1_IRQHandler       (void) { _IllegalException(); }
+   \                     CAN1_RX1_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    163          WEAK void CAN1_SCE_IRQHandler       (void) { _IllegalException(); }
+   \                     CAN1_SCE_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    164          WEAK void EXTI9_5_IRQHandler        (void) { _IllegalException(); }
+   \                     EXTI9_5_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    165          WEAK void TIM1_BRK_IRQHandler       (void) { _IllegalException(); }
+   \                     TIM1_BRK_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    166          WEAK void TIM1_UP_IRQHandler        (void) { _IllegalException(); }
+   \                     TIM1_UP_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    167          WEAK void TIM1_TRG_COM_IRQHandler   (void) { _IllegalException(); }
+   \                     TIM1_TRG_COM_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    168          WEAK void TIM1_CC_IRQHandler        (void) { _IllegalException(); }
+   \                     TIM1_CC_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    169          WEAK void TIM2_IRQHandler           (void) { _IllegalException(); }
+   \                     TIM2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    170          WEAK void TIM3_IRQHandler           (void) { _IllegalException(); }
+   \                     TIM3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    171          WEAK void TIM4_IRQHandler           (void) { _IllegalException(); }
+   \                     TIM4_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    172          WEAK void I2C1_EV_IRQHandler        (void) { _IllegalException(); }
+   \                     I2C1_EV_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    173          WEAK void I2C1_ER_IRQHandler        (void) { _IllegalException(); }
+   \                     I2C1_ER_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    174          WEAK void I2C2_EV_IRQHandler        (void) { _IllegalException(); }
+   \                     I2C2_EV_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    175          WEAK void I2C2_ER_IRQHandler        (void) { _IllegalException(); }
+   \                     I2C2_ER_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    176          WEAK void SPI1_IRQHandler           (void) { _IllegalException(); }
+   \                     SPI1_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    177          WEAK void SPI2_IRQHandler           (void) { _IllegalException(); }
+   \                     SPI2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    178          WEAK void USART1_IRQHandler         (void) { _IllegalException(); }
+   \                     USART1_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    179          WEAK void USART2_IRQHandler         (void) { _IllegalException(); }
+   \                     USART2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    180          WEAK void USART3_IRQHandler         (void) { _IllegalException(); }
+   \                     USART3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    181          WEAK void EXTI15_10_IRQHandler      (void) { _IllegalException(); }
+   \                     EXTI15_10_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    182          WEAK void RTCAlarm_IRQHandler       (void) { _IllegalException(); }
+   \                     RTCAlarm_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    183          WEAK void USBWakeUp_IRQHandler      (void) { _IllegalException(); }
+   \                     USBWakeUp_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    184          WEAK void TIM8_BRK_IRQHandler       (void) { _IllegalException(); }
+   \                     TIM8_BRK_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    185          WEAK void TIM8_UP_IRQHandler        (void) { _IllegalException(); }
+   \                     TIM8_UP_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    186          WEAK void TIM8_TRG_COM_IRQHandler   (void) { _IllegalException(); }
+   \                     TIM8_TRG_COM_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    187          WEAK void TIM8_CC_IRQHandler        (void) { _IllegalException(); }
+   \                     TIM8_CC_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    188          WEAK void ADC3_IRQHandler           (void) { _IllegalException(); }
+   \                     ADC3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    189          WEAK void FSMC_IRQHandler           (void) { _IllegalException(); }
+   \                     FSMC_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    190          WEAK void SDIO_IRQHandler           (void) { _IllegalException(); }
+   \                     SDIO_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    191          WEAK void TIM5_IRQHandler           (void) { _IllegalException(); }
+   \                     TIM5_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    192          WEAK void SPI3_IRQHandler           (void) { _IllegalException(); }
+   \                     SPI3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    193          WEAK void UART4_IRQHandler          (void) { _IllegalException(); }
+   \                     UART4_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    194          WEAK void UART5_IRQHandler          (void) { _IllegalException(); }
+   \                     UART5_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    195          WEAK void TIM6_IRQHandler           (void) { _IllegalException(); }
+   \                     TIM6_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    196          WEAK void TIM7_IRQHandler           (void) { _IllegalException(); }
+   \                     TIM7_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    197          WEAK void DMA2_Channel1_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA2_Channel1_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    198          WEAK void DMA2_Channel2_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA2_Channel2_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    199          WEAK void DMA2_Channel3_IRQHandler  (void) { _IllegalException(); }
+   \                     DMA2_Channel3_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    200          WEAK void DMA2_Channel4_5_IRQHandler(void) { _IllegalException(); }
+   \                     DMA2_Channel4_5_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+   \   00000002   0x.... 0x....      BL       _IllegalException
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+    201          
+    202          /*********************************************************************
+    203          *
+    204          *       Global code
+    205          *
+    206          **********************************************************************
+    207          */
+    208          
+    209          /*********************************************************************
+    210          *
+    211          *       Exception vector table
+    212          */
+    213          #ifdef __ICCARM__
+    214            #if (__VER__ < 500)
+    215              #pragma location = "INTVEC"
+    216            #else
+    217              #pragma location = ".intvec"
+    218            #endif  // #if (__VER__ < 500)
+    219          #endif    // #ifdef __ICCARM__
+    220          #ifdef __CC_ARM
+    221            #pragma arm section rodata = "INTVEC"
+    222          #endif
+    223          
+    224          /****** STM32F10x Vector Table entries ******************************/
+
+   \                                 In section .intvec, align 4
+    225          const intvec_elem __vector_table[] =
+   \                     __vector_table:
+   \   00000000   0x........         DC32 SFE(CSTACK), __iar_program_start, NMI_Handler, HardFault_Handler
+   \              0x........   
+   \              0x........   
+   \              0x........   
+   \   00000010   0x........         DC32 MemManage_Handler, BusFault_Handler, UsageFault_Handler, 0H, 0H
+   \              0x........   
+   \              0x........   
+   \              0x00000000   
+   \              0x00000000   
+   \   00000024   0x00000000         DC32 0H, 0H, SVC_Handler, DebugMon_Handler, 0H, PendSV_Handler
+   \              0x00000000   
+   \              0x........   
+   \              0x........   
+   \              0x00000000   
+   \              0x........   
+   \   0000003C   0x........         DC32 SysTick_Handler, WWDG_IRQHandler, PVD_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   00000048   0x........         DC32 TAMPER_IRQHandler, RTC_IRQHandler, FLASH_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   00000054   0x........         DC32 RCC_IRQHandler, EXTI0_IRQHandler, EXTI1_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   00000060   0x........         DC32 EXTI2_IRQHandler, EXTI3_IRQHandler, EXTI4_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   0000006C   0x........         DC32 DMA1_Channel1_IRQHandler, DMA1_Channel2_IRQHandler
+   \              0x........   
+   \   00000074   0x........         DC32 DMA1_Channel3_IRQHandler, DMA1_Channel4_IRQHandler
+   \              0x........   
+   \   0000007C   0x........         DC32 DMA1_Channel5_IRQHandler, DMA1_Channel6_IRQHandler
+   \              0x........   
+   \   00000084   0x........         DC32 DMA1_Channel7_IRQHandler, ADC1_2_IRQHandler
+   \              0x........   
+   \   0000008C   0x........         DC32 USB_HP_CAN1_TX_IRQHandler, USB_LP_CAN1_RX0_IRQHandler
+   \              0x........   
+   \   00000094   0x........         DC32 CAN1_RX1_IRQHandler, CAN1_SCE_IRQHandler, EXTI9_5_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000A0   0x........         DC32 TIM1_BRK_IRQHandler, TIM1_UP_IRQHandler, TIM1_TRG_COM_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000AC   0x........         DC32 TIM1_CC_IRQHandler, TIM2_IRQHandler, TIM3_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000B8   0x........         DC32 TIM4_IRQHandler, I2C1_EV_IRQHandler, I2C1_ER_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000C4   0x........         DC32 I2C2_EV_IRQHandler, I2C2_ER_IRQHandler, SPI1_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000D0   0x........         DC32 SPI2_IRQHandler, USART1_IRQHandler, USART2_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000DC   0x........         DC32 USART3_IRQHandler, EXTI15_10_IRQHandler, RTCAlarm_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000E8   0x........         DC32 USBWakeUp_IRQHandler, TIM8_BRK_IRQHandler, TIM8_UP_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   000000F4   0x........         DC32 TIM8_TRG_COM_IRQHandler, TIM8_CC_IRQHandler, ADC3_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   00000100   0x........         DC32 FSMC_IRQHandler, SDIO_IRQHandler, TIM5_IRQHandler, SPI3_IRQHandler
+   \              0x........   
+   \              0x........   
+   \              0x........   
+   \   00000110   0x........         DC32 UART4_IRQHandler, UART5_IRQHandler, TIM6_IRQHandler
+   \              0x........   
+   \              0x........   
+   \   0000011C   0x........         DC32 TIM7_IRQHandler, DMA2_Channel1_IRQHandler
+   \              0x........   
+   \   00000124   0x........         DC32 DMA2_Channel2_IRQHandler, DMA2_Channel3_IRQHandler
+   \              0x........   
+   \   0000012C   0x........         DC32 DMA2_Channel4_5_IRQHandler
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0:
+   \   00000000   0xE000ED2C         DC32     0xe000ed2c
+    226          {
+    227          #ifdef __ICCARM__
+    228            { .__ptr = __sfe( "CSTACK" ) },
+    229          #if (__VER__ < 500)
+    230            __program_start,
+    231          #else
+    232            __iar_program_start,
+    233          #endif  // #if (__VER__ >= 500)
+    234          #endif  // #ifdef __ICCARM__
+    235          #ifdef __CC_ARM
+    236            (intfunc) &Image$$CSTACK$$ZI$$Limit,
+    237            __main,
+    238          #endif
+    239          
+    240            /**** System exceptions *****************/
+    241          
+    242            NMI_Handler,
+    243            HardFault_Handler,
+    244            MemManage_Handler,
+    245            BusFault_Handler,
+    246            UsageFault_Handler,
+    247            0, 0, 0, 0,            /* Reserved */
+    248            SVC_Handler,
+    249            DebugMon_Handler,
+    250            0,                     /* Reserved */
+    251            PendSV_Handler,        /* Required for the OS ! */
+    252            SysTick_Handler,       /* Required for the OS ! */
+    253          
+    254            /**** Peripheral exceptions / interrupts */
+    255          
+    256            WWDG_IRQHandler,              /* 0  Window Watchdog */
+    257            PVD_IRQHandler,               /* 1  PVD through EXTI Line detect */
+    258            TAMPER_IRQHandler,            /* 2  Tamper */
+    259            RTC_IRQHandler,               /* 3  RTC */
+    260            FLASH_IRQHandler,             /* 4  Flash */
+    261            RCC_IRQHandler,               /* 5  RCC */
+    262            EXTI0_IRQHandler,             /* 6  EXTI Line 0 */
+    263            EXTI1_IRQHandler,             /* 7  EXTI Line 1 */
+    264            EXTI2_IRQHandler,             /* 8  EXTI Line 2 */
+    265            EXTI3_IRQHandler,             /* 9  EXTI Line 3 */
+    266            EXTI4_IRQHandler,             /* 10 EXTI Line 4 */
+    267            DMA1_Channel1_IRQHandler,     /* 11 DMA1 Channel 1 */
+    268            DMA1_Channel2_IRQHandler,     /* 12 DMA1 Channel 2 */
+    269            DMA1_Channel3_IRQHandler,     /* 13 DMA1 Channel 3 */
+    270            DMA1_Channel4_IRQHandler,     /* 14 DMA1 Channel 4 */
+    271            DMA1_Channel5_IRQHandler,     /* 15 DMA1 Channel 5 */
+    272            DMA1_Channel6_IRQHandler,     /* 16 DMA1 Channel 6 */
+    273            DMA1_Channel7_IRQHandler,     /* 17 DMA1 Channel 7 */
+    274            ADC1_2_IRQHandler,            /* 18 ADC1 & ADC2 */
+    275            USB_HP_CAN1_TX_IRQHandler,    /* 19 USB High Priority or CAN1 TX */
+    276            USB_LP_CAN1_RX0_IRQHandler,   /* 20 USB Low  Priority or CAN1 RX0 */
+    277            CAN1_RX1_IRQHandler,          /* 21 CAN1 RX1 */
+    278            CAN1_SCE_IRQHandler,          /* 22 CAN1 SCE */
+    279            EXTI9_5_IRQHandler,           /* 23 EXTI Line 9..5 */
+    280            TIM1_BRK_IRQHandler,          /* 24 TIM1 Break */
+    281            TIM1_UP_IRQHandler,           /* 25 TIM1 Update */
+    282            TIM1_TRG_COM_IRQHandler,      /* 26 TIM1 Trigger and Commutation */
+    283            TIM1_CC_IRQHandler,           /* 27 TIM1 Capture Compare */
+    284            TIM2_IRQHandler,              /* 28 TIM2 */
+    285            TIM3_IRQHandler,              /* 29 TIM3 */
+    286            TIM4_IRQHandler,              /* 30 TIM4 */
+    287            I2C1_EV_IRQHandler,           /* 31 I2C1 Event */
+    288            I2C1_ER_IRQHandler,           /* 32 I2C1 Error */
+    289            I2C2_EV_IRQHandler,           /* 33 I2C2 Event */
+    290            I2C2_ER_IRQHandler,           /* 34 I2C2 Error */
+    291            SPI1_IRQHandler,              /* 35 SPI1 */
+    292            SPI2_IRQHandler,              /* 36 SPI2 */
+    293            USART1_IRQHandler,            /* 37 USART1 */
+    294            USART2_IRQHandler,            /* 38 USART2 */
+    295            USART3_IRQHandler,            /* 39 USART3 */
+    296            EXTI15_10_IRQHandler,         /* 40 EXTI Line 15..10 */
+    297            RTCAlarm_IRQHandler,          /* 41 RTC Alarm through EXTI Line */
+    298            USBWakeUp_IRQHandler,         /* 42 USB Wakeup from suspend */
+    299            TIM8_BRK_IRQHandler,          /* 43 TIM8 Break */
+    300            TIM8_UP_IRQHandler,           /* 44 TIM8 Update */
+    301            TIM8_TRG_COM_IRQHandler,      /* 45 TIM8 Trigger and Commutation */
+    302            TIM8_CC_IRQHandler,           /* 46 TIM8 Capture Compare */
+    303            ADC3_IRQHandler,              /* 47 ADC3 */
+    304            FSMC_IRQHandler,              /* 48 FSMC */
+    305            SDIO_IRQHandler,              /* 49 SDIO */
+    306            TIM5_IRQHandler,              /* 50 TIM5 */
+    307            SPI3_IRQHandler,              /* 51 SPI3 */
+    308            UART4_IRQHandler,             /* 52 UART4 */
+    309            UART5_IRQHandler,             /* 53 UART5 */
+    310            TIM6_IRQHandler,              /* 54 TIM6 */
+    311            TIM7_IRQHandler,              /* 55 TIM7 */
+    312            DMA2_Channel1_IRQHandler,     /* 56 DMA2 Channel1 */
+    313            DMA2_Channel2_IRQHandler,     /* 57 DMA2 Channel2 */
+    314            DMA2_Channel3_IRQHandler,     /* 58 DMA2 Channel3 */
+    315            DMA2_Channel4_5_IRQHandler    /* 59 DMA2 Channel4 & Channel5 */
+    316          };
+    317          
+    318          #ifdef __cplusplus
+    319            }
+    320          #endif
+    321          
+    322          /****** End Of File *************************************************/
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   ADC1_2_IRQHandler
+         8   -> _IllegalException
+       8   ADC3_IRQHandler
+         8   -> _IllegalException
+       8   BusFault_Handler
+         8   -> _IllegalException
+       8   CAN1_RX1_IRQHandler
+         8   -> _IllegalException
+       8   CAN1_SCE_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel1_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel2_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel3_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel4_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel5_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel6_IRQHandler
+         8   -> _IllegalException
+       8   DMA1_Channel7_IRQHandler
+         8   -> _IllegalException
+       8   DMA2_Channel1_IRQHandler
+         8   -> _IllegalException
+       8   DMA2_Channel2_IRQHandler
+         8   -> _IllegalException
+       8   DMA2_Channel3_IRQHandler
+         8   -> _IllegalException
+       8   DMA2_Channel4_5_IRQHandler
+         8   -> _IllegalException
+       8   DebugMon_Handler
+         8   -> _IllegalException
+       8   EXTI0_IRQHandler
+         8   -> _IllegalException
+       8   EXTI15_10_IRQHandler
+         8   -> _IllegalException
+       8   EXTI1_IRQHandler
+         8   -> _IllegalException
+       8   EXTI2_IRQHandler
+         8   -> _IllegalException
+       8   EXTI3_IRQHandler
+         8   -> _IllegalException
+       8   EXTI4_IRQHandler
+         8   -> _IllegalException
+       8   EXTI9_5_IRQHandler
+         8   -> _IllegalException
+       8   FLASH_IRQHandler
+         8   -> _IllegalException
+       8   FSMC_IRQHandler
+         8   -> _IllegalException
+       8   HardFault_Handler
+         8   -> OS_HardFaultHandler
+         8   -> _IllegalException
+       8   I2C1_ER_IRQHandler
+         8   -> _IllegalException
+       8   I2C1_EV_IRQHandler
+         8   -> _IllegalException
+       8   I2C2_ER_IRQHandler
+         8   -> _IllegalException
+       8   I2C2_EV_IRQHandler
+         8   -> _IllegalException
+       8   MemManage_Handler
+         8   -> _IllegalException
+       8   NMI_Handler
+         8   -> _IllegalException
+       8   PVD_IRQHandler
+         8   -> _IllegalException
+       8   PendSV_Handler
+         8   -> _IllegalException
+       8   RCC_IRQHandler
+         8   -> _IllegalException
+       8   RTCAlarm_IRQHandler
+         8   -> _IllegalException
+       8   RTC_IRQHandler
+         8   -> _IllegalException
+       8   SDIO_IRQHandler
+         8   -> _IllegalException
+       8   SPI1_IRQHandler
+         8   -> _IllegalException
+       8   SPI2_IRQHandler
+         8   -> _IllegalException
+       8   SPI3_IRQHandler
+         8   -> _IllegalException
+       8   SVC_Handler
+         8   -> _IllegalException
+       8   SysTick_Handler
+         8   -> _IllegalException
+       8   TAMPER_IRQHandler
+         8   -> _IllegalException
+       8   TIM1_BRK_IRQHandler
+         8   -> _IllegalException
+       8   TIM1_CC_IRQHandler
+         8   -> _IllegalException
+       8   TIM1_TRG_COM_IRQHandler
+         8   -> _IllegalException
+       8   TIM1_UP_IRQHandler
+         8   -> _IllegalException
+       8   TIM2_IRQHandler
+         8   -> _IllegalException
+       8   TIM3_IRQHandler
+         8   -> _IllegalException
+       8   TIM4_IRQHandler
+         8   -> _IllegalException
+       8   TIM5_IRQHandler
+         8   -> _IllegalException
+       8   TIM6_IRQHandler
+         8   -> _IllegalException
+       8   TIM7_IRQHandler
+         8   -> _IllegalException
+       8   TIM8_BRK_IRQHandler
+         8   -> _IllegalException
+       8   TIM8_CC_IRQHandler
+         8   -> _IllegalException
+       8   TIM8_TRG_COM_IRQHandler
+         8   -> _IllegalException
+       8   TIM8_UP_IRQHandler
+         8   -> _IllegalException
+       8   UART4_IRQHandler
+         8   -> _IllegalException
+       8   UART5_IRQHandler
+         8   -> _IllegalException
+       8   USART1_IRQHandler
+         8   -> _IllegalException
+       8   USART2_IRQHandler
+         8   -> _IllegalException
+       8   USART3_IRQHandler
+         8   -> _IllegalException
+       8   USBWakeUp_IRQHandler
+         8   -> _IllegalException
+       8   USB_HP_CAN1_TX_IRQHandler
+         8   -> _IllegalException
+       8   USB_LP_CAN1_RX0_IRQHandler
+         8   -> _IllegalException
+       8   UsageFault_Handler
+         8   -> _IllegalException
+       8   WWDG_IRQHandler
+         8   -> _IllegalException
+       0   _IllegalException
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable0
+       8  ADC1_2_IRQHandler
+       8  ADC3_IRQHandler
+       8  BusFault_Handler
+       8  CAN1_RX1_IRQHandler
+       8  CAN1_SCE_IRQHandler
+       8  DMA1_Channel1_IRQHandler
+       8  DMA1_Channel2_IRQHandler
+       8  DMA1_Channel3_IRQHandler
+       8  DMA1_Channel4_IRQHandler
+       8  DMA1_Channel5_IRQHandler
+       8  DMA1_Channel6_IRQHandler
+       8  DMA1_Channel7_IRQHandler
+       8  DMA2_Channel1_IRQHandler
+       8  DMA2_Channel2_IRQHandler
+       8  DMA2_Channel3_IRQHandler
+       8  DMA2_Channel4_5_IRQHandler
+       8  DebugMon_Handler
+       8  EXTI0_IRQHandler
+       8  EXTI15_10_IRQHandler
+       8  EXTI1_IRQHandler
+       8  EXTI2_IRQHandler
+       8  EXTI3_IRQHandler
+       8  EXTI4_IRQHandler
+       8  EXTI9_5_IRQHandler
+       8  FLASH_IRQHandler
+       8  FSMC_IRQHandler
+      34  HardFault_Handler
+       8  I2C1_ER_IRQHandler
+       8  I2C1_EV_IRQHandler
+       8  I2C2_ER_IRQHandler
+       8  I2C2_EV_IRQHandler
+       8  MemManage_Handler
+       8  NMI_Handler
+       8  PVD_IRQHandler
+       8  PendSV_Handler
+       8  RCC_IRQHandler
+       8  RTCAlarm_IRQHandler
+       8  RTC_IRQHandler
+       8  SDIO_IRQHandler
+       8  SPI1_IRQHandler
+       8  SPI2_IRQHandler
+       8  SPI3_IRQHandler
+       8  SVC_Handler
+       8  SysTick_Handler
+       8  TAMPER_IRQHandler
+       8  TIM1_BRK_IRQHandler
+       8  TIM1_CC_IRQHandler
+       8  TIM1_TRG_COM_IRQHandler
+       8  TIM1_UP_IRQHandler
+       8  TIM2_IRQHandler
+       8  TIM3_IRQHandler
+       8  TIM4_IRQHandler
+       8  TIM5_IRQHandler
+       8  TIM6_IRQHandler
+       8  TIM7_IRQHandler
+       8  TIM8_BRK_IRQHandler
+       8  TIM8_CC_IRQHandler
+       8  TIM8_TRG_COM_IRQHandler
+       8  TIM8_UP_IRQHandler
+       8  UART4_IRQHandler
+       8  UART5_IRQHandler
+       8  USART1_IRQHandler
+       8  USART2_IRQHandler
+       8  USART3_IRQHandler
+       8  USBWakeUp_IRQHandler
+       8  USB_HP_CAN1_TX_IRQHandler
+       8  USB_LP_CAN1_RX0_IRQHandler
+       8  UsageFault_Handler
+       8  WWDG_IRQHandler
+       2  _IllegalException
+     304  __vector_table
+
+ 
+ 304 bytes in section .intvec
+ 584 bytes in section .text
+ 
+ 584 bytes of CODE  memory
+ 304 bytes of CONST memory
+
+Errors: none
+Warnings: none

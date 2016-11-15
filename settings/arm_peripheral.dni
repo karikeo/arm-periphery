@@ -1,0 +1,116 @@
+[Stack]
+FillEnabled=0
+OverflowWarningsEnabled=1
+WarningThreshold=90
+SpWarningsEnabled=1
+WarnLogOnly=1
+UseTrigger=1
+TriggerName=main
+LimitSize=0
+ByteLimit=50
+[DebugChecksum]
+Checksum=104558651
+[Exceptions]
+StopOnUncaught=_ 0
+StopOnThrow=_ 0
+[CallStack]
+ShowArgs=0
+[Disassembly]
+MixedMode=1
+[SWOTraceHWSettings]
+OverrideDefaultClocks=0
+CpuClock=72000000
+ClockAutoDetect=0
+ClockWanted=2000000
+JtagSpeed=2000000
+Prescaler=36
+TimeStampPrescIndex=0
+TimeStampPrescData=0
+PcSampCYCTAP=1
+PcSampPOSTCNT=15
+PcSampIndex=0
+DataLogMode=0
+ITMportsEnable=0
+ITMportsTermIO=0
+ITMportsLogFile=0
+ITMlogFile=$PROJ_DIR$\ITM.log
+[RecentFlashDownload]
+Path=D:\projects\vendingpro\fw\arm\Output\arm_peripheral\Debug\Exe\arm_peripheral.srec
+[struct_types]
+Fmt0=DMA_Channel_TypeDef-CCR	4	0
+Fmt1=DMA_Channel_TypeDef-CMAR	4	0
+Fmt2=DMA_Channel_TypeDef-CPAR	4	0
+Fmt3=DMA_TypeDef-ISR	4	0
+Fmt4=FLASH_TypeDef-ACR	4	0
+Fmt5=FLASH_TypeDef-CR	4	0
+Fmt6=FLASH_TypeDef-OBR	4	0
+Fmt7=FLASH_TypeDef-WRPR	4	0
+Fmt8=GPIO_TypeDef-CRH	4	0
+Fmt9=GPIO_TypeDef-CRL	4	0
+Fmt10=GPIO_TypeDef-LCKR	4	0
+Fmt11=USART_TypeDef-SR	4	0
+[array_types]
+Fmt0=u16[1024]	4	0
+[watch_formats]
+Fmt0={W}0:0x40011000	4	0
+Fmt1={W}0:FPEC	4	0
+Fmt2={W}0:RCC->APB2ENR	4	0
+Fmt3={W}0:adr	4	0
+Fmt4={W}0:ep	4	0
+Fmt5={W}0:u	4	0
+[DataLog]
+LogEnabled=0
+SumEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+ShowTimeSum=1
+[InterruptLog]
+LogEnabled=0
+SumEnabled=1
+GraphEnabled=0
+ShowTimeLog=1
+ShowTimeSum=1
+SumSortOrder=0
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
+[Trace2]
+Enabled=0
+ShowSource=1
+[SWOTraceWindow]
+PcSampling=0
+InterruptLogs=0
+ForcedTimeStamps=0
+EventCPI=0
+EventEXC=0
+EventFOLD=0
+EventLSU=0
+EventSLEEP=0
+[CallStackLog]
+Enabled=0
+[DriverProfiling]
+Enabled=0
+Mode=3
+Graph=0
+Symbiont=0
+Exclusions=
+[Disassemble mode]
+mode=0
+[Breakpoints2]
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\flash.c}.100.5" 0 0 1 "" 0 "" 0
+Bp1=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\flash.c}.56.7" 0 0 1 "" 0 "" 0
+Bp2=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\flash.c}.70.25" 0 0 1 "" 0 "" 0
+Bp3=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\spi_slave.c}.542.24" 0 0 1 "" 0 "" 0
+Bp4=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\spi_slave.c}.531.4" 0 0 1 "" 0 "" 0
+Bp5=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\p-types\pt-vending.c}.554.23" 0 0 1 "" 0 "" 0
+Bp6=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\p-types\pt-vending.c}.204.7" 0 0 1 "" 0 "" 0
+Bp7=_ 0 "EMUL_DATA" "dexTx" 0 0 0 0 4294967295
+Bp8=_ 0 "EMUL_CODE" "{$PROJ_DIR$\Application\p-types\pt-vending.c}.582.10" 0 0 1 "" 0 "" 0
+Count=9
+[Aliases]
+Count=0
+SuppressDialog=0

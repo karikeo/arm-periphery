@@ -1,0 +1,46 @@
+/*###ICF### Section handled by ICF editor, don't touch! ****/
+/*-Editor annotation file-*/
+/* IcfEditorFile="$TOOLKIT_DIR$\config\ide\IcfEditor\a_v1_0.xml" */
+/*-Specials-*/
+define symbol __bootloader_intvec_start__ = 0x08000000;
+define symbol __ICFEDIT_intvec_start__ = 0x08004000;
+/*-Memory Regions-*/
+define symbol __ICFEDIT_region_ROM1_start__ = 0x08000040;
+define symbol __ICFEDIT_region_ROM1_end__   = 0x08003FFF;
+define symbol __ICFEDIT_region_ROM2_start__ = 0x08004040;
+define symbol __ICFEDIT_region_ROM2_end__   = 0x0801FFFF;
+define symbol __ICFEDIT_region_RAM_start__ = 0x20000000;
+define symbol __ICFEDIT_region_RAM_end__   = 0x20004FFF;
+/*-Sizes-*/
+define symbol __ICFEDIT_size_cstack__   = 0x200;
+define symbol __ICFEDIT_size_heap__     = 0x0;
+/**** End of ICF editor section. ###ICF###*/
+
+
+define memory mem with size = 4G;
+define region ROM1_region = mem:[from __ICFEDIT_region_ROM1_start__ to __ICFEDIT_region_ROM1_end__];
+define region ROM2_region = mem:[from __ICFEDIT_region_ROM2_start__ to __ICFEDIT_region_ROM2_end__];
+define region RAM_region = mem:[from __ICFEDIT_region_RAM_start__ to __ICFEDIT_region_RAM_end__];
+
+define block CSTACK    with alignment = 8, size = __ICFEDIT_size_cstack__   { };
+define block HEAP      with alignment = 8, size = __ICFEDIT_size_heap__     { };
+
+/*define block FlashApplet with size = 0x100, alignment = 4 { };*/
+
+initialize by copy { readwrite };
+do not initialize  { section .noinit };
+
+place at address mem:__bootloader_intvec_start__    { readonly section .bootloader_intvec };
+place at address mem:__ICFEDIT_intvec_start__    { readonly section .intvec };
+
+place in ROM1_region  { 
+    readonly section .bootloader, 
+};
+                                        
+place in ROM2_region   { readonly };
+place in RAM_region   { readwrite,
+                        block CSTACK,
+                        block HEAP,
+                        /*block FlashApplet */
+                        };
+

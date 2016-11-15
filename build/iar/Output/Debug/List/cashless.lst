@@ -1,0 +1,60 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       15/Nov/2016  14:53:01
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\cashless.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\cashless.c
+#        -D STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\cashless.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\cashless.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\p-types\vending\cashless.c
+      1          #include "stm32f10x.h"
+      2          #include "RTOS.h"
+      3          #include "BSP.h"
+      4          #include "pt-vending.h"
+      5          #include "dex.h"
+      6          #include "mdb.h"
+      7          #include "stdio.h"
+      8          #include "log.h"
+      9          #include "cashless.h"
+     10          
+     11          #if 0
+     12          int cashless_mdb_evt_rx(u16* tx_buf)
+     13          {
+     14            return 0;
+     15          }
+     16          #endif
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

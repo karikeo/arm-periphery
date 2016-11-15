@@ -1,0 +1,920 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       20/Oct/2016  15:17:35
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\mdb.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\mdb.c -D
+#        STM32F10X_HD -D USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\mdb.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\mdb.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\p-types\vending\mdb.c
+      1          #include "stm32f10x.h"
+      2          #include "RTOS.h"
+      3          #include "BSP.h"
+      4          #include "pt-vending.h"
+      5          #include "stdio.h"
+      6          #include "log.h"
+      7          #if defined LCD
+      8            #include "lcd_2x16.h"
+      9          #endif
+     10          #include "spi_comm.h"
+     11          
+     12          #include "mdb.h"
+     13          #include "mdb_sniffer.h"
+     14          #include "..\sw_uart.h"
+     15          
+     16          extern t_fb_desc fb;
+
+   \                                 In section .bss, align 4
+     17          t_mdb_mon mdb_mon;
+   \                     mdb_mon:
+   \   00000000                      DS8 888
+     18          
+     19          extern OS_Q  fb_evt_q;
+     20                 
+     21          extern tMdbSniffer sniffer;
+     22          
+     23          static u8 calc_crc(u16*, u8);
+     24          
+
+   \                                 In section .text, align 2, keep-with-next
+     25          void mdb_evt_s_rx()
+     26          {
+     27            //int i;
+     28            //int len = 0;
+     29            //u8 bLog = 0;
+     30            //t_mdb_session *d = 0;
+     31            
+     32          #if 0
+     33            sprintf( buf,"[%.2x]", fbSlaveRxBuf[ 0 ]);
+     34            goto_cursor( 0x4C );
+     35            lcd_print( buf );
+     36          #endif
+     37             
+     38          #if defined ( MDB_SNIFFER )
+     39            //sniffer_s_rx();
+     40          #endif  
+     41             
+     42          #if 0  
+     43             switch ( fb.m.rx[ 0 ] & 0xFF )
+     44             {
+     45             case MDB_CMD_CHG_TUBE_STATUS:  //0x0A
+     46                d = &mdb_mon.sessions[ 0 ];
+     47                break;
+     48             case MDB_CMD_CHG_COIN_TYPE:    //0x0C
+     49                d = &mdb_mon.sessions[ 1 ];
+     50                if ( fb.m.rx_size == 6 ) {
+     51                   u32 evtType = 0;
+     52          
+     53                   if ( fb.m.rx[ 3 ] == 0xFF && fb.m.rx[ 4 ] == 0xFF
+     54                      && d->rqst[ 3 ] == 0x00 && d->rqst[ 4 ] == 0x00 ) {
+     55                      evtType = eFbEvtType_DoorOpen;
+     56                      OS_Q_Put( &fb_evt_q, &evtType, sizeof( evtType ) );
+     57          #if 0
+     58                      log( "#1:%d %.2X %.2X %.2X %.2X %.2X %.2X "
+     59                          , d->rqst_size
+     60                          , d->rqst[ 0 ], d->rqst[ 1 ], d->rqst[ 2 ], d->rqst[ 3 ], d->rqst[ 4 ], d->rqst[ 5 ] );
+     61          #endif
+     62                      log( "fb: door open\r\n" );
+     63          
+     64                   } else if ( fb.m.rx[ 3 ] == 0x00 && fb.m.rx[ 4 ] == 0x00
+     65                      && d->rqst[ 3 ] == 0xFF && d->rqst[ 4 ] == 0xFF ) {
+     66                      evtType = eFbEvtType_DoorClose;
+     67                      OS_Q_Put( &fb_evt_q, &evtType, sizeof( evtType ) );
+     68                      log( "fb: door closed\r\n" );
+     69                   }
+     70          
+     71                }
+     72          #if 0
+     73                log( "#2:%d %.2X %.2X %.2X %.2X %.2X %.2X\r\n"
+     74                    , d->rqst_size
+     75                    , d->rqst[ 0 ], d->rqst[ 1 ], d->rqst[ 2 ], d->rqst[ 3 ], d->rqst[ 4 ], d->rqst[ 5 ] );
+     76          
+     77          #endif
+     78          #if 0
+     79                log( "#3:%d %.2X %.2X %.2X %.2X %.2X %.2X\r\n"
+     80                    , fb.m.rx_size
+     81                    , fb.m.rx[ 0 ], fb.m.rx[ 1 ], fb.m.rx[ 2 ], fb.m.rx[ 3 ], fb.m.rx[ 4 ], fb.m.rx[ 5 ] );
+     82                bLog = 1;
+     83          #endif
+     84                break;
+     85              case MDB_CMD_CHG_POLL:         //0x0B
+     86                d = &mdb_mon.sessions[ 2 ];
+     87                break;
+     88              case MDB_CMD_BV_POLL:          //0x33
+     89                d = &mdb_mon.sessions[ 3 ];
+     90                break;
+     91              case MDB_CMD_BV_STACKER:       //0x36
+     92                d = &mdb_mon.sessions[ 4 ];
+     93                break;
+     94              case MDB_CMD_BV_BILLTYPE:      //0x34
+     95                d = &mdb_mon.sessions[ 5 ];
+     96                break;
+     97              default:
+     98                bLog = 1;
+     99                break;
+    100            }
+    101          #if 1
+    102             if ( fb.en_log && !bLog && d ) {
+    103                u8 ms = 0;
+    104                u8 mc = 0;
+    105                ms = d->rqst_size != fb.m.rx_size;
+    106                mc = memcmp( d->rqst, fb.m.rx, fb.m.rx_size * 2 );
+    107          #if 0
+    108                if ( fb.m.rx[ 0 ] == 0x10C ) {
+    109                   log("ms=%d,%d,%d\r\n", ms, d->rqst_size, fb.m.rx_size);
+    110                   log("mc=%d\r\n", mc);
+    111                   bLog = 1;
+    112                }
+    113          #endif
+    114                if ( ms || mc ) {
+    115          #if 1
+    116                   if( ms && fb.en_log )
+    117                      log("ms(%d<>%d) ", d->rqst_size, fb.m.rx_size);
+    118                   if ( mc && fb.en_log )
+    119                      log("mc " );
+    120          #endif
+    121                   bLog = 1;
+    122          
+    123                }
+    124          
+    125                ms = d->rply_size != fb.s.rx_size;
+    126                mc = memcmp( d->rply, fb.s.rx, fb.s.rx_size * 2 );
+    127                if ( ms || mc ) {
+    128          #if 0
+    129                   if( ms && fb.en_log )
+    130                      log("ss ");
+    131                   if ( mc && fb.en_log )
+    132                      log("sc ");
+    133          #endif
+    134                   bLog = 1;
+    135                }
+    136             }
+    137          #endif
+    138             if ( fb.en_log && bLog ) {
+    139          
+    140                log( "fbm: " );
+    141                for ( i = 0; i < fb.m.rx_size; i++ ) {
+    142                   log( "%.2x ", fb.m.rx[ i ] );
+    143                }
+    144                log( "\r\n" );
+    145          
+    146                if ( d ) {
+    147                   log( "_bm: " );
+    148                   for ( i = 0; i < d->rqst_size; i++ ) {
+    149                      log( "%.2x ", d->rqst[ i ] );
+    150                   }
+    151                   log( "\r\n" );
+    152                }
+    153          
+    154                log( "fbs: " );
+    155                for ( i = 0; i < fb.s.rx_size; i++ ) {
+    156                   log( "%.2x ", fb.s.rx[ i ] );
+    157                }
+    158                log( "\r\n" );
+    159             }
+    160          
+    161             if ( d ) {
+    162                len = ( fb.m.rx_size < MDB_MAX_LEN ) ? fb.m.rx_size : MDB_MAX_LEN;
+    163                memcpy( d->rqst, fb.m.rx, len * 2 );
+    164                d->rqst_size = len;
+    165          
+    166                len = ( fb.s.rx_size < MDB_MAX_LEN ) ? fb.s.rx_size : MDB_MAX_LEN;
+    167                memcpy( d->rply, fb.s.rx, len * 2 );
+    168                d->rply_size = len;
+    169             }
+    170          #endif   
+    171             fb.s.rx_size = 0;
+   \                     mdb_evt_s_rx: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable2
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004   0xF881 0x01BC      STRB     R0,[R1, #+444]
+    172          }
+   \   00000008   0x4770             BX       LR               ;; return
+    173          
+
+   \                                 In section .text, align 4, keep-with-next
+    174          void mdb_evt_m_rx()
+    175          {      
+    176            static u8 just_reset = 1;
+    177            static u8 tr = 1;
+    178            
+    179            if ( !fb.m.enabled || fb.m.rx_size == 0 )
+   \                     mdb_evt_m_rx: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable2
+   \   00000002   0x7B01             LDRB     R1,[R0, #+12]
+   \   00000004   0x07C9             LSLS     R1,R1,#+31
+   \   00000006   0xD400             BMI.N    ??mdb_evt_m_rx_0
+   \   00000008   0x4770             BX       LR
+   \                     ??mdb_evt_m_rx_0: (+1)
+   \   0000000A   0xB570             PUSH     {R4-R6,LR}
+   \   0000000C   0xB096             SUB      SP,SP,#+88
+   \   0000000E   0xF890 0x10AC      LDRB     R1,[R0, #+172]
+   \   00000012   0x2900             CMP      R1,#+0
+   \   00000014   0xF000 0x81B0      BEQ.W    ??mdb_evt_m_rx_1
+    180            {
+    181              return;
+    182            }
+    183            
+    184            u8 n = 0;
+    185            u16 b;
+    186            u16 buf[ MDB_MAX_LEN ];
+    187            
+    188            
+    189            u8 cashless1 = ( ( fb.m.rx[ 0 ] & 0x1F8 ) == 0x110 );
+    190            u8 cashless2 = ( ( fb.m.rx[ 0 ] & 0x1F8 ) == 0x160 );
+    191            u8 usd = ( ( fb.m.rx[ 0 ] & 0x1F8 ) == 0x140 ) 
+    192              || ( ( fb.m.rx[ 0 ] & 0x1F8 ) == 0x148 )
+    193              || ( ( fb.m.rx[ 0 ] & 0x1F8 ) == 0x150 );  
+    194            
+    195            if ( usd || cashless1 || cashless2 )
+    196            {
+    197              tr = 1;
+    198            }
+    199              
+    200            
+    201            switch(  fb.m.rx[ 0 ] )
+   \   00000018   0xF8B0 0x20AE      LDRH     R2,[R0, #+174]
+   \   0000001C   0x2400             MOVS     R4,#+0
+   \   0000001E   0xF44F 0x7398      MOV      R3,#+304
+   \   00000022   0x1AD2             SUBS     R2,R2,R3
+   \   00000024   0xD011             BEQ.N    ??mdb_evt_m_rx_2
+   \   00000026   0x1E52             SUBS     R2,R2,#+1
+   \   00000028   0xF000 0x80E7      BEQ.W    ??mdb_evt_m_rx_3
+   \   0000002C   0x1E52             SUBS     R2,R2,#+1
+   \   0000002E   0xD017             BEQ.N    ??mdb_evt_m_rx_4
+   \   00000030   0x1E52             SUBS     R2,R2,#+1
+   \   00000032   0xF000 0x810B      BEQ.W    ??mdb_evt_m_rx_5
+   \   00000036   0x1E52             SUBS     R2,R2,#+1
+   \   00000038   0xF000 0x8154      BEQ.W    ??mdb_evt_m_rx_6
+   \   0000003C   0x1E52             SUBS     R2,R2,#+1
+   \   0000003E   0xF000 0x8146      BEQ.W    ??mdb_evt_m_rx_7
+   \   00000042   0x1E92             SUBS     R2,R2,#+2
+   \   00000044   0xF000 0x8163      BEQ.W    ??mdb_evt_m_rx_8
+   \   00000048   0xE190             B.N      ??mdb_evt_m_rx_9
+    202            {
+    203              case 0x130:       
+    204                if ( fb.m.rx_size >= 2 )
+   \                     ??mdb_evt_m_rx_2: (+1)
+   \   0000004A   0x2902             CMP      R1,#+2
+   \   0000004C   0xF2C0 0x8194      BLT.W    ??mdb_evt_m_rx_1
+    205                {
+    206                  buf[ n++ ] = 0x100;
+    207                  just_reset = 1;
+   \   00000050   0x....             LDR.N    R1,??DataTable2_1
+   \   00000052   0xF44F 0x7080      MOV      R0,#+256
+   \   00000056   0x2401             MOVS     R4,#+1
+   \   00000058   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+   \   0000005C   0x700C             STRB     R4,[R1, #+0]
+   \   0000005E   0xE187             B.N      ??mdb_evt_m_rx_10
+    208                }
+    209                break;
+    210                
+    211              case 0x132:
+    212                if ( fb.m.rx_size >= 2 )
+   \                     ??mdb_evt_m_rx_4: (+1)
+   \   00000060   0x2902             CMP      R1,#+2
+   \   00000062   0xF2C0 0x8189      BLT.W    ??mdb_evt_m_rx_1
+    213                {
+    214                  if ( just_reset )
+   \   00000066   0x....             LDR.N    R1,??DataTable2_1
+   \   00000068   0x780A             LDRB     R2,[R1, #+0]
+   \   0000006A   0xB142             CBZ.N    R2,??mdb_evt_m_rx_11
+    215                  {
+    216                    just_reset = 0;
+   \   0000006C   0x700C             STRB     R4,[R1, #+0]
+    217                    buf[ n++ ] = 0x00;      
+   \   0000006E   0xF8AD 0x4000      STRH     R4,[SP, #+0]
+    218                    buf[ n++ ] = 0x100;        
+   \   00000072   0xF44F 0x7080      MOV      R0,#+256
+   \   00000076   0xF8AD 0x0002      STRH     R0,[SP, #+2]
+   \   0000007A   0x2402             MOVS     R4,#+2
+   \   0000007C   0xE178             B.N      ??mdb_evt_m_rx_10
+    219                  }
+    220                  else if ( fb.cashless.display_tr )
+   \                     ??mdb_evt_m_rx_11: (+1)
+   \   0000007E   0xF890 0x12C0      LDRB     R1,[R0, #+704]
+   \   00000082   0xF3C1 0x0240      UBFX     R2,R1,#+1,#+1
+   \   00000086   0x2A00             CMP      R2,#+0
+   \   00000088   0xD072             BEQ.N    ??mdb_evt_m_rx_12
+    221                  {
+    222                    fb.cashless.display_tr = 0;
+   \   0000008A   0xF001 0x01FD      AND      R1,R1,#0xFD
+   \   0000008E   0xF880 0x12C0      STRB     R1,[R0, #+704]
+    223                    buf[ n++ ] = 0x02;
+   \   00000092   0x2002             MOVS     R0,#+2
+    224                    buf[ n++ ] = 0x80;
+   \   00000094   0x2180             MOVS     R1,#+128
+   \   00000096   0xF8AD 0x1002      STRH     R1,[SP, #+2]
+   \   0000009A   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    225                    buf[ n++ ] = 'H';
+   \   0000009E   0x2148             MOVS     R1,#+72
+   \   000000A0   0xF8AD 0x1004      STRH     R1,[SP, #+4]
+    226                    buf[ n++ ] = 'o';
+    227                    buf[ n++ ] = 'l';
+    228                    buf[ n++ ] = 'a';
+    229                    buf[ n++ ] = ' ';          
+    230                    buf[ n++ ] = 'D';
+    231                    buf[ n++ ] = 'a';
+    232                    buf[ n++ ] = 'n';
+    233                    buf[ n++ ] = 'i';
+    234                    buf[ n++ ] = 'e';
+    235                    buf[ n++ ] = 'l';
+    236                    buf[ n++ ] = '!';
+    237                    buf[ n++ ] = '!';          
+    238                    buf[ n++ ] = '!';          
+    239                    buf[ n++ ] = '!';          
+    240                    buf[ n++ ] = '!'; 
+    241                    buf[ n++ ] = 'H';
+    242                    buf[ n++ ] = 'o';
+    243                    buf[ n++ ] = 'l';
+    244                    buf[ n++ ] = 'a';
+    245                    buf[ n++ ] = ' ';          
+    246                    buf[ n++ ] = 'A';
+    247                    buf[ n++ ] = 'l';
+    248                    buf[ n++ ] = 'v';
+    249                    buf[ n++ ] = 'a';
+    250                    buf[ n++ ] = 'r';
+    251                    buf[ n++ ] = 'o';
+    252                    buf[ n++ ] = '!';
+    253                    buf[ n++ ] = '!';          
+    254                    buf[ n++ ] = '!';          
+    255                    buf[ n++ ] = '!';          
+    256                    buf[ n++ ] = '!'; 
+    257          /*          
+    258                    for ( int i = n ; i < 32 + 2; i++ )
+    259                    {
+    260                      buf[ n++ ] = '+'; 
+    261                    }
+    262          */          
+    263                    b = calc_crc(buf, n);
+   \   000000A4   0x466A             MOV      R2,SP
+   \   000000A6   0x216F             MOVS     R1,#+111
+   \   000000A8   0xF8AD 0x1006      STRH     R1,[SP, #+6]
+   \   000000AC   0x2311             MOVS     R3,#+17
+   \   000000AE   0x216C             MOVS     R1,#+108
+   \   000000B0   0xF8AD 0x1008      STRH     R1,[SP, #+8]
+   \   000000B4   0x2161             MOVS     R1,#+97
+   \   000000B6   0xF8AD 0x100A      STRH     R1,[SP, #+10]
+   \   000000BA   0x2120             MOVS     R1,#+32
+   \   000000BC   0xF8AD 0x100C      STRH     R1,[SP, #+12]
+   \   000000C0   0x2144             MOVS     R1,#+68
+   \   000000C2   0xF8AD 0x100E      STRH     R1,[SP, #+14]
+   \   000000C6   0x2161             MOVS     R1,#+97
+   \   000000C8   0xF8AD 0x1010      STRH     R1,[SP, #+16]
+   \   000000CC   0x216E             MOVS     R1,#+110
+   \   000000CE   0xF8AD 0x1012      STRH     R1,[SP, #+18]
+   \   000000D2   0x2169             MOVS     R1,#+105
+   \   000000D4   0xF8AD 0x1014      STRH     R1,[SP, #+20]
+   \   000000D8   0x2165             MOVS     R1,#+101
+   \   000000DA   0xF8AD 0x1016      STRH     R1,[SP, #+22]
+   \   000000DE   0x216C             MOVS     R1,#+108
+   \   000000E0   0xF8AD 0x1018      STRH     R1,[SP, #+24]
+   \   000000E4   0x2121             MOVS     R1,#+33
+   \   000000E6   0xF8AD 0x101A      STRH     R1,[SP, #+26]
+   \   000000EA   0xF8AD 0x101C      STRH     R1,[SP, #+28]
+   \   000000EE   0xF8AD 0x101E      STRH     R1,[SP, #+30]
+   \   000000F2   0xF8AD 0x1020      STRH     R1,[SP, #+32]
+   \   000000F6   0xF8AD 0x1022      STRH     R1,[SP, #+34]
+   \   000000FA   0x2148             MOVS     R1,#+72
+   \   000000FC   0xF8AD 0x1024      STRH     R1,[SP, #+36]
+   \   00000100   0x216F             MOVS     R1,#+111
+   \   00000102   0xF8AD 0x1026      STRH     R1,[SP, #+38]
+   \   00000106   0x216C             MOVS     R1,#+108
+   \   00000108   0xF8AD 0x1028      STRH     R1,[SP, #+40]
+   \   0000010C   0x2161             MOVS     R1,#+97
+   \   0000010E   0xF8AD 0x102A      STRH     R1,[SP, #+42]
+   \   00000112   0x2120             MOVS     R1,#+32
+   \   00000114   0xF8AD 0x102C      STRH     R1,[SP, #+44]
+   \   00000118   0x2141             MOVS     R1,#+65
+   \   0000011A   0xF8AD 0x102E      STRH     R1,[SP, #+46]
+   \   0000011E   0x216C             MOVS     R1,#+108
+   \   00000120   0xF8AD 0x1030      STRH     R1,[SP, #+48]
+   \   00000124   0x2176             MOVS     R1,#+118
+   \   00000126   0xF8AD 0x1032      STRH     R1,[SP, #+50]
+   \   0000012A   0x2161             MOVS     R1,#+97
+   \   0000012C   0xF8AD 0x1034      STRH     R1,[SP, #+52]
+   \   00000130   0x2172             MOVS     R1,#+114
+   \   00000132   0xF8AD 0x1036      STRH     R1,[SP, #+54]
+   \   00000136   0x216F             MOVS     R1,#+111
+   \   00000138   0xF8AD 0x1038      STRH     R1,[SP, #+56]
+   \   0000013C   0x2121             MOVS     R1,#+33
+   \   0000013E   0xF8AD 0x103A      STRH     R1,[SP, #+58]
+   \   00000142   0xF8AD 0x103C      STRH     R1,[SP, #+60]
+   \   00000146   0xF8AD 0x103E      STRH     R1,[SP, #+62]
+   \   0000014A   0xF8AD 0x1040      STRH     R1,[SP, #+64]
+   \   0000014E   0xF8AD 0x1042      STRH     R1,[SP, #+66]
+   \   00000152   0x2100             MOVS     R1,#+0
+   \                     ??mdb_evt_m_rx_13: (+1)
+   \   00000154   0x8814             LDRH     R4,[R2, #+0]
+   \   00000156   0x1861             ADDS     R1,R4,R1
+   \   00000158   0x8854             LDRH     R4,[R2, #+2]
+   \   0000015A   0x1D12             ADDS     R2,R2,#+4
+   \   0000015C   0x1861             ADDS     R1,R4,R1
+   \   0000015E   0x1E5B             SUBS     R3,R3,#+1
+   \   00000160   0xB2C9             UXTB     R1,R1
+   \   00000162   0xD1F7             BNE.N    ??mdb_evt_m_rx_13
+    264                    buf[ n++ ] = 0x100 | b;
+   \   00000164   0xF441 0x7180      ORR      R1,R1,#0x100
+   \   00000168   0xF8AD 0x1044      STRH     R1,[SP, #+68]
+   \   0000016C   0x2423             MOVS     R4,#+35
+   \   0000016E   0xE0FF             B.N      ??mdb_evt_m_rx_10
+    265                  }
+    266                  else if ( fb.cashless.begin_session_tr )
+   \                     ??mdb_evt_m_rx_12: (+1)
+   \   00000170   0xF3C1 0x0280      UBFX     R2,R1,#+2,#+1
+   \   00000174   0xB37A             CBZ.N    R2,??mdb_evt_m_rx_14
+    267                  {
+    268                    fb.cashless.begin_session_tr = 0;
+   \   00000176   0xF001 0x01FB      AND      R1,R1,#0xFB
+   \   0000017A   0xF880 0x12C0      STRB     R1,[R0, #+704]
+    269                    buf[ n++ ] = 0x03;
+    270                    buf[ n++ ] = ( fb.cashless.funds_available >> 8) & 0xFF;
+    271                    buf[ n++ ] = fb.cashless.funds_available  & 0xFF;
+    272                    buf[ n++ ] = 0x01;
+    273                    buf[ n++ ] = 0x02;
+    274                    buf[ n++ ] = 0x03;
+    275                    buf[ n++ ] = 0x04;                      
+    276                    buf[ n++ ] = 0x00;
+    277                    buf[ n++ ] = 0x00;
+    278                    buf[ n++ ] = 0x00;
+    279                    b = calc_crc(buf, n);
+   \   0000017E   0x2305             MOVS     R3,#+5
+   \   00000180   0x2103             MOVS     R1,#+3
+   \   00000182   0xF8AD 0x1000      STRH     R1,[SP, #+0]
+   \   00000186   0xF8D0 0x12C4      LDR      R1,[R0, #+708]
+   \   0000018A   0xF3C1 0x2207      UBFX     R2,R1,#+8,#+8
+   \   0000018E   0xB2C9             UXTB     R1,R1
+   \   00000190   0xF8AD 0x1004      STRH     R1,[SP, #+4]
+   \   00000194   0xF8AD 0x2002      STRH     R2,[SP, #+2]
+   \   00000198   0x2101             MOVS     R1,#+1
+   \   0000019A   0xF8AD 0x1006      STRH     R1,[SP, #+6]
+   \   0000019E   0x466A             MOV      R2,SP
+   \   000001A0   0x2102             MOVS     R1,#+2
+   \   000001A2   0xF8AD 0x1008      STRH     R1,[SP, #+8]
+   \   000001A6   0x2103             MOVS     R1,#+3
+   \   000001A8   0xF8AD 0x100A      STRH     R1,[SP, #+10]
+   \   000001AC   0x2104             MOVS     R1,#+4
+   \   000001AE   0xF8AD 0x100C      STRH     R1,[SP, #+12]
+   \   000001B2   0x2100             MOVS     R1,#+0
+   \   000001B4   0xF8AD 0x100E      STRH     R1,[SP, #+14]
+   \   000001B8   0x9104             STR      R1,[SP, #+16]
+   \                     ??mdb_evt_m_rx_15: (+1)
+   \   000001BA   0x8814             LDRH     R4,[R2, #+0]
+   \   000001BC   0x1861             ADDS     R1,R4,R1
+   \   000001BE   0x8854             LDRH     R4,[R2, #+2]
+   \   000001C0   0x1D12             ADDS     R2,R2,#+4
+   \   000001C2   0x1861             ADDS     R1,R4,R1
+   \   000001C4   0x1E5B             SUBS     R3,R3,#+1
+   \   000001C6   0xB2C9             UXTB     R1,R1
+   \   000001C8   0xD1F7             BNE.N    ??mdb_evt_m_rx_15
+    280                    buf[ n++ ] = 0x100 | b;           
+   \   000001CA   0xF441 0x7180      ORR      R1,R1,#0x100
+   \   000001CE   0xF8AD 0x1014      STRH     R1,[SP, #+20]
+   \   000001D2   0x240B             MOVS     R4,#+11
+   \   000001D4   0xE0CC             B.N      ??mdb_evt_m_rx_10
+    281                  }
+    282                  else if ( fb.cashless.cancel_session_tr )
+   \                     ??mdb_evt_m_rx_14: (+1)
+   \   000001D6   0xF3C1 0x02C0      UBFX     R2,R1,#+3,#+1
+   \   000001DA   0x2A00             CMP      R2,#+0
+   \   000001DC   0xF000 0x8091      BEQ.W    ??mdb_evt_m_rx_16
+    283                  {
+    284                    fb.cashless.cancel_session_tr = 0;
+   \   000001E0   0xF001 0x01F7      AND      R1,R1,#0xF7
+   \   000001E4   0xF880 0x12C0      STRB     R1,[R0, #+704]
+    285                    buf[ n++ ] = 0x04;
+   \   000001E8   0x2004             MOVS     R0,#+4
+   \   000001EA   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    286                    b = calc_crc(buf, n);
+    287                    buf[ n++ ] = 0x100 | b;           
+   \   000001EE   0x2402             MOVS     R4,#+2
+   \   000001F0   0xF44F 0x7082      MOV      R0,#+260
+   \   000001F4   0xF8AD 0x0002      STRH     R0,[SP, #+2]
+   \   000001F8   0xE0BA             B.N      ??mdb_evt_m_rx_10
+    288                  }        
+    289                  else
+    290                  {
+    291                    buf[ n++ ] = 0x100;
+    292                  }        
+    293                }
+    294                break;   
+    295                
+    296              case 0x131:
+    297                //01 02 00 56 01 00 0F 03 16C
+    298                if ( fb.m.rx_size >= 7 )
+   \                     ??mdb_evt_m_rx_3: (+1)
+   \   000001FA   0x2907             CMP      R1,#+7
+   \   000001FC   0xF2C0 0x80BC      BLT.W    ??mdb_evt_m_rx_1
+    299                {
+    300                  if (  fb.m.rx[ 1 ] == 0x00 )
+   \   00000200   0xF8B0 0x00B0      LDRH     R0,[R0, #+176]
+   \   00000204   0xB9D0             CBNZ.N   R0,??mdb_evt_m_rx_17
+    301                  {
+    302                    buf[ n++ ] = 0x01;
+    303                    buf[ n++ ] = 0x02;
+   \   00000206   0x2102             MOVS     R1,#+2
+   \   00000208   0xF8AD 0x1002      STRH     R1,[SP, #+2]
+    304                    buf[ n++ ] = 0x00;
+   \   0000020C   0xF8AD 0x4004      STRH     R4,[SP, #+4]
+    305                    buf[ n++ ] = 0x56;
+   \   00000210   0x2156             MOVS     R1,#+86
+   \   00000212   0xF8AD 0x1006      STRH     R1,[SP, #+6]
+    306                    buf[ n++ ] = 0x01;
+    307                    buf[ n++ ] = 0x00;
+   \   00000216   0xF8AD 0x400A      STRH     R4,[SP, #+10]
+    308                    buf[ n++ ] = 0x0F;
+   \   0000021A   0x210F             MOVS     R1,#+15
+   \   0000021C   0xF8AD 0x100C      STRH     R1,[SP, #+12]
+   \   00000220   0x2001             MOVS     R0,#+1
+    309                    buf[ n++ ] = 0x03;
+   \   00000222   0x2103             MOVS     R1,#+3
+   \   00000224   0xF8AD 0x100E      STRH     R1,[SP, #+14]
+   \   00000228   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    310                    b = calc_crc(buf, n);
+    311                    buf[ n++ ] = 0x100 | b;
+   \   0000022C   0xF44F 0x71B6      MOV      R1,#+364
+   \   00000230   0xF8AD 0x0008      STRH     R0,[SP, #+8]
+   \   00000234   0xF8AD 0x1010      STRH     R1,[SP, #+16]
+   \   00000238   0x2409             MOVS     R4,#+9
+   \   0000023A   0xE099             B.N      ??mdb_evt_m_rx_10
+    312                  }
+    313                  else if (  fb.m.rx[ 1 ] == 0x01 )
+   \                     ??mdb_evt_m_rx_17: (+1)
+   \   0000023C   0x2801             CMP      R0,#+1
+   \   0000023E   0xD060             BEQ.N    ??mdb_evt_m_rx_16
+    314                  {
+    315                    buf[ n++ ] = 0x100;
+    316                  }
+    317                  else
+    318                  {
+    319                    buf[ n++ ] = 0x1FF;        
+   \   00000240   0xF240 0x10FF      MOVW     R0,#+511
+   \   00000244   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+   \   00000248   0x2401             MOVS     R4,#+1
+   \   0000024A   0xE091             B.N      ??mdb_evt_m_rx_10
+    320                  }
+    321                }
+    322                else
+    323                {
+    324                  
+    325                }
+    326                break;      
+    327                
+    328              case 0x133:
+    329                //113 00 00 01 00 01 15
+    330                //113 02 00 64 79
+    331                //113 04 17 
+    332                //tr = 0;      
+    333                if ( fb.m.rx_size >= 7 && fb.m.rx[1] == 0x00 )
+   \                     ??mdb_evt_m_rx_5: (+1)
+   \   0000024C   0x2907             CMP      R1,#+7
+   \   0000024E   0xDB18             BLT.N    ??mdb_evt_m_rx_18
+   \   00000250   0xF8B0 0x10B0      LDRH     R1,[R0, #+176]
+   \   00000254   0xB9B9             CBNZ.N   R1,??mdb_evt_m_rx_19
+    334                {
+    335                  fb.cashless.item_price = ( fb.m.rx[2] << 8 ) | fb.m.rx[3];
+   \   00000256   0xF8B0 0x10B2      LDRH     R1,[R0, #+178]
+   \   0000025A   0xF8B0 0x20B4      LDRH     R2,[R0, #+180]
+    336                  buf[ n++ ] = 0x05;
+    337                  buf[ n++ ] = 0x00;        
+   \   0000025E   0xF8AD 0x4002      STRH     R4,[SP, #+2]
+   \   00000262   0xEA42 0x2101      ORR      R1,R2,R1, LSL #+8
+   \   00000266   0xF8A0 0x12C8      STRH     R1,[R0, #+712]
+   \   0000026A   0x2005             MOVS     R0,#+5
+    338                  buf[ n++ ] = 0x01;        
+   \   0000026C   0x2101             MOVS     R1,#+1
+   \   0000026E   0xF8AD 0x1004      STRH     R1,[SP, #+4]
+   \   00000272   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    339                  b = calc_crc(buf, n);
+    340                  buf[ n++ ] = 0x100 | b;                  
+   \   00000276   0xF44F 0x7183      MOV      R1,#+262
+   \   0000027A   0xF8AD 0x1006      STRH     R1,[SP, #+6]
+   \   0000027E   0x2404             MOVS     R4,#+4
+   \   00000280   0xE076             B.N      ??mdb_evt_m_rx_10
+    341                }            
+    342                else if ( fb.m.rx_size >= 5 && fb.m.rx[1] == 0x02 )
+   \                     ??mdb_evt_m_rx_18: (+1)
+   \   00000282   0x2905             CMP      R1,#+5
+   \   00000284   0xDB14             BLT.N    ??mdb_evt_m_rx_20
+   \                     ??mdb_evt_m_rx_19: (+1)
+   \   00000286   0xF8B0 0x10B0      LDRH     R1,[R0, #+176]
+   \   0000028A   0x2902             CMP      R1,#+2
+   \   0000028C   0xD112             BNE.N    ??mdb_evt_m_rx_21
+    343                {
+    344                  b = 0;
+    345                  buf[ n++ ] = 0x100 | b;          
+   \   0000028E   0xF44F 0x7180      MOV      R1,#+256
+   \   00000292   0xF8AD 0x1000      STRH     R1,[SP, #+0]
+   \   00000296   0x2401             MOVS     R4,#+1
+    346          
+    347                  u8  bt_buf[ 16 ];
+    348                  int bt_buf_sz = sprintf((char*)bt_buf, "VEND,OK,%d\r", fb.cashless.item_price);
+   \   00000298   0xF8B0 0x22C8      LDRH     R2,[R0, #+712]
+   \   0000029C   0x.... 0x....      ADR.W    R1,?_0
+   \   000002A0   0xA812             ADD      R0,SP,#+72
+   \   000002A2   0x.... 0x....      BL       sprintf
+   \   000002A6   0x4601             MOV      R1,R0
+    349                  sw_uart_tx( bt_buf, bt_buf_sz );
+   \   000002A8   0xA812             ADD      R0,SP,#+72
+   \   000002AA   0x.... 0x....      BL       sw_uart_tx
+   \   000002AE   0xE05F             B.N      ??mdb_evt_m_rx_10
+    350                }
+    351                else if ( fb.m.rx_size >= 2 && fb.m.rx[1] == 0x04 )
+   \                     ??mdb_evt_m_rx_20: (+1)
+   \   000002B0   0x2902             CMP      R1,#+2
+   \   000002B2   0xDB61             BLT.N    ??mdb_evt_m_rx_1
+   \                     ??mdb_evt_m_rx_21: (+1)
+   \   000002B4   0xF8B0 0x00B0      LDRH     R0,[R0, #+176]
+   \   000002B8   0x2804             CMP      R0,#+4
+   \   000002BA   0xD15D             BNE.N    ??mdb_evt_m_rx_1
+    352                {
+    353                  buf[ n++ ] = 0x07;        
+   \   000002BC   0x2007             MOVS     R0,#+7
+   \   000002BE   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    354                  b = calc_crc(buf, n);
+    355                  buf[ n++ ] = 0x100 | b;                  
+   \   000002C2   0x2402             MOVS     R4,#+2
+   \   000002C4   0xF240 0x1007      MOVW     R0,#+263
+   \   000002C8   0xF8AD 0x0002      STRH     R0,[SP, #+2]
+   \   000002CC   0xE050             B.N      ??mdb_evt_m_rx_10
+    356                }      
+    357                break;
+    358                
+    359              case 0x135:      
+    360                if ( fb.m.rx_size >= 3 )
+   \                     ??mdb_evt_m_rx_7: (+1)
+   \   000002CE   0x2903             CMP      R1,#+3
+   \   000002D0   0xDB52             BLT.N    ??mdb_evt_m_rx_1
+    361                {
+    362                  buf[ n++ ] = 0x0E;
+   \   000002D2   0x200E             MOVS     R0,#+14
+   \   000002D4   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    363                  b = calc_crc(buf, n);
+    364                  buf[ n++ ] = 0x100 | b;        
+   \   000002D8   0x2402             MOVS     R4,#+2
+   \   000002DA   0xF44F 0x7087      MOV      R0,#+270
+   \   000002DE   0xF8AD 0x0002      STRH     R0,[SP, #+2]
+   \   000002E2   0xE045             B.N      ??mdb_evt_m_rx_10
+    365                }      
+    366                break;
+    367                  
+    368              case 0x134:
+    369                if ( fb.m.rx_size >= 3 )
+   \                     ??mdb_evt_m_rx_6: (+1)
+   \   000002E4   0x2903             CMP      R1,#+3
+   \   000002E6   0xDB47             BLT.N    ??mdb_evt_m_rx_1
+    370                {
+    371                  fb.cashless.enabled = ( fb.m.rx[1] != 0 );
+   \   000002E8   0xF8B0 0x20B0      LDRH     R2,[R0, #+176]
+   \   000002EC   0xF890 0x12C0      LDRB     R1,[R0, #+704]
+   \   000002F0   0x1E53             SUBS     R3,R2,#+1
+   \   000002F2   0x419B             SBCS     R3,R3,R3
+   \   000002F4   0xF001 0x01FE      AND      R1,R1,#0xFE
+   \   000002F8   0x43DB             MVNS     R3,R3
+   \   000002FA   0xEA41 0x71D3      ORR      R1,R1,R3, LSR #+31
+   \   000002FE   0xF880 0x12C0      STRB     R1,[R0, #+704]
+    372                  buf[ n++ ] = 0x100;
+   \                     ??mdb_evt_m_rx_16: (+1)
+   \   00000302   0xF44F 0x7080      MOV      R0,#+256
+   \   00000306   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+   \   0000030A   0x2401             MOVS     R4,#+1
+   \   0000030C   0xE030             B.N      ??mdb_evt_m_rx_10
+    373                }
+    374                break;   
+    375                
+    376              case 0x137:      
+    377                if ( fb.m.rx_size >= 32 )
+   \                     ??mdb_evt_m_rx_8: (+1)
+   \   0000030E   0x2920             CMP      R1,#+32
+   \   00000310   0xDB32             BLT.N    ??mdb_evt_m_rx_1
+    378                {
+    379                  buf[ n++ ] = 0x09;
+   \   00000312   0x2009             MOVS     R0,#+9
+   \   00000314   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+   \   00000318   0x2101             MOVS     R1,#+1
+    380                  for ( int i  = 1; i < 30; i++)
+   \   0000031A   0x221D             MOVS     R2,#+29
+   \   0000031C   0x2300             MOVS     R3,#+0
+    381                  {
+    382                    buf[ n++ ] = 0;
+   \                     ??mdb_evt_m_rx_22: (+1)
+   \   0000031E   0xB2C9             UXTB     R1,R1
+   \   00000320   0xF82D 0x3011      STRH     R3,[SP, R1, LSL #+1]
+   \   00000324   0x1C49             ADDS     R1,R1,#+1
+    383                  }
+   \   00000326   0x1E52             SUBS     R2,R2,#+1
+   \   00000328   0xD1F9             BNE.N    ??mdb_evt_m_rx_22
+    384                  b = calc_crc(buf, n);
+   \   0000032A   0xB2C9             UXTB     R1,R1
+   \   0000032C   0xB1C9             CBZ.N    R1,??mdb_evt_m_rx_23
+   \   0000032E   0xF011 0x0503      ANDS     R5,R1,#0x3
+   \   00000332   0x466A             MOV      R2,SP
+   \   00000334   0xF000 0x8006      BEQ.W    ??mdb_evt_m_rx_24
+   \                     ??mdb_evt_m_rx_25: (+1)
+   \   00000338   0xF832 0x6B02      LDRH     R6,[R2], #+2
+   \   0000033C   0x18F3             ADDS     R3,R6,R3
+   \   0000033E   0x1E6D             SUBS     R5,R5,#+1
+   \   00000340   0xB2DB             UXTB     R3,R3
+   \   00000342   0xD1F9             BNE.N    ??mdb_evt_m_rx_25
+   \                     ??mdb_evt_m_rx_24: (+1)
+   \   00000344   0x088C             LSRS     R4,R1,#+2
+   \   00000346   0xD00C             BEQ.N    ??mdb_evt_m_rx_23
+   \                     ??mdb_evt_m_rx_26: (+1)
+   \   00000348   0x8815             LDRH     R5,[R2, #+0]
+   \   0000034A   0x18EB             ADDS     R3,R5,R3
+   \   0000034C   0x8855             LDRH     R5,[R2, #+2]
+   \   0000034E   0x18EB             ADDS     R3,R5,R3
+   \   00000350   0x8895             LDRH     R5,[R2, #+4]
+   \   00000352   0x18EB             ADDS     R3,R5,R3
+   \   00000354   0x88D5             LDRH     R5,[R2, #+6]
+   \   00000356   0x18EB             ADDS     R3,R5,R3
+   \   00000358   0x1E64             SUBS     R4,R4,#+1
+   \   0000035A   0xB2DB             UXTB     R3,R3
+   \   0000035C   0xF102 0x0208      ADD      R2,R2,#+8
+   \   00000360   0xD1F2             BNE.N    ??mdb_evt_m_rx_26
+    385                  buf[ n++ ] = 0x100 | b;
+   \                     ??mdb_evt_m_rx_23: (+1)
+   \   00000362   0xF443 0x7280      ORR      R2,R3,#0x100
+   \   00000366   0xF82D 0x2011      STRH     R2,[SP, R1, LSL #+1]
+   \   0000036A   0x1C4C             ADDS     R4,R1,#+1
+    386                }      
+    387                break;
+    388            }
+    389            
+    390            if ( n > 0 )
+   \                     ??mdb_evt_m_rx_9: (+1)
+   \   0000036C   0xB2E4             UXTB     R4,R4
+   \   0000036E   0xB11C             CBZ.N    R4,??mdb_evt_m_rx_1
+    391            {
+    392              fb_m_tx( buf, n );    
+   \                     ??mdb_evt_m_rx_10: (+1)
+   \   00000370   0x4621             MOV      R1,R4
+   \   00000372   0x4668             MOV      R0,SP
+   \   00000374   0x.... 0x....      BL       fb_m_tx
+    393            }
+    394          }
+   \                     ??mdb_evt_m_rx_1: (+1)
+   \   00000378   0xB016             ADD      SP,SP,#+88
+   \   0000037A   0xBD70             POP      {R4-R6,PC}       ;; return
+
+   \                                 In section .data, align 1
+   \                     ??just_reset:
+   \   00000000   0x01               DC8 1
+
+   \                                 In section .data, align 1
+   \   00000000   0x01               DC8 1
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x........         DC32     fb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2_1:
+   \   00000000   0x........         DC32     ??just_reset
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_0:
+   \   00000000   0x56 0x45          DC8 "VEND,OK,%d\015"
+   \              0x4E 0x44    
+   \              0x2C 0x4F    
+   \              0x4B 0x2C    
+   \              0x25 0x64    
+   \              0x0D 0x00    
+    395          
+    396          static u8 calc_crc(u16* p, u8 n)
+    397          {
+    398            u8 crc = 0;
+    399            for ( u8 i = 0; i < n; i++ )
+    400            {
+    401              crc += p[ i ];
+    402            }
+    403            return crc;
+    404          }
+    405          
+    406          #if 0
+    407          
+    408          u16 voteForEXE = 0;
+    409          u16 voteForMDB = 0;
+    410          
+    411          void detectFbType( u16 b ) {
+    412             u8 calcedParity = 0;
+    413             u8 receivedParity = ( ( b & 0x0100 ) != 0 );
+    414             int i;
+    415             for ( i = 0; i < 8; i++ ) {
+    416                if ( b & ( 1 << i ) )
+    417                   //calcedParity = !calcedParity;
+    418                   calcedParity = ( calcedParity != 0);
+    419             }
+    420          
+    421             if ( ( fb.m.rx_size == 1 && receivedParity )
+    422                 || ( fb.m.rx_size > 1 ) && !receivedParity && calcedParity ) {
+    423                if ( voteForMDB < 20 ) {
+    424                   voteForMDB++;
+    425                } else if ( fb.type != eFbType_MDB ) {
+    426                   fb.type = eFbType_MDB;
+    427                   //u32 evtType = eFbEvtType_FbType;
+    428                   //OS_Q_Put( &fb_evt_q, &evtType, sizeof( evtType ) );
+    429                }
+    430                if ( voteForEXE > 0 ) {
+    431                   voteForEXE--;
+    432                }
+    433          
+    434             } else if ( receivedParity == calcedParity ) {
+    435                if ( voteForMDB > 0 ) {
+    436                   voteForMDB--;
+    437                }
+    438                if ( voteForEXE < 20 ) {
+    439                   voteForEXE++;
+    440                } else if ( fb.type != eFbType_EXE ) {
+    441                   fb.type = eFbType_EXE;
+    442                   //u32 evtType = eFbEvtType_FbType;
+    443                   //OS_Q_Put( &fb_evt_q, &evtType, sizeof( evtType ) );
+    444                }
+    445             }
+    446          
+    447          #if 0
+    448             if( fb.en_log )
+    449                log("b=%X ", b );
+    450          
+    451             if ( ( receivedParity && calcedParity )
+    452                 || ( !receivedParity && !calcedParity ) ) {
+    453                if ( voteForEXE < 20 ) {
+    454                   voteForEXE++;
+    455                   if( fb.en_log )
+    456                      log("e+ r%d c%d\r\n" , receivedParity, calcedParity );
+    457                } else {
+    458                   fb.type = eFbType_EXE;
+    459                }
+    460             } else {
+    461                if ( voteForEXE > 0 ) {
+    462                   voteForEXE--;
+    463          
+    464                   if( fb.en_log )
+    465                      log("e- r%d c%d\r\n" , receivedParity, calcedParity );
+    466                } else {
+    467                   fb.type = eFbType_MDB;
+    468                }
+    469             }
+    470          #endif
+    471          }
+    472          #endif
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+     104   mdb_evt_m_rx
+       104   -> fb_m_tx
+       104   -> sprintf
+       104   -> sw_uart_tx
+       0   mdb_evt_s_rx
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+       4  ??DataTable2_1
+      12  ?_0
+       1  just_reset
+     892  mdb_evt_m_rx
+      10  mdb_evt_s_rx
+     888  mdb_mon
+       1  tr
+
+ 
+ 888 bytes in section .bss
+   2 bytes in section .data
+ 922 bytes in section .text
+ 
+ 922 bytes of CODE memory
+ 890 bytes of DATA memory
+
+Errors: none
+Warnings: 1

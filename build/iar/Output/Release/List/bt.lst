@@ -1,0 +1,154 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       19/Oct/2016  13:34:21
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  C:\ilya\vendicont\arm-periphery\Application\bt.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\bt.c -D STM32F10X_HD -D
+#        USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\bt.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\bt.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\bt.c
+      1          #include "stm32f10x.h"
+      2          #include "RTOS.h"
+      3          #include "BSP.h"
+      4          //#include "vending/pt-vending.h"
+      5          //#include "dex.h"
+      6          #include "vending/mdb.h"
+      7          #include "stdio.h"
+      8          #include "log.h"
+      9          #if defined LCD
+     10          #include "lcd_2x16.h"
+     11          #endif
+     12          #include "spi_comm.h"
+     13          //#include "mdb_sniffer.h"
+     14          #include "sw_uart.h"
+     15          #include "bt.h"
+     16          
+     17          extern t_sw_uart sw_uart;
+     18          extern t_fb_desc fb;
+     19          
+     20          #define BT_CMD_BALANCE "BALANCE"
+     21          
+
+   \                                 In section .text, align 2, keep-with-next
+     22          void bt_rx_msg_handler(void)
+     23          {  
+   \                     bt_rx_msg_handler: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB082             SUB      SP,SP,#+8
+     24             const char* p = (const char*) sw_uart.rx.buf;
+     25             int d;
+     26             if ( sscanf( p,"BALANCE=%d", &d ) > 0 )
+   \   00000004   0x....             LDR.N    R4,??DataTable2
+   \   00000006   0x.... 0x....      ADR.W    R1,?_0
+   \   0000000A   0x466A             MOV      R2,SP
+   \   0000000C   0xF104 0x0025      ADD      R0,R4,#+37
+   \   00000010   0x.... 0x....      BL       sscanf
+   \   00000014   0x2801             CMP      R0,#+1
+   \   00000016   0xDB08             BLT.N    ??bt_rx_msg_handler_0
+     27             {
+     28                fb.cashless.funds_available = d;
+   \   00000018   0x....             LDR.N    R0,??DataTable2_1
+   \   0000001A   0x9900             LDR      R1,[SP, #+0]
+   \   0000001C   0xF8C0 0x12C4      STR      R1,[R0, #+708]
+     29                fb.cashless.begin_session_tr = 1; 
+   \   00000020   0xF890 0x12C0      LDRB     R1,[R0, #+704]
+   \   00000024   0xF041 0x0104      ORR      R1,R1,#0x4
+   \   00000028   0xE00B             B.N      ??bt_rx_msg_handler_1
+     30             }
+     31             else if ( strcmp( p,"CANCEL\r" ) == 0 )
+   \                     ??bt_rx_msg_handler_0: (+1)
+   \   0000002A   0x.... 0x....      ADR.W    R1,?_1
+   \   0000002E   0xF104 0x0025      ADD      R0,R4,#+37
+   \   00000032   0x.... 0x....      BL       strcmp
+   \   00000036   0xB930             CBNZ.N   R0,??bt_rx_msg_handler_2
+     32             {
+     33                fb.cashless.cancel_session_tr = 1;
+   \   00000038   0x....             LDR.N    R0,??DataTable2_1
+   \   0000003A   0xF890 0x12C0      LDRB     R1,[R0, #+704]
+   \   0000003E   0xF041 0x0108      ORR      R1,R1,#0x8
+   \                     ??bt_rx_msg_handler_1: (+1)
+   \   00000042   0xF880 0x12C0      STRB     R1,[R0, #+704]
+     34             }   
+     35             sw_uart_reset_buffers();
+   \                     ??bt_rx_msg_handler_2: (+1)
+   \   00000046   0x.... 0x....      BL       sw_uart_reset_buffers
+     36          }
+   \   0000004A   0xB002             ADD      SP,SP,#+8
+   \   0000004C   0xBD10             POP      {R4,PC}          ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x........         DC32     sw_uart
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2_1:
+   \   00000000   0x........         DC32     fb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_0:
+   \   00000000   0x42 0x41          DC8 "BALANCE=%d"
+   \              0x4C 0x41    
+   \              0x4E 0x43    
+   \              0x45 0x3D    
+   \              0x25 0x64    
+   \              0x00         
+   \   0000000B   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_1:
+   \   00000000   0x43 0x41          DC8 "CANCEL\015"
+   \              0x4E 0x43    
+   \              0x45 0x4C    
+   \              0x0D 0x00    
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   bt_rx_msg_handler
+        16   -> sscanf
+        16   -> strcmp
+        16   -> sw_uart_reset_buffers
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+       4  ??DataTable2_1
+      12  ?_0
+       8  ?_1
+      78  bt_rx_msg_handler
+
+ 
+ 106 bytes in section .text
+ 
+ 106 bytes of CODE memory
+
+Errors: none
+Warnings: none

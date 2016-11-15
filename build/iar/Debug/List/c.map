@@ -1,0 +1,131 @@
+###############################################################################
+#
+# IAR ELF Linker V7.50.2.10312/W32 for ARM                24/May/2016  23:23:24
+# Copyright 2007-2015 IAR Systems AB.
+#
+#    Output file  =  D:\sandbox\arm-periphery\build\iar\Debug\Exe\c.out
+#    Map file     =  D:\sandbox\arm-periphery\build\iar\Debug\List\c.map
+#    Command line =  
+#        D:\sandbox\arm-periphery\build\iar\Debug\Obj\main.o -o
+#        D:\sandbox\arm-periphery\build\iar\Debug\Exe\c.out --redirect
+#        _Printf=_PrintfFull --redirect _Scanf=_ScanfFull --map
+#        D:\sandbox\arm-periphery\build\iar\Debug\List\c.map --config
+#        D:\langs\iar\arm\config\linker\ST\stm32f103xB.icf --semihosting
+#        --entry __iar_program_start --vfe
+#
+###############################################################################
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__SystemLibrary = DLib
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A1":  place at 0x08000000 { ro section .intvec };
+"P1":  place in [from 0x08000000 to 0x0801ffff] { ro };
+"P2":  place in [from 0x20000000 to 0x20004fff] { rw, block CSTACK, block HEAP };
+
+  Section   Kind        Address   Size  Object
+  -------   ----        -------   ----  ------
+"A1":                             0x40
+  .intvec   ro code  0x08000000   0x40  vector_table_M.o [4]
+                   - 0x08000040   0x40
+
+"P1":                             0x54
+  .text     ro code  0x08000040   0x1a  cmain.o [4]
+  .text     ro code  0x0800005a    0x4  low_level_init.o [3]
+  .text     ro code  0x0800005e    0x4  main.o [1]
+  .text     ro code  0x08000062    0x4  exit.o [3]
+  .text     ro code  0x08000066    0x2  vector_table_M.o [4]
+  .text     ro code  0x08000068    0xa  cexit.o [4]
+  .text     ro code  0x08000074   0x14  exit.o [5]
+  .text     ro code  0x08000088    0xc  cstartup_M.o [4]
+                   - 0x08000094   0x54
+
+"P2":                            0x800
+  CSTACK             0x20000000  0x800  <Block>
+    CSTACK  uninit   0x20000000  0x800  <Block tail>
+                   - 0x20000800  0x800
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module            ro code  rw data
+    ------            -------  -------
+D:\sandbox\arm-periphery\build\iar\Debug\Obj: [1]
+    main.o                  4
+    ----------------------------------
+    Total:                  4
+
+command line: [2]
+    ----------------------------------
+    Total:
+
+dl7M_tln.a: [3]
+    exit.o                  4
+    low_level_init.o        4
+    ----------------------------------
+    Total:                  8
+
+rt7M_tl.a: [4]
+    cexit.o                10
+    cmain.o                26
+    cstartup_M.o           12
+    vector_table_M.o       66
+    ----------------------------------
+    Total:                114
+
+shb_l.a: [5]
+    exit.o                 20
+    ----------------------------------
+    Total:                 20
+
+    Gaps                    2
+    Linker created               2 048
+--------------------------------------
+    Grand Total:          148    2 048
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                    Address  Size  Type      Object
+-----                    -------  ----  ----      ------
+?main                 0x08000041        Code  Gb  cmain.o [4]
+CSTACK$$Base          0x20000000         --   Gb  - Linker created -
+CSTACK$$Limit         0x20000800         --   Gb  - Linker created -
+Region$$Table$$Base   0x00000000         --   Gb  - Linker created -
+Region$$Table$$Limit  0x00000000         --   Gb  - Linker created -
+__cmain               0x08000041        Code  Gb  cmain.o [4]
+__exit                0x08000075  0x14  Code  Gb  exit.o [5]
+__iar_program_start   0x08000089        Code  Gb  cstartup_M.o [4]
+__low_level_init      0x0800005b   0x4  Code  Gb  low_level_init.o [3]
+__vector_table        0x08000000        Data  Gb  vector_table_M.o [4]
+_call_main            0x0800004d        Code  Gb  cmain.o [4]
+_exit                 0x08000069        Code  Gb  cexit.o [4]
+_main                 0x08000057        Code  Gb  cmain.o [4]
+exit                  0x08000063   0x4  Code  Gb  exit.o [3]
+main                  0x0800005f   0x4  Code  Gb  main.o [1]
+
+
+[1] = D:\sandbox\arm-periphery\build\iar\Debug\Obj
+[2] = command line
+[3] = dl7M_tln.a
+[4] = rt7M_tl.a
+[5] = shb_l.a
+
+    148 bytes of readonly  code memory
+  2 048 bytes of readwrite data memory
+
+Errors: none
+Warnings: none

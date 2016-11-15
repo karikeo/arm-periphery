@@ -1,0 +1,169 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       12/Sep/2016  16:26:17
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\xmtx.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\xmtx.c -D
+#        STM32F10X_HD -D USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\xmtx.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\xmtx.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\xmtx.c
+      1          /*********************************************************************
+      2          *               SEGGER MICROCONTROLLER GmbH & Co KG                  *
+      3          *       Solutions for real time microcontroller applications         *
+      4          **********************************************************************
+      5          *                                                                    *
+      6          *       (c) 1995 - 2014  SEGGER Microcontroller GmbH & Co KG         *
+      7          *                                                                    *
+      8          *       www.segger.com     Support: support@segger.com               *
+      9          *                                                                    *
+     10          **********************************************************************
+     11          *                                                                    *
+     12          *       embOS * Real time operating system for microcontrollers      *
+     13          *                                                                    *
+     14          *                                                                    *
+     15          *       Please note:                                                 *
+     16          *                                                                    *
+     17          *       Knowledge of this file may under no circumstances            *
+     18          *       be used to write a similar product or a real-time            *
+     19          *       operating system for in-house use.                           *
+     20          *                                                                    *
+     21          *       Thank you for your fairness !                                *
+     22          *                                                                    *
+     23          **********************************************************************
+     24          *                                                                    *
+     25          *       OS version: 4.02a                                            *
+     26          *                                                                    *
+     27          **********************************************************************
+     28          
+     29          ----------------------------------------------------------------------
+     30          File    : xmtx.c
+     31          Purpose : xmtx system interface -- thread locking and unlocking
+     32                    functions, adapted to embOS
+     33          --------- END-OF-HEADER ----------------------------------------------
+     34          */
+     35          
+     36          #include <yvals.h>
+     37          #include "RTOS.h"
+     38          
+     39          #if _MULTI_THREAD  // Used in multi thread supported libraries only
+     40          
+     41          _STD_BEGIN
+     42          
+     43          /*********************************************************************
+     44          *
+     45          *       Global functions
+     46          *
+     47          **********************************************************************
+     48          */
+     49          
+     50          /*********************************************************************
+     51          *
+     52          *       __iar_system_Mtxinit()
+     53          */
+
+   \                                 In section .text, align 2, keep-with-next
+     54          void __iar_system_Mtxinit(__iar_Rmtx *m) {
+     55            OS__iar_system_Mtxinit(m);
+   \                     __iar_system_Mtxinit: (+1)
+   \   00000000   0x.... 0x....      B.W      OS__iar_system_Mtxinit
+     56          }
+     57          
+     58          /*********************************************************************
+     59          *
+     60          *       __iar_system_Mtxdst()
+     61          */
+
+   \                                 In section .text, align 2, keep-with-next
+     62          void __iar_system_Mtxdst(__iar_Rmtx *m) {
+     63            OS__iar_system_Mtxdst(m);
+   \                     __iar_system_Mtxdst: (+1)
+   \   00000000   0x.... 0x....      B.W      OS__iar_system_Mtxdst
+     64          }
+     65          
+     66          /*********************************************************************
+     67          *
+     68          *       __iar_system_Mtxlock()
+     69          */
+
+   \                                 In section .text, align 2, keep-with-next
+     70          void __iar_system_Mtxlock(__iar_Rmtx *m) {
+     71            OS__iar_system_Mtxlock(m);
+   \                     __iar_system_Mtxlock: (+1)
+   \   00000000   0x.... 0x....      B.W      OS__iar_system_Mtxlock
+     72          }
+     73          
+     74          /*********************************************************************
+     75          *
+     76          *       __iar_system_Mtxunlock()
+     77          */
+
+   \                                 In section .text, align 2, keep-with-next
+     78          void __iar_system_Mtxunlock(__iar_Rmtx *m) {
+     79            OS__iar_system_Mtxunlock(m);
+   \                     __iar_system_Mtxunlock: (+1)
+   \   00000000   0x.... 0x....      B.W      OS__iar_system_Mtxunlock
+     80          }
+     81          
+     82          _STD_END
+     83          
+     84          /********************************************************************/
+     85          
+     86          #endif // _MULTI_THREAD
+     87          
+     88          /****** End Of File *************************************************/
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   __iar_system_Mtxdst
+         0   -> OS__iar_system_Mtxdst
+       0   __iar_system_Mtxinit
+         0   -> OS__iar_system_Mtxinit
+       0   __iar_system_Mtxlock
+         0   -> OS__iar_system_Mtxlock
+       0   __iar_system_Mtxunlock
+         0   -> OS__iar_system_Mtxunlock
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  __iar_system_Mtxdst
+       4  __iar_system_Mtxinit
+       4  __iar_system_Mtxlock
+       4  __iar_system_Mtxunlock
+
+ 
+ 16 bytes in section .text
+ 
+ 16 bytes of CODE memory
+
+Errors: none
+Warnings: none

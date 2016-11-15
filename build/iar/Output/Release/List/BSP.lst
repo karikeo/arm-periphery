@@ -1,0 +1,320 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       19/Oct/2016  13:34:21
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  C:\ilya\vendicont\arm-periphery\rtos\embos\BSP.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\BSP.c -D STM32F10X_HD -D
+#        USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\BSP.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\BSP.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\rtos\embos\BSP.c
+      1          /*********************************************************************
+      2          *               SEGGER MICROCONTROLLER GmbH & Co KG                  *
+      3          *       Solutions for real time microcontroller applications         *
+      4          **********************************************************************
+      5          *                                                                    *
+      6          *       (c) 1995 - 2012  SEGGER Microcontroller GmbH & Co KG         *
+      7          *                                                                    *
+      8          *       www.segger.com     Support: support@segger.com               *
+      9          *                                                                    *
+     10          **********************************************************************
+     11          *                                                                    *
+     12          *       embOS * Real time operating system for microcontrollers      *
+     13          *                                                                    *
+     14          *                                                                    *
+     15          *       Please note:                                                 *
+     16          *                                                                    *
+     17          *       Knowledge of this file may under no circumstances            *
+     18          *       be used to write a similar product or a real-time            *
+     19          *       operating system for in-house use.                           *
+     20          *                                                                    *
+     21          *       Thank you for your fairness !                                *
+     22          *                                                                    *
+     23          **********************************************************************
+     24          *                                                                    *
+     25          *       OS version: 3.86d                                            *
+     26          *                                                                    *
+     27          **********************************************************************
+     28          
+     29          ----------------------------------------------------------------------
+     30          File    : BSP.c
+     31          Purpose : BSP for STM32F103 (MB525)
+     32          --------  END-OF-HEADER  ---------------------------------------------
+     33          */
+     34          
+     35          #define BSP_C
+     36          #include "stm32f10x.h"
+     37          #include "BSP.h"
+     38          //#include "platform_config.h"
+     39          #include "sw_uart.h"
+     40          /*********************************************************************
+     41          *
+     42          *       Defines
+     43          *
+     44          **********************************************************************
+     45          */
+     46          
+     47          /****** SFRs used for LED-Port **************************************/
+     48          
+     49          #define _GPIOC_BASE_ADDR           (0x40011000)
+     50          
+     51          
+     52          
+
+   \                                 In section .bss, align 4
+     53          GPIO_InitTypeDef GPIO_InitStructure;
+   \                     GPIO_InitStructure:
+   \   00000000                      DS8 4
+     54          
+     55          /*********************************************************************
+     56          *
+     57          *       Global functions
+     58          *
+     59          **********************************************************************
+     60          */
+     61          #if defined LCD
+     62          #include "lcd_2x16.h"
+     63          #endif
+     64          #include "spi_slave.h"
+     65          #include "vending/pt-vending.h"
+     66          
+     67          extern OS_RSEMA SemaLog;
+     68          extern OS_RSEMA SemaLCD;
+     69          
+     70          OS_TICK_HOOK tickHook;
+   \                     tickHook:
+   \   00000004                      DS8 8
+     71          
+     72          
+
+   \                                 In section .text, align 2, keep-with-next
+     73          void hookFunc( void )
+     74          {
+     75             IWDG_ReloadCounter();
+   \                     hookFunc: (+1)
+   \   00000000   0x.... 0x....      B.W      IWDG_ReloadCounter
+     76          }
+     77          
+     78          ////////////////////////////////////////////////////////////////////////////////
+     79          
+     80          
+     81          /*********************************************************************
+     82          *
+     83          *       BSP_Init()
+     84          */
+
+   \                                 In section .text, align 2, keep-with-next
+     85          void BSP_Init(void) {
+   \                     BSP_Init: (+1)
+   \   00000000   0xB530             PUSH     {R4,R5,LR}
+   \   00000002   0xB081             SUB      SP,SP,#+4
+     86          #if 0
+     87            _SYSCTRL_RCC_APB2 |= (1uL << _SYSCTRL_LEDPORT_BIT);
+     88            GPIOC_CRL  = (GPIOC_CRL & (0x00FFFFFFuL)) | 0x33000000uL;
+     89            GPIOC_CRH  = (GPIOC_CRH & (0xFFFFFF00uL)) | 0x00000033uL;
+     90            GPIOC_BRR |= _LED_MASK_ALL;   // Initially switch off all LEDS
+     91          #endif
+     92          
+     93          #ifdef DEBUG
+     94          //#warning DEBUG
+     95            //debug();
+     96          #else
+     97          //#warning NO DEBUG
+     98          #endif
+     99          
+    100             RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOA , ENABLE );
+   \   00000004   0x2101             MOVS     R1,#+1
+   \   00000006   0x2004             MOVS     R0,#+4
+   \   00000008   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+    101             RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOC , ENABLE );   
+   \   0000000C   0x2101             MOVS     R1,#+1
+   \   0000000E   0x2010             MOVS     R0,#+16
+   \   00000010   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+    102          
+    103             /* Enable USARTs clock */
+    104             RCC_APB2PeriphClockCmd( RCC_APB2Periph_USART1, ENABLE );
+   \   00000014   0x2101             MOVS     R1,#+1
+   \   00000016   0xF44F 0x4080      MOV      R0,#+16384
+   \   0000001A   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+    105             RCC_APB1PeriphClockCmd( RCC_APB1Periph_USART2, ENABLE );
+   \   0000001E   0x2101             MOVS     R1,#+1
+   \   00000020   0xF44F 0x3000      MOV      R0,#+131072
+   \   00000024   0x.... 0x....      BL       RCC_APB1PeriphClockCmd
+    106             RCC_APB1PeriphClockCmd( RCC_APB1Periph_USART3, ENABLE );
+   \   00000028   0x2101             MOVS     R1,#+1
+   \   0000002A   0xF44F 0x2080      MOV      R0,#+262144
+   \   0000002E   0x.... 0x....      BL       RCC_APB1PeriphClockCmd
+    107          
+    108             RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+   \   00000032   0x2101             MOVS     R1,#+1
+   \   00000034   0x2001             MOVS     R0,#+1
+   \   00000036   0x.... 0x....      BL       RCC_AHBPeriphClockCmd
+    109             RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+   \   0000003A   0x2101             MOVS     R1,#+1
+   \   0000003C   0x2008             MOVS     R0,#+8
+   \   0000003E   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+    110             RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+   \   00000042   0x2101             MOVS     R1,#+1
+   \   00000044   0xF44F 0x4080      MOV      R0,#+16384
+   \   00000048   0x.... 0x....      BL       RCC_APB1PeriphClockCmd
+    111          
+    112             OS_CREATERSEMA( &SemaLog );    /* Creates resource semaphore  */
+   \   0000004C   0x....             LDR.N    R0,??DataTable0
+   \   0000004E   0x....             LDR.N    R4,??DataTable0_1
+   \   00000050   0x....             LDR.N    R5,??DataTable0_2  ;; 0x40011000
+   \   00000052   0x.... 0x....      BL       OS_CreateRSema
+    113             OS_CREATERSEMA( &SemaLCD );    /* Creates resource semaphore  */
+   \   00000056   0x....             LDR.N    R0,??DataTable0_3
+   \   00000058   0x.... 0x....      BL       OS_CreateRSema
+    114          #if defined LCD   
+    115             lcd_init();
+    116          #endif
+    117            //spi_slave_init();
+    118            //init_uarts();
+    119            //init_fb();
+    120             
+    121          #if 1 //defined ( SW_UART ) 
+    122             /* Configure (PC.5) as alternate function push-pull */
+    123             //HC05 CONF2
+    124             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+   \   0000005C   0x2020             MOVS     R0,#+32
+   \   0000005E   0x8020             STRH     R0,[R4, #+0]
+    125             GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    126             GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;//GPIO_Mode_AF_PP;
+    127             GPIO_Init(GPIOC, &GPIO_InitStructure);   
+   \   00000060   0x4621             MOV      R1,R4
+   \   00000062   0x2001             MOVS     R0,#+1
+   \   00000064   0x70A0             STRB     R0,[R4, #+2]
+   \   00000066   0x2010             MOVS     R0,#+16
+   \   00000068   0x70E0             STRB     R0,[R4, #+3]
+   \   0000006A   0x4628             MOV      R0,R5
+   \   0000006C   0x.... 0x....      BL       GPIO_Init
+    128             HC05_CONF_OFF;
+   \   00000070   0x2120             MOVS     R1,#+32
+   \   00000072   0x4628             MOV      R0,R5
+   \   00000074   0x.... 0x....      BL       GPIO_ResetBits
+    129               
+    130             sw_uart_init();
+   \   00000078   0x.... 0x....      BL       sw_uart_init
+    131             
+    132             
+    133          #endif
+    134            
+    135             OS_TICK_AddHook ( &tickHook, hookFunc );
+   \   0000007C   0x1D20             ADDS     R0,R4,#+4
+   \   0000007E   0xB001             ADD      SP,SP,#+4
+   \   00000080   0xE8BD 0x4030      POP      {R4,R5,LR}
+   \   00000084   0x....             LDR.N    R1,??DataTable0_4
+   \   00000086   0x.... 0x....      B.W      OS_TICK_AddHook
+    136          
+    137          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0:
+   \   00000000   0x........         DC32     SemaLog
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0_1:
+   \   00000000   0x........         DC32     GPIO_InitStructure
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0_2:
+   \   00000000   0x40011000         DC32     0x40011000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0_3:
+   \   00000000   0x........         DC32     SemaLCD
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0_4:
+   \   00000000   0x........         DC32     hookFunc
+    138          
+    139          #if 0
+    140          /*********************************************************************
+    141          *
+    142          *       LED switching routines
+    143          *       LEDs are switched on with low level on port lines
+    144          */
+    145          void BSP_SetLED(int Index) {
+    146            GPIOC_BSRR |= (1uL << (_LED0_BIT + Index));             /* Switch LED on */
+    147          }
+    148          
+    149          void BSP_ClrLED(int Index) {
+    150            GPIOC_BRR  |= (1uL << (_LED0_BIT + Index));             /* Switch LED off*/
+    151          }
+    152          
+    153          void BSP_ToggleLED(int Index) {
+    154            if ((GPIOC_ODR & (1uL << (_LED0_BIT + Index))) == 0) {  /* LED is switched off */
+    155              BSP_SetLED(Index);
+    156            } else {
+    157              BSP_ClrLED(Index);
+    158            }
+    159          }
+    160          #endif
+    161          
+    162          /****** EOF *********************************************************/
+    163          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   BSP_Init
+        16   -> GPIO_Init
+        16   -> GPIO_ResetBits
+        16   -> OS_CreateRSema
+         0   -> OS_TICK_AddHook
+        16   -> RCC_AHBPeriphClockCmd
+        16   -> RCC_APB1PeriphClockCmd
+        16   -> RCC_APB2PeriphClockCmd
+        16   -> sw_uart_init
+       0   hookFunc
+         0   -> IWDG_ReloadCounter
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable0
+       4  ??DataTable0_1
+       4  ??DataTable0_2
+       4  ??DataTable0_3
+       4  ??DataTable0_4
+     138  BSP_Init
+      12  GPIO_InitStructure
+          tickHook
+       4  hookFunc
+
+ 
+  12 bytes in section .bss
+ 162 bytes in section .text
+ 
+ 162 bytes of CODE memory
+  12 bytes of DATA memory
+
+Errors: none
+Warnings: none

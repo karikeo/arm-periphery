@@ -1,0 +1,13 @@
+"D:\langs\iar\arm\bin\armproc.dll" 
+
+"D:\langs\iar\arm\bin\armsim2.dll" 
+
+"D:\sandbox\arm-periphery\build\iar\main.c" 
+
+--plugin "D:\langs\iar\arm\bin\armbat.dll" 
+
+--device_macro "D:\langs\iar\arm\config\debugger\ST\STM32F1xx_XL.dmac" 
+
+
+
+

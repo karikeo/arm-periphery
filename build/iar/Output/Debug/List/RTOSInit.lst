@@ -1,0 +1,1802 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       09/Nov/2016  14:40:00
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\RTOSInit.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\RTOSInit.c -D
+#        STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\RTOSInit.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\RTOSInit.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\RTOSInit.c
+      1          /*********************************************************************
+      2          *               SEGGER MICROCONTROLLER GmbH & Co KG                  *
+      3          *       Solutions for real time microcontroller applications         *
+      4          **********************************************************************
+      5          *                                                                    *
+      6          *       (c) 1995 - 2014  SEGGER Microcontroller GmbH & Co KG         *
+      7          *                                                                    *
+      8          *       www.segger.com     Support: support@segger.com               *
+      9          *                                                                    *
+     10          **********************************************************************
+     11          *                                                                    *
+     12          *       embOS * Real time operating system for microcontrollers      *
+     13          *                                                                    *
+     14          *                                                                    *
+     15          *       Please note:                                                 *
+     16          *                                                                    *
+     17          *       Knowledge of this file may under no circumstances            *
+     18          *       be used to write a similar product or a real-time            *
+     19          *       operating system for in-house use.                           *
+     20          *                                                                    *
+     21          *       Thank you for your fairness !                                *
+     22          *                                                                    *
+     23          **********************************************************************
+     24          *                                                                    *
+     25          *       OS version: 4.02a                                            *
+     26          *                                                                    *
+     27          **********************************************************************
+     28          
+     29          ----------------------------------------------------------------------
+     30          File    : RTOSInit.c for STM32F103 and IAR STM32-SK eval board
+     31          
+     32          Purpose : Initializes and handles the hardware for embOS as far
+     33                    as required by embOS
+     34                    Feel free to modify this file acc. to your target system.
+     35          --------  END-OF-HEADER  ---------------------------------------------
+     36          */
+     37          
+     38          #include "RTOS.h"
+     39          #ifdef __ICCARM__  // IAR
+     40            #include "exceptions.h"           /* CMSIS compatible irq interface */
+     41          #endif
+     42          
+     43          /*********************************************************************
+     44          *
+     45          *       Configuration
+     46          *
+     47          **********************************************************************
+     48          */
+     49          
+     50          /*********************************************************************
+     51          *
+     52          *       Clock frequency settings
+     53          */
+     54          #ifndef   OS_FSYS                   /* CPU Main clock frequency      */
+     55            #define OS_FSYS 72000000uL
+     56          #endif
+     57          
+     58          #ifndef   OS_PCLK_TIMER             /* Peripheral clock for timer   */
+     59            #define OS_PCLK_TIMER  OS_FSYS    /* May vary from CPU clock      */
+     60          #endif                              /* depending on CPU             */
+     61          
+     62          #ifndef   OS_PCLK_UART              /* Peripheral clock for UART    */
+     63            #define OS_PCLK_UART  OS_FSYS     /* May vary from CPU clock      */
+     64          #endif                              /* depending on CPU             */
+     65          
+     66          #ifndef   OS_TICK_FREQ
+     67            #define OS_TICK_FREQ (1000u)
+     68          #endif
+     69          
+     70          #ifndef   OS_USE_VARINTTABLE        /* The interrupt vector table   */
+     71            #define OS_USE_VARINTTABLE (0)    /* may be located in RAM        */
+     72          #endif
+     73          
+     74          #define OS_Systick SysTick_Handler  /* Map OS systick handler to CMSIS compatible handler name */
+     75          
+     76          /*********************************************************************
+     77          *
+     78          *       Configuration of communication to OSView
+     79          */
+     80          #ifndef   OS_VIEW_ENABLE            // Global enable of communication
+     81            #define OS_VIEW_ENABLE    (1)     // Default: on
+     82          #endif
+     83          
+     84          #ifndef   OS_VIEW_USE_UART          // If set, UART will be used for communication
+     85            #define OS_VIEW_USE_UART  (0)     // Default: 0 => memory access is used
+     86          #endif                              // if OS_VIEW_ENABLE is on
+     87          
+     88          /*********************************************************************
+     89          *
+     90          *       UART settings for OSView
+     91          *       If you do not want (or can not due to hardware limitations)
+     92          *       to dedicate a UART to embOSView, please define it to be -1
+     93          *       Currently the standard code enables OS_UART 1 per default.
+     94          *       OS_UART=1: RS232-2 on IAR STM32-SK (USART 2)
+     95          *       OS_UART=2: RS232-3 on IAR STM32-SK (USART 3)
+     96          */
+     97          #ifndef   OS_UART
+     98            #define OS_UART (1)
+     99          #endif
+    100          
+    101          #ifndef   OS_BAUDRATE
+    102            #define OS_BAUDRATE (38400)
+    103          #endif
+    104          
+    105          /****** End of configurable options *********************************/
+    106          
+    107          /*********************************************************************
+    108          *
+    109          *       Check configuration
+    110          *
+    111          **********************************************************************
+    112          */
+    113          #ifndef   DEBUG     /* Should normally be defined as project option */
+    114            #define DEBUG (0)
+    115          #endif
+    116          
+    117          /*********************************************************************
+    118          *
+    119          *       JLINKMEM and UART settings for OSView
+    120          *
+    121          *       Automatically generated from configuration settings
+    122          */
+    123          #define OS_USE_JLINKMEM   (OS_VIEW_ENABLE && (OS_VIEW_USE_UART == 0))
+    124          
+    125          #define OS_UART_USED      (OS_VIEW_ENABLE && (OS_VIEW_USE_UART != 0) && ((OS_UART == 1) || (OS_UART == 2)))
+    126          
+    127          #if OS_USE_JLINKMEM
+    128            #include "JLINKMEM.h"
+    129          #endif
+    130          
+    131          /****** MAP UART initialization function ****************************/
+    132          
+    133          #if  (OS_UART_USED || OS_USE_JLINKMEM)
+    134            #define OS_COM_INIT() OS_COM_Init()
+    135          #else
+    136            #define OS_COM_INIT()
+    137          #endif
+    138          
+    139          /*********************************************************************
+    140          *
+    141          *       Vector table
+    142          */
+    143          #ifdef __ICCARM__          // IAR
+    144            #define __Vectors    __vector_table
+    145          #endif
+    146          
+    147          #ifdef __CROSSWORKS_ARM   // Rowley CrossStudio
+    148            #define __Vectors    _vectors
+    149          #endif
+    150          
+    151          #ifdef __GNUC__           // GCC
+    152            extern unsigned char __Vectors;
+    153          #endif
+    154          
+    155          #ifdef __CC_ARM          // KEIL
+    156            extern unsigned char __Vectors;
+    157          #endif
+    158          
+    159          /*********************************************************************
+    160          *
+    161          *       Local defines (sfrs used in RTOSInit.c)
+    162          *
+    163          **********************************************************************
+    164          */
+    165          #define NVIC_VTOR         (*(volatile OS_U32*) (0xE000ED08uL))
+    166          #define NVIC_HFSR         (*(volatile OS_U32*) (0xE000ED2CuL))
+    167          
+    168          #define SYS_INT_CTRL_STATE            (*(volatile OS_U32*)(0xE000ED04uL))
+    169          #define SYS_PENDSTSET                 26
+    170          
+    171          #define SYSPRI1_ADDR                  (0xE000ED18uL)
+    172          #define SYSHND_CTRL_ADDR              (0xE000ED24uL)    // System Handler Control and State
+    173          #define SYSHND_CTRL                   (*(volatile OS_U32*) (SYSHND_CTRL_ADDR))
+    174          
+    175          #define NVIC_SYS_HND_CTRL_MEM         (0x00010000uL)  // Mem manage fault enable
+    176          #define NVIC_SYS_HND_CTRL_BUS         (0x00020000uL)  // Bus fault enable
+    177          #define NVIC_SYS_HND_CTRL_USAGE       (0x00040000uL)  // Usage fault enable
+    178          
+    179          #define NVIC_PRIOBASE_ADDR            (0xE000E400uL)
+    180          #define NVIC_ENABLE_ADDR              (0xE000E100uL)
+    181          #define NVIC_DISABLE_ADDR             (0xE000E180uL)
+    182          #define NVIC_VTOREG_ADDR              (0xE000ED08uL)
+    183          
+    184          #define NUM_INTERRUPTS                (16+60)
+    185          
+    186          #define AFIO_BASE_ADDR                (0x40010000uL)
+    187          #define AFIO_MAPR                     (*(volatile OS_U32*)(AFIO_BASE_ADDR + 0x04))
+    188          
+    189          #define PERIPH_BASE_ADDR              ((OS_U32)0x40000000uL)
+    190          #define APB1PERIPH_BASE_ADDR          (PERIPH_BASE_ADDR)
+    191          #define APB2PERIPH_BASE_ADDR          (PERIPH_BASE_ADDR + 0x10000u)
+    192          #define AHBPERIPH_BASE_ADDR           (PERIPH_BASE_ADDR + 0x20000u)
+    193          
+    194          #define RCC_BASE_ADDR                 (AHBPERIPH_BASE_ADDR + 0x1000)
+    195          #define RCC_APB2ENR                   (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x18))
+    196          
+    197          #define RCC_CR                        (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x00))
+    198          #define RCC_CFGR                      (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x04))
+    199          #define RCC_CIR                       (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x08))
+    200          #define RCC_APB2RSTR                  (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x0C))
+    201          #define RCC_APB1RSTR                  (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x10))
+    202          #define RCC_AHBENR                    (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x14))
+    203          #define RCC_APB1ENR                   (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x1C))
+    204          #define RCC_BDCR                      (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x20))
+    205          #define RCC_CSR                       (*(volatile OS_U32*)(RCC_BASE_ADDR + 0x24))
+    206          
+    207          #define SYS_TICK_BASE_ADDR            (0xE000E010uL)
+    208          #define SYS_TICK_CONTROL              (*(volatile OS_U32*)(SYS_TICK_BASE_ADDR + 0x00))
+    209          #define SYS_TICK_RELOAD               (*(volatile OS_U32*)(SYS_TICK_BASE_ADDR + 0x04))
+    210          #define SYS_TICK_VALUE                (*(volatile OS_U32*)(SYS_TICK_BASE_ADDR + 0x08))
+    211          #define SYS_TICK_CALIBRATION          (*(volatile OS_U32*)(SYS_TICK_BASE_ADDR + 0x0C))
+    212          #define SYS_TICK_ENABLE_BIT           (0)
+    213          #define SYS_TICK_INT_ENABLE_BIT       (1)
+    214          #define SYS_TICK_CLK_SOURCE_BIT       (2)
+    215          
+    216          #define CR_PLLON_BB                   (*(volatile OS_U32*)(0x42420060uL))
+    217          #define CR_HSEBYP_Reset               ((OS_U32)0xFFFBFFFFuL)
+    218          #define CR_HSEBYP_Set                 ((OS_U32)0x00040000uL)
+    219          #define CR_HSEON_Reset                ((OS_U32)0xFFFEFFFFuL)
+    220          
+    221          #define CR_HSEON_Set                  ((OS_U32)0x00010000uL)
+    222          #define CR_HSITRIM_Mask               ((OS_U32)0xFFFFFF07uL)
+    223          #define FLASH_Latency_2               ((OS_U32)0x00000002uL)
+    224          #define ACR_LATENCY_Mask              ((OS_U32)0x00000038uL)
+    225          #define ACR_PRFTBE_Mask               ((OS_U32)0xFFFFFFEFuL)
+    226          #define FLASH_PrefetchBuffer_Enable   ((OS_U32)0x00000010uL)
+    227          #define CFGR_HPRE_Reset_Mask          ((OS_U32)0xFFFFFF0FuL)
+    228          #define RCC_SYSCLK_Div1               ((OS_U32)0x00000000uL)
+    229          #define CFGR_PPRE2_Reset_Mask         ((OS_U32)0xFFFFC7FFuL)
+    230          #define RCC_HCLK_Div1                 ((OS_U32)0x00000000uL)
+    231          #define RCC_HCLK_Div2                 ((OS_U32)0x00000400uL)
+    232          #define CFGR_PPRE1_Reset_Mask         ((OS_U32)0xFFFFF8FFuL)
+    233          #define CFGR_PLL_Mask                 ((OS_U32)0xFFC0FFFFuL)
+    234          #define PERIPH_BB_BASE                ((OS_U32)0x42000000uL)
+    235          #define PLLON_BitNumber               (0x18uL)
+    236          #define CFGR_SW_Mask                  ((OS_U32)0xFFFFFFFCuL)
+    237          #define RCC_SYSCLKSource_PLLCLK       ((OS_U32)0x00000002uL)
+    238          #define CFGR_SWS_Mask                 ((OS_U32)0x0000000CuL)
+    239          #define RCC_PLLSource_HSE_Div1        ((OS_U32)0x00010000uL)
+    240          #define RCC_PLLMul_9                  ((OS_U32)0x001C0000uL)
+    241          
+    242          #define FLASH_BASE_ADDR               ((OS_U32)0x40022000uL)
+    243          #define FLASH_ACR                     (*(volatile OS_U32*)(FLASH_BASE_ADDR + 0x00))
+    244          
+    245          /*********************************************************************
+    246          *
+    247          * The following can be used as as arguments for the PLL activation
+    248          * if required in __low_level_init()
+    249          *
+    250          **********************************************************************
+    251          */
+    252          #define SYSCTRL_SYSDIV_1              (0x07800000uL)  // Processor clock is osc/pll /1
+    253          #define SYSCTRL_SYSDIV_4              (0x01C00000uL)  // Processor clock is osc/pll /4
+    254          #define SYSCTRL_SYSDIV_10             (0x04C00000uL)  // Processor clock is osc/pll /10
+    255          #define SYSCTRL_USE_PLL               (0x00000000uL)  // System clock is the PLL clock
+    256          #define SYSCTRL_USE_OSC               (0x00003800uL)  // System clock is the osc clock
+    257          #define SYSCTRL_XTAL_6MHZ             (0x000002C0uL)  // External crystal is 6MHz
+    258          #define SYSCTRL_XTAL_8MHZ             (0x00000380uL)  // External crystal is 8MHz
+    259          #define SYSCTRL_OSC_MAIN              (0x00000000uL)  // Oscillator source is main osc
+    260          
+    261          /*****  Interrupt ID numbers ****************************************/
+    262          
+    263          #define ISR_ID_MPU                    (4)                // MPU fault
+    264          #define ISR_ID_BUS                    (5)                // Bus fault
+    265          #define ISR_ID_USAGE                  (6)                // Usage fault
+    266          #define ISR_ID_SYSTICK                (15)               // System Tick
+    267          
+    268          #define ISR_ID_USART1                 (53)               // USART1
+    269          #define ISR_ID_USART2                 (54)               // USART2
+    270          #define ISR_ID_USART3                 (55)               // USART3
+    271          
+    272          #define OS_ISR_ID_TICK                ISR_ID_SYSTICK     // We use Sys-Timer
+    273          
+    274          /****** OS timer configuration **************************************/
+    275          
+    276          #define OS_TIMER_RELOAD           (OS_PCLK_TIMER / OS_TICK_FREQ - 1)
+    277          #if (OS_TIMER_RELOAD >= 0x100000000u)
+    278            #error "Systick can not be used, please check configuration"
+    279          #endif
+    280          
+    281          /*********************************************************************
+    282          *
+    283          *       Static data
+    284          *
+    285          **********************************************************************
+    286          */
+    287          
+    288          #if OS_USE_JLINKMEM
+    289            // Size of the communication buffer for JLINKMEM
+
+   \                                 In section .rodata, align 4
+    290          const OS_U32 OS_JLINKMEM_BufferSize = 32u;
+   \                     OS_JLINKMEM_BufferSize:
+   \   00000000   0x00000020         DC32 32
+    291          #else
+    292          const OS_U32 OS_JLINKMEM_BufferSize = 0;     // Communication not used
+    293          #endif
+    294          
+    295          /*********************************************************************
+    296          *
+    297          *       Local functions
+    298          *
+    299          **********************************************************************
+    300          */
+    301          
+    302          /*********************************************************************
+    303          *
+    304          *       _OS_GetHWTimerCycles()
+    305          *
+    306          * Function description
+    307          *   Returns the current hardware timer count value
+    308          *
+    309          * Return value
+    310          *   Current timer count value
+    311          */
+
+   \                                 In section .text, align 2, keep-with-next
+    312          static unsigned int _OS_GetHWTimerCycles(void) {
+    313            return SYS_TICK_VALUE;
+   \                     _OS_GetHWTimerCycles: (+1)
+   \   00000000   0x.... 0x....      LDR.W    R0,??DataTable8  ;; 0xe000e018
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0x4770             BX       LR               ;; return
+    314          }
+    315          
+    316          /*********************************************************************
+    317          *
+    318          *       _OS_GetHWTimerCycles()
+    319          *
+    320          * Function description
+    321          *   Returns if the hardware timer interrupt pending flag is set
+    322          *
+    323          * Return value
+    324          *   == 0; Interrupt pending flag not set
+    325          *   != 0: Interrupt pending flag set
+    326          */
+
+   \                                 In section .text, align 2, keep-with-next
+    327          static unsigned int _OS_GetHWTimer_IntPending(void) {
+    328            return SYS_INT_CTRL_STATE & (1uL << SYS_PENDSTSET);
+   \                     _OS_GetHWTimer_IntPending: (+1)
+   \   00000000   0x.... 0x....      LDR.W    R0,??DataTable8_1  ;; 0xe000ed04
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0xF010 0x6080      ANDS     R0,R0,#0x4000000
+   \   0000000A   0x4770             BX       LR               ;; return
+    329          }
+    330          
+    331          /*********************************************************************
+    332          *
+    333          *       Global functions
+    334          *
+    335          **********************************************************************
+    336          */
+    337          
+    338          /*********************************************************************
+    339          *
+    340          *       OS_Systick()
+    341          *
+    342          * Function description
+    343          *   This is the code that gets called when the processor receives a
+    344          *   SysTick exception. SysTick is used as OS timer tick.
+    345          *
+    346          * NOTES:
+    347          *   (1) It has to be inserted in the interrupt vector table, if RAM
+    348          *       vectors are not used. Therefore it is declared public
+    349          */
+    350          #ifdef __cplusplus
+    351          extern "C" {
+    352          #endif
+    353          void OS_Systick(void);
+    354          #ifdef __cplusplus
+    355          }
+    356          #endif
+
+   \                                 In section .text, align 2, keep-with-next
+    357          void OS_Systick(void) {
+   \                     SysTick_Handler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    358            OS_EnterNestableInterrupt();
+   \   00000002   0x.... 0x....      LDR.W    R0,??DataTable8_2
+   \   00000006   0x7800             LDRB     R0,[R0, #+0]
+   \   00000008   0x1C40             ADDS     R0,R0,#+1
+   \   0000000A   0x.... 0x....      LDR.W    R1,??DataTable8_2
+   \   0000000E   0x7008             STRB     R0,[R1, #+0]
+   \   00000010   0x.... 0x....      LDR.W    R0,??DataTable8_3
+   \   00000014   0x7800             LDRB     R0,[R0, #+0]
+   \   00000016   0x1C40             ADDS     R0,R0,#+1
+   \   00000018   0x.... 0x....      LDR.W    R1,??DataTable8_3
+   \   0000001C   0x7008             STRB     R0,[R1, #+0]
+   \   0000001E   0x.... 0x....      BL       OS_AssertCPUInISRMode
+    359            OS_TICK_Handle();
+   \   00000022   0x.... 0x....      BL       OS_TICK_Handle
+    360          #if OS_USE_JLINKMEM
+    361            JLINKMEM_Process();
+   \   00000026   0x.... 0x....      BL       JLINKMEM_Process
+    362          #endif
+    363            OS_LeaveNestableInterrupt();
+   \   0000002A   0x2080             MOVS     R0,#+128
+   \   0000002C   0xF380 0x8811      MSR      BASEPRI,R0
+   \   00000030   0xBF00             Nop      
+   \   00000032   0xBF00             Nop      
+   \   00000034   0x.... 0x....      LDR.W    R0,??DataTable8_2
+   \   00000038   0x7800             LDRB     R0,[R0, #+0]
+   \   0000003A   0x1E41             SUBS     R1,R0,#+1
+   \   0000003C   0x.... 0x....      LDR.W    R2,??DataTable8_2
+   \   00000040   0x7011             STRB     R1,[R2, #+0]
+   \   00000042   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000044   0x2800             CMP      R0,#+0
+   \   00000046   0xD102             BNE.N    ??SysTick_Handler_0
+   \   00000048   0x2098             MOVS     R0,#+152
+   \   0000004A   0x.... 0x....      BL       OS_Error
+   \                     ??SysTick_Handler_0: (+1)
+   \   0000004E   0x.... 0x....      LDR.W    R0,??DataTable8_3
+   \   00000052   0x7800             LDRB     R0,[R0, #+0]
+   \   00000054   0x2801             CMP      R0,#+1
+   \   00000056   0xD106             BNE.N    ??SysTick_Handler_1
+   \   00000058   0x.... 0x....      LDR.W    R0,??DataTable8_3
+   \   0000005C   0x6840             LDR      R0,[R0, #+4]
+   \   0000005E   0x2800             CMP      R0,#+0
+   \   00000060   0xD001             BEQ.N    ??SysTick_Handler_1
+   \   00000062   0x.... 0x....      BL       OS_SwitchFromInt
+   \                     ??SysTick_Handler_1: (+1)
+   \   00000066   0x.... 0x....      LDR.W    R0,??DataTable8_3
+   \   0000006A   0x7800             LDRB     R0,[R0, #+0]
+   \   0000006C   0x1E40             SUBS     R0,R0,#+1
+   \   0000006E   0x.... 0x....      LDR.W    R1,??DataTable8_3
+   \   00000072   0x7008             STRB     R0,[R1, #+0]
+   \   00000074   0x2000             MOVS     R0,#+0
+   \   00000076   0xF380 0x8811      MSR      BASEPRI,R0
+    364          }
+   \   0000007A   0xBD01             POP      {R0,PC}          ;; return
+    365          
+    366          /*********************************************************************
+    367          *
+    368          *       OS_InitHW()
+    369          *
+    370          *       Initialize the hardware (timer) required for the OS to run.
+    371          *       May be modified, if an other timer should be used
+    372          */
+
+   \                                 In section .text, align 2, keep-with-next
+    373          void OS_InitHW(void) {
+   \                     OS_InitHW: (+1)
+   \   00000000   0xB530             PUSH     {R4,R5,LR}
+   \   00000002   0xB085             SUB      SP,SP,#+20
+    374            OS_U8  TickPrio;
+    375            OS_U32 tmpreg;
+    376            OS_SYSTIMER_CONFIG SysTimerConfig = {OS_PCLK_TIMER, OS_TICK_FREQ, 0, _OS_GetHWTimerCycles, _OS_GetHWTimer_IntPending}; // Setup values for OS_Config_SysTimer()
+   \   00000004   0x4668             MOV      R0,SP
+   \   00000006   0x.... 0x....      LDR.W    R1,??DataTable8_4
+   \   0000000A   0x2214             MOVS     R2,#+20
+   \   0000000C   0x.... 0x....      BL       __aeabi_memcpy4
+    377          
+    378            OS_IncDI();                            // Initially disable interrupts
+   \   00000010   0x.... 0x....      LDR.W    R0,??DataTable8_3
+   \   00000014   0x7840             LDRB     R0,[R0, #+1]
+   \   00000016   0x21F0             MOVS     R1,#+240
+   \   00000018   0x4208             TST      R0,R1
+   \   0000001A   0xD002             BEQ.N    ??OS_InitHW_0
+   \   0000001C   0x2099             MOVS     R0,#+153
+   \   0000001E   0x.... 0x....      BL       OS_Error
+   \                     ??OS_InitHW_0: (+1)
+   \   00000022   0x2080             MOVS     R0,#+128
+   \   00000024   0xF380 0x8811      MSR      BASEPRI,R0
+   \   00000028   0xBF00             Nop      
+   \   0000002A   0xBF00             Nop      
+   \   0000002C   0x.... 0x....      LDR.W    R0,??DataTable8_3
+   \   00000030   0x7840             LDRB     R0,[R0, #+1]
+   \   00000032   0x1C40             ADDS     R0,R0,#+1
+   \   00000034   0x.... 0x....      LDR.W    R1,??DataTable8_3
+   \   00000038   0x7048             STRB     R0,[R1, #+1]
+    379            RCC_APB2RSTR = 0x00000000uL;           // Disable APB2 Peripheral Reset
+   \   0000003A   0x2000             MOVS     R0,#+0
+   \   0000003C   0x.... 0x....      LDR.W    R1,??DataTable8_5  ;; 0x4002100c
+   \   00000040   0x6008             STR      R0,[R1, #+0]
+    380            RCC_APB1RSTR = 0x00000000uL;           // Disable APB1 Peripheral Reset
+   \   00000042   0x2000             MOVS     R0,#+0
+   \   00000044   0x.... 0x....      LDR.W    R1,??DataTable8_6  ;; 0x40021010
+   \   00000048   0x6008             STR      R0,[R1, #+0]
+    381            RCC_AHBENR   = 0x00000014uL;           // FLITF and SRAM Clock ON
+   \   0000004A   0x2014             MOVS     R0,#+20
+   \   0000004C   0x.... 0x....      LDR.W    R1,??DataTable8_7  ;; 0x40021014
+   \   00000050   0x6008             STR      R0,[R1, #+0]
+    382            RCC_APB2ENR  = 0x00000000uL;           // Disable APB2 Peripheral Clock
+   \   00000052   0x2000             MOVS     R0,#+0
+   \   00000054   0x.... 0x....      LDR.W    R1,??DataTable8_8  ;; 0x40021018
+   \   00000058   0x6008             STR      R0,[R1, #+0]
+    383            RCC_APB1ENR  = 0x00000000uL;           // Disable APB1 Peripheral Clock
+   \   0000005A   0x2000             MOVS     R0,#+0
+   \   0000005C   0x.... 0x....      LDR.W    R1,??DataTable8_9  ;; 0x4002101c
+   \   00000060   0x6008             STR      R0,[R1, #+0]
+    384            RCC_CR      |= (OS_U32)0x00000001uL;   // Set HSION bit
+   \   00000062   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   00000066   0x6800             LDR      R0,[R0, #+0]
+   \   00000068   0xF050 0x0001      ORRS     R0,R0,#0x1
+   \   0000006C   0x.... 0x....      LDR.W    R1,??DataTable8_10  ;; 0x40021000
+   \   00000070   0x6008             STR      R0,[R1, #+0]
+    385            RCC_CFGR    &= 0xF8FF0000uL;           // Reset SW[1:0], HPRE[3:0], PPRE1[2:0], PPRE2[2:0], ADCPRE[1:0] and MCO[2:0] bits
+   \   00000072   0x.... 0x....      LDR.W    R0,??DataTable8_11  ;; 0x40021004
+   \   00000076   0x6800             LDR      R0,[R0, #+0]
+   \   00000078   0x.... 0x....      LDR.W    R1,??DataTable8_12  ;; 0xf8ff0000
+   \   0000007C   0x4008             ANDS     R0,R1,R0
+   \   0000007E   0x.... 0x....      LDR.W    R1,??DataTable8_11  ;; 0x40021004
+   \   00000082   0x6008             STR      R0,[R1, #+0]
+    386            RCC_CR      &= 0xFEF6FFFFuL;           // Reset HSEON, CSSON and PLLON bits
+   \   00000084   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   00000088   0x6800             LDR      R0,[R0, #+0]
+   \   0000008A   0x.... 0x....      LDR.W    R1,??DataTable8_13  ;; 0xfef6ffff
+   \   0000008E   0x4008             ANDS     R0,R1,R0
+   \   00000090   0x.... 0x....      LDR.W    R1,??DataTable8_10  ;; 0x40021000
+   \   00000094   0x6008             STR      R0,[R1, #+0]
+    387            RCC_CR      &= 0xFFFBFFFFuL;           // Reset HSEBYP bit
+   \   00000096   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   0000009A   0x6800             LDR      R0,[R0, #+0]
+   \   0000009C   0xF430 0x2080      BICS     R0,R0,#0x40000
+   \   000000A0   0x.... 0x....      LDR.W    R1,??DataTable8_10  ;; 0x40021000
+   \   000000A4   0x6008             STR      R0,[R1, #+0]
+    388            RCC_CFGR    &= 0xFF80FFFFuL;           // Reset PLLSRC, PLLXTPRE, PLLMUL[3:0] and USBPRE bits
+   \   000000A6   0x.... 0x....      LDR.W    R0,??DataTable8_11  ;; 0x40021004
+   \   000000AA   0x6800             LDR      R0,[R0, #+0]
+   \   000000AC   0xF430 0x00FE      BICS     R0,R0,#0x7F0000
+   \   000000B0   0x.... 0x....      LDR.W    R1,??DataTable8_11  ;; 0x40021004
+   \   000000B4   0x6008             STR      R0,[R1, #+0]
+    389            RCC_CIR      = 0x00000000uL;           // Disable all interrupts
+   \   000000B6   0x2000             MOVS     R0,#+0
+   \   000000B8   0x.... 0x....      LDR.W    R1,??DataTable8_14  ;; 0x40021008
+   \   000000BC   0x6008             STR      R0,[R1, #+0]
+    390            RCC_CR      &= CR_HSEON_Reset;         // Reset HSEON bit
+   \   000000BE   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   000000C2   0x6800             LDR      R0,[R0, #+0]
+   \   000000C4   0xF430 0x3080      BICS     R0,R0,#0x10000
+   \   000000C8   0x.... 0x....      LDR.W    R1,??DataTable8_10  ;; 0x40021000
+   \   000000CC   0x6008             STR      R0,[R1, #+0]
+    391            RCC_CR      &= CR_HSEBYP_Reset;        // Reset HSEBYP bit
+   \   000000CE   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   000000D2   0x6800             LDR      R0,[R0, #+0]
+   \   000000D4   0xF430 0x2080      BICS     R0,R0,#0x40000
+   \   000000D8   0x.... 0x....      LDR.W    R1,??DataTable8_10  ;; 0x40021000
+   \   000000DC   0x6008             STR      R0,[R1, #+0]
+    392            RCC_CR      |= CR_HSEON_Set;           // Configure HSE (RCC_HSE_OFF is already covered by the code section above
+   \   000000DE   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   000000E2   0x6800             LDR      R0,[R0, #+0]
+   \   000000E4   0xF450 0x3080      ORRS     R0,R0,#0x10000
+   \   000000E8   0x.... 0x....      LDR.W    R1,??DataTable8_10  ;; 0x40021000
+   \   000000EC   0x6008             STR      R0,[R1, #+0]
+    393            while ((RCC_CR & (1uL << 17)) == 0);   // Wait till HSE is ready (The RCC_CR_HSERDY_BIT (Bit 17) is 1 if the HSE is running.)
+   \                     ??OS_InitHW_1: (+1)
+   \   000000EE   0x.... 0x....      LDR.W    R0,??DataTable8_10  ;; 0x40021000
+   \   000000F2   0x6800             LDR      R0,[R0, #+0]
+   \   000000F4   0x0380             LSLS     R0,R0,#+14
+   \   000000F6   0xD5FA             BPL.N    ??OS_InitHW_1
+    394            FLASH_ACR   &= ACR_LATENCY_Mask;       // Flash 2 wait state and Prefetch enable
+   \   000000F8   0x.... 0x....      LDR.W    R0,??DataTable8_15  ;; 0x40022000
+   \   000000FC   0x6800             LDR      R0,[R0, #+0]
+   \   000000FE   0xF010 0x0038      ANDS     R0,R0,#0x38
+   \   00000102   0x.... 0x....      LDR.W    R1,??DataTable8_15  ;; 0x40022000
+   \   00000106   0x6008             STR      R0,[R1, #+0]
+    395            FLASH_ACR   |= FLASH_Latency_2;
+   \   00000108   0x.... 0x....      LDR.W    R0,??DataTable8_15  ;; 0x40022000
+   \   0000010C   0x6800             LDR      R0,[R0, #+0]
+   \   0000010E   0xF050 0x0002      ORRS     R0,R0,#0x2
+   \   00000112   0x.... 0x....      LDR.W    R1,??DataTable8_15  ;; 0x40022000
+   \   00000116   0x6008             STR      R0,[R1, #+0]
+    396            FLASH_ACR   &= ACR_PRFTBE_Mask;        // Enable or disable the Prefetch Buffer
+   \   00000118   0x.... 0x....      LDR.W    R0,??DataTable8_15  ;; 0x40022000
+   \   0000011C   0x6800             LDR      R0,[R0, #+0]
+   \   0000011E   0xF030 0x0010      BICS     R0,R0,#0x10
+   \   00000122   0x.... 0x....      LDR.W    R1,??DataTable8_15  ;; 0x40022000
+   \   00000126   0x6008             STR      R0,[R1, #+0]
+    397            FLASH_ACR   |= FLASH_PrefetchBuffer_Enable;
+   \   00000128   0x....             LDR.N    R0,??DataTable8_15  ;; 0x40022000
+   \   0000012A   0x6800             LDR      R0,[R0, #+0]
+   \   0000012C   0xF050 0x0010      ORRS     R0,R0,#0x10
+   \   00000130   0x....             LDR.N    R1,??DataTable8_15  ;; 0x40022000
+   \   00000132   0x6008             STR      R0,[R1, #+0]
+    398            RCC_CFGR    &= CFGR_HPRE_Reset_Mask;   // HCLK = SYSCLK
+   \   00000134   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   00000136   0x6800             LDR      R0,[R0, #+0]
+   \   00000138   0xF030 0x00F0      BICS     R0,R0,#0xF0
+   \   0000013C   0x....             LDR.N    R1,??DataTable8_11  ;; 0x40021004
+   \   0000013E   0x6008             STR      R0,[R1, #+0]
+    399            RCC_CFGR    |= RCC_SYSCLK_Div1;
+   \   00000140   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   00000142   0x6800             LDR      R0,[R0, #+0]
+   \   00000144   0x....             LDR.N    R1,??DataTable8_11  ;; 0x40021004
+   \   00000146   0x6008             STR      R0,[R1, #+0]
+    400            RCC_CFGR    &= CFGR_PPRE2_Reset_Mask;  // PCLK2 = HCLK
+   \   00000148   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   0000014A   0x6800             LDR      R0,[R0, #+0]
+   \   0000014C   0xF430 0x5060      BICS     R0,R0,#0x3800
+   \   00000150   0x....             LDR.N    R1,??DataTable8_11  ;; 0x40021004
+   \   00000152   0x6008             STR      R0,[R1, #+0]
+    401            RCC_CFGR     = (RCC_HCLK_Div1 << 3);
+   \   00000154   0x2000             MOVS     R0,#+0
+   \   00000156   0x....             LDR.N    R1,??DataTable8_11  ;; 0x40021004
+   \   00000158   0x6008             STR      R0,[R1, #+0]
+    402            RCC_CFGR    &= CFGR_PPRE1_Reset_Mask;  // PCLK1 = HCLK/2
+   \   0000015A   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   0000015C   0x6800             LDR      R0,[R0, #+0]
+   \   0000015E   0xF430 0x60E0      BICS     R0,R0,#0x700
+   \   00000162   0x....             LDR.N    R1,??DataTable8_11  ;; 0x40021004
+   \   00000164   0x6008             STR      R0,[R1, #+0]
+    403            RCC_CFGR     = RCC_HCLK_Div2;
+   \   00000166   0xF44F 0x6080      MOV      R0,#+1024
+   \   0000016A   0x....             LDR.N    R1,??DataTable8_11  ;; 0x40021004
+   \   0000016C   0x6008             STR      R0,[R1, #+0]
+    404            tmpreg       = RCC_CFGR;               // PLLCLK = 8MHz * 9 = 72 MHz */
+   \   0000016E   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   00000170   0x6800             LDR      R0,[R0, #+0]
+   \   00000172   0x0005             MOVS     R5,R0
+    405            tmpreg      &= CFGR_PLL_Mask;          // Clear PLLSRC, PLLXTPRE and PLLMUL[21:18] bits
+   \   00000174   0xF435 0x157C      BICS     R5,R5,#0x3F0000
+    406            tmpreg      |= RCC_PLLSource_HSE_Div1 | RCC_PLLMul_9;// Set the PLL configuration bits
+   \   00000178   0xF455 0x15E8      ORRS     R5,R5,#0x1D0000
+    407            RCC_CFGR     = tmpreg;                 // Store the new value
+   \   0000017C   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   0000017E   0x6005             STR      R5,[R0, #+0]
+    408            CR_PLLON_BB  = (OS_U32)0x01u;          // Enable PLL
+   \   00000180   0x2001             MOVS     R0,#+1
+   \   00000182   0x....             LDR.N    R1,??DataTable8_16  ;; 0x42420060
+   \   00000184   0x6008             STR      R0,[R1, #+0]
+    409            while ((RCC_CR & (1uL << 25)) == 0);   // Wait till PLL is ready
+   \                     ??OS_InitHW_2: (+1)
+   \   00000186   0x....             LDR.N    R0,??DataTable8_10  ;; 0x40021000
+   \   00000188   0x6800             LDR      R0,[R0, #+0]
+   \   0000018A   0x0180             LSLS     R0,R0,#+6
+   \   0000018C   0xD5FB             BPL.N    ??OS_InitHW_2
+    410            tmpreg   = RCC_CFGR;                   // Select PLL as system clock source
+   \   0000018E   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   00000190   0x6800             LDR      R0,[R0, #+0]
+   \   00000192   0x0005             MOVS     R5,R0
+    411            tmpreg  &= CFGR_SW_Mask;               // Clear SW[1:0] bits
+   \   00000194   0x08AD             LSRS     R5,R5,#+2
+   \   00000196   0x00AD             LSLS     R5,R5,#+2
+    412            tmpreg  |= RCC_SYSCLKSource_PLLCLK;    // Set SW[1:0] bits according to RCC_SYSCLKSource value
+   \   00000198   0xF055 0x0502      ORRS     R5,R5,#0x2
+    413            RCC_CFGR = tmpreg;                     // Store the new value
+   \   0000019C   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   0000019E   0x6005             STR      R5,[R0, #+0]
+    414            while ((RCC_CFGR & CFGR_SWS_Mask) != 0x08u); // Wait till PLL is used as system clock source
+   \                     ??OS_InitHW_3: (+1)
+   \   000001A0   0x....             LDR.N    R0,??DataTable8_11  ;; 0x40021004
+   \   000001A2   0x6800             LDR      R0,[R0, #+0]
+   \   000001A4   0xF010 0x000C      ANDS     R0,R0,#0xC
+   \   000001A8   0x2808             CMP      R0,#+8
+   \   000001AA   0xD1F9             BNE.N    ??OS_InitHW_3
+    415            //
+    416            // Initialize OS timer, clock soure = core clock
+    417            //
+    418            SYS_TICK_RELOAD  = OS_TIMER_RELOAD;
+   \   000001AC   0x....             LDR.N    R0,??DataTable8_17  ;; 0x1193f
+   \   000001AE   0x....             LDR.N    R1,??DataTable8_18  ;; 0xe000e014
+   \   000001B0   0x6008             STR      R0,[R1, #+0]
+    419            SYS_TICK_CONTROL = (1uL << SYS_TICK_ENABLE_BIT) | (1uL << SYS_TICK_CLK_SOURCE_BIT);
+   \   000001B2   0x2005             MOVS     R0,#+5
+   \   000001B4   0x....             LDR.N    R1,??DataTable8_19  ;; 0xe000e010
+   \   000001B6   0x6008             STR      R0,[R1, #+0]
+    420            //
+    421            // Install Systick Timer Handler and enable timer interrupt
+    422            //
+    423            OS_ARM_InstallISRHandler(OS_ISR_ID_TICK, (OS_ISR_HANDLER*)OS_Systick);
+   \   000001B8   0x....             LDR.N    R1,??DataTable8_20
+   \   000001BA   0x200F             MOVS     R0,#+15
+   \   000001BC   0x.... 0x....      BL       OS_ARM_InstallISRHandler
+    424            //
+    425            // Initialize NVIC vector base address. Might be necessary for RAM targets or application not running from 0
+    426            //
+    427            NVIC_VTOR = (OS_U32)&__Vectors;
+   \   000001C0   0x....             LDR.N    R0,??DataTable8_21
+   \   000001C2   0x....             LDR.N    R1,??DataTable8_22  ;; 0xe000ed08
+   \   000001C4   0x6008             STR      R0,[R1, #+0]
+    428            //
+    429            // Set the interrupt priority for the system timer to 2nd lowest level to ensure the timer can preempt PendSV handler
+    430            //
+    431            OS_ARM_ISRSetPrio(OS_ISR_ID_TICK, 0xFFu);              // Set to lowest level, ALL BITS set
+   \   000001C6   0x21FF             MOVS     R1,#+255
+   \   000001C8   0x200F             MOVS     R0,#+15
+   \   000001CA   0x.... 0x....      BL       OS_ARM_ISRSetPrio
+    432            TickPrio  = OS_ARM_ISRSetPrio(OS_ISR_ID_TICK, 0xFFu);  // Read priority back to examine relevant preemption-level-bits
+   \   000001CE   0x21FF             MOVS     R1,#+255
+   \   000001D0   0x200F             MOVS     R0,#+15
+   \   000001D2   0x.... 0x....      BL       OS_ARM_ISRSetPrio
+   \   000001D6   0x0004             MOVS     R4,R0
+    433            TickPrio -= 1;                                         // Set to low preemption level, 1 level higher than lowest
+   \   000001D8   0x1E64             SUBS     R4,R4,#+1
+    434            OS_ARM_ISRSetPrio(OS_ISR_ID_TICK, TickPrio);
+   \   000001DA   0xB2E4             UXTB     R4,R4            ;; ZeroExt  R4,R4,#+24,#+24
+   \   000001DC   0x0021             MOVS     R1,R4
+   \   000001DE   0x200F             MOVS     R0,#+15
+   \   000001E0   0x.... 0x....      BL       OS_ARM_ISRSetPrio
+    435            OS_ARM_EnableISR(OS_ISR_ID_TICK);
+   \   000001E4   0x200F             MOVS     R0,#+15
+   \   000001E6   0x.... 0x....      BL       OS_ARM_EnableISR
+    436            //
+    437            // Setup values for usec precise system time functions
+    438            //
+    439            OS_Config_SysTimer(&SysTimerConfig);
+   \   000001EA   0x4668             MOV      R0,SP
+   \   000001EC   0x.... 0x....      BL       OS_Config_SysTimer
+    440          
+    441            OS_COM_INIT();
+   \   000001F0   0x.... 0x....      BL       OS_COM_Init
+    442            OS_DecRI();
+   \   000001F4   0x....             LDR.N    R0,??DataTable8_3
+   \   000001F6   0x7840             LDRB     R0,[R0, #+1]
+   \   000001F8   0x21F0             MOVS     R1,#+240
+   \   000001FA   0x4208             TST      R0,R1
+   \   000001FC   0xD002             BEQ.N    ??OS_InitHW_4
+   \   000001FE   0x2099             MOVS     R0,#+153
+   \   00000200   0x.... 0x....      BL       OS_Error
+   \                     ??OS_InitHW_4: (+1)
+   \   00000204   0x....             LDR.N    R0,??DataTable8_3
+   \   00000206   0x7840             LDRB     R0,[R0, #+1]
+   \   00000208   0x1E40             SUBS     R0,R0,#+1
+   \   0000020A   0x....             LDR.N    R1,??DataTable8_3
+   \   0000020C   0x7048             STRB     R0,[R1, #+1]
+   \   0000020E   0x....             LDR.N    R0,??DataTable8_3
+   \   00000210   0x7840             LDRB     R0,[R0, #+1]
+   \   00000212   0x2800             CMP      R0,#+0
+   \   00000214   0xD102             BNE.N    ??OS_InitHW_5
+   \   00000216   0x2000             MOVS     R0,#+0
+   \   00000218   0xF380 0x8811      MSR      BASEPRI,R0
+    443          }
+   \                     ??OS_InitHW_5: (+1)
+   \   0000021C   0xB005             ADD      SP,SP,#+20
+   \   0000021E   0xBD30             POP      {R4,R5,PC}       ;; return
+
+   \                                 In section .rodata, align 4
+   \                     ?_0:
+   \   00000000   0x044AA200         DC32 72000000, 1000
+   \              0x000003E8   
+   \   00000008   0x00 0x00          DC8 0, 0, 0, 0
+   \              0x00 0x00    
+   \   0000000C   0x........         DC32 _OS_GetHWTimerCycles, _OS_GetHWTimer_IntPending
+   \              0x........   
+    444          
+    445          /*********************************************************************
+    446          *
+    447          *       OS_Idle()
+    448          *
+    449          *       Please note:
+    450          *       This is basically the "core" of the idle loop.
+    451          *       This core loop can be changed, but:
+    452          *       The idle loop does not have a stack of its own, therefore no
+    453          *       functionality should be implemented that relies on the stack
+    454          *       to be preserved. However, a simple program loop can be programmed
+    455          *       (like toggeling an output or incrementing a counter)
+    456          */
+
+   \                                 In section .text, align 2, keep-with-next
+    457          void OS_Idle(void) {     // Idle loop: No task is ready to execute
+    458            while (1) {
+   \                     OS_Idle: (+1)
+   \                     ??OS_Idle_0: (+1)
+   \   00000000   0xE7FE             B.N      ??OS_Idle_0
+    459              #if ((OS_USE_JLINKMEM == 0) && (DEBUG == 0))     // Enter CPU halt mode when not in DEBUG build and J-Link communication not used
+    460                #ifdef __ICCARM__  // IAR
+    461                  __asm(" wfi");
+    462                #endif
+    463                #ifdef __CC_ARM    // KEIL
+    464                  __wfi();
+    465                #endif
+    466                #ifdef __GNUC__    // GCC
+    467                  __asm(" wfi");
+    468                #endif
+    469              #endif
+    470            }
+    471          }
+    472          
+    473          /*********************************************************************
+    474          *
+    475          *       OS_GetTime_Cycles()
+    476          *
+    477          *       This routine is required for task-info via OSView or high
+    478          *       resolution time measurement functions.
+    479          *       It returns the system time in timer clock cycles.
+    480          */
+
+   \                                 In section .text, align 2, keep-with-next
+    481          OS_U32 OS_GetTime_Cycles(void) {
+    482            OS_U32 Time;
+    483            OS_U32 Cnt;
+    484          
+    485            Time = OS_GetTime32();
+   \                     OS_GetTime_Cycles: (+1)
+   \   00000000   0x....             LDR.N    R2,??DataTable8_3
+   \   00000002   0x6A12             LDR      R2,[R2, #+32]
+   \   00000004   0x0010             MOVS     R0,R2
+    486            Cnt  = (OS_TIMER_RELOAD) - SYS_TICK_VALUE;
+   \   00000006   0x....             LDR.N    R2,??DataTable8_17  ;; 0x1193f
+   \   00000008   0x....             LDR.N    R3,??DataTable8  ;; 0xe000e018
+   \   0000000A   0x681B             LDR      R3,[R3, #+0]
+   \   0000000C   0x1AD2             SUBS     R2,R2,R3
+   \   0000000E   0x0011             MOVS     R1,R2
+    487            //
+    488            // Check if timer interrupt pending ...
+    489            //
+    490            if (SYS_INT_CTRL_STATE & (1uL << SYS_PENDSTSET)) {
+   \   00000010   0x....             LDR.N    R2,??DataTable8_1  ;; 0xe000ed04
+   \   00000012   0x6812             LDR      R2,[R2, #+0]
+   \   00000014   0x0152             LSLS     R2,R2,#+5
+   \   00000016   0xD505             BPL.N    ??OS_GetTime_Cycles_0
+    491              Cnt = OS_TIMER_RELOAD - SYS_TICK_VALUE;          // Interrupt pending, re-read timer and adjust result
+   \   00000018   0x....             LDR.N    R2,??DataTable8_17  ;; 0x1193f
+   \   0000001A   0x....             LDR.N    R3,??DataTable8  ;; 0xe000e018
+   \   0000001C   0x681B             LDR      R3,[R3, #+0]
+   \   0000001E   0x1AD2             SUBS     R2,R2,R3
+   \   00000020   0x0011             MOVS     R1,R2
+    492              Time++;
+   \   00000022   0x1C40             ADDS     R0,R0,#+1
+    493            }
+    494            return (OS_TIMER_RELOAD * Time) + Cnt;
+   \                     ??OS_GetTime_Cycles_0: (+1)
+   \   00000024   0x....             LDR.N    R2,??DataTable8_17  ;; 0x1193f
+   \   00000026   0xFB02 0x1000      MLA      R0,R2,R0,R1
+   \   0000002A   0x4770             BX       LR               ;; return
+    495          }
+    496          
+    497          /*********************************************************************
+    498          *
+    499          *       OS_ConvertCycles2us()
+    500          *
+    501          *       Convert Cycles into micro seconds.
+    502          *
+    503          *       If your clock frequency is not a multiple of 1 MHz,
+    504          *       you may have to modify this routine in order to get proper
+    505          *       diagnostics.
+    506          *
+    507          *       This routine is required for profiling or high resolution time
+    508          *       measurement only. It does not affect operation of the OS.
+    509          */
+
+   \                                 In section .text, align 2, keep-with-next
+    510          OS_U32 OS_ConvertCycles2us(OS_U32 Cycles) {
+    511            return Cycles/(OS_PCLK_TIMER/1000000u);
+   \                     OS_ConvertCycles2us: (+1)
+   \   00000000   0x2148             MOVS     R1,#+72
+   \   00000002   0xFBB0 0xF0F1      UDIV     R0,R0,R1
+   \   00000006   0x4770             BX       LR               ;; return
+    512          }
+    513          
+    514          #if OS_UART_USED
+    515          /*********************************************************************
+    516          *
+    517          *       Optional communication with embOSView
+    518          *
+    519          **********************************************************************
+    520          */
+    521          #if (OS_UART == 0)
+    522            #define OS_COM_IsrHandler USART1_IRQHandler
+    523            #define USART_BASE_ADDR   (0x40013800uL)  /* USART 1 */
+    524            #define OS_BRR_VALUE      (OS_PCLK_UART / OS_BAUDRATE)
+    525            #define ISR_ID_USART      (ISR_ID_USART1)
+    526          #elif (OS_UART == 1)
+    527            #define OS_COM_IsrHandler USART2_IRQHandler
+    528            #define USART_BASE_ADDR   (0x40004400uL)  /* USART 2 */
+    529            #define ISR_ID_USART      (ISR_ID_USART2)
+    530            #if (OS_PCLK_UART > 36000000uL)
+    531              //
+    532              // BUS is limited to 36MHz, assume, clock frequency is divided by 2
+    533              //
+    534              #define OS_BRR_VALUE     (OS_PCLK_UART / OS_BAUDRATE / 2)
+    535            #else
+    536              #define OS_BRR_VALUE     (OS_PCLK_UART / OS_BAUDRATE)
+    537            #endif
+    538          #elif (OS_UART == 2)
+    539            #define OS_COM_IsrHandler USART3_IRQHandler
+    540            #define USART_BASE_ADDR   (0x40004800uL)  /* USART 3 */
+    541            #define ISR_ID_USART      (ISR_ID_USART3)
+    542            #if (OS_PCLK_UART > 36000000uL)
+    543              //
+    544              // BUS is limited to 36MHz, assume, clock frequency is divided by 2
+    545              //
+    546              #define OS_BRR_VALUE    (OS_PCLK_UART / OS_BAUDRATE / 2)
+    547            #else
+    548              #define OS_BRR_VALUE    (OS_PCLK_UART / OS_BAUDRATE)
+    549            #endif
+    550            #define USART3_REMAP_MASK     0x00000030uL
+    551            #define USART3_REMAP_PARTIAL  0x00000010uL
+    552          #endif
+    553          
+    554          #define USART_SR             (*(volatile OS_U32*)(USART_BASE_ADDR + 0x00))
+    555          #define USART_DR             (*(volatile OS_U32*)(USART_BASE_ADDR + 0x04))
+    556          #define USART_BRR            (*(volatile OS_U32*)(USART_BASE_ADDR + 0x08))
+    557          #define USART_CR1            (*(volatile OS_U32*)(USART_BASE_ADDR + 0x0C))
+    558          #define USART_CR2            (*(volatile OS_U32*)(USART_BASE_ADDR + 0x10))
+    559          #define USART_CR3            (*(volatile OS_U32*)(USART_BASE_ADDR + 0x14))
+    560          #define USART_GTPR           (*(volatile OS_U32*)(USART_BASE_ADDR + 0x18))
+    561          #define RCC_USART1EN         ((OS_U32)0x00004004uL)
+    562          #define RCC_USART2EN         ((OS_U32)0x00000014uL)
+    563          #define RCC_USART3EN         ((OS_U32)0x00000010uL)
+    564          
+    565          #define GPIOA_CRL            (*(volatile OS_U32*)(0x40010800uL))
+    566          #define GPIOA_CRH            (*(volatile OS_U32*)(0x40010804uL))
+    567          #define GPIOB_CRH            (*(volatile OS_U32*)(0x40010C04uL))
+    568          #define GPIOC_CRH            (*(volatile OS_U32*)(0x40011004uL))
+    569          #define GPIOD_CRL            (*(volatile OS_U32*)(0x40011400uL))
+    570          
+    571          #define US_RXRDY             (0x20u)   // RXNE
+    572          #define USART_RX_ERROR_FLAGS (0x0Fu)   // ORE/NE/FE/PE
+    573          #define US_TXEMPTY           (0x80u)   // TXE
+    574          
+    575          /*********************************************************************
+    576          *
+    577          *       OS_COM_IsrHandler
+    578          *
+    579          * Function description
+    580          *   The communication interrupt handler for UART communication
+    581          *   to embOSView.
+    582          *
+    583          * NOTES:
+    584          *   (1) It has to be inserted in the interrupt vector table, if RAM
+    585          *       vectors are not used. Therefore is is declared public
+    586          */
+    587          void OS_COM_IsrHandler(void) {
+    588            volatile OS_U32 Dummy;
+    589            int UsartStatus;
+    590            OS_EnterNestableInterrupt();
+    591            UsartStatus = USART_SR;                        // Examine status register
+    592            do {
+    593              if (UsartStatus & US_RXRDY) {                // Data received?
+    594                if (UsartStatus & USART_RX_ERROR_FLAGS) {  // Any error ?
+    595                  Dummy = USART_DR;                        // => Discard data
+    596                } else {
+    597                  OS_OnRx(USART_DR);                       // Process actual byte
+    598                }
+    599              }
+    600              UsartStatus = USART_SR;                      // Examine current status
+    601            } while (UsartStatus & US_RXRDY);
+    602            if (UsartStatus & US_TXEMPTY) {
+    603              if (OS_OnTx()) {                             // No more characters to send ?
+    604                USART_CR1 &= ~0x40uL;                      // Disable further tx interrupts
+    605              }
+    606            }
+    607            OS_LeaveNestableInterrupt();
+    608          }
+    609          
+    610          /*********************************************************************
+    611          *
+    612          *       OS_COM_Send1()
+    613          *
+    614          *       Sends one character via UART. Never call this from your application
+    615          */
+    616          void OS_COM_Send1(OS_U8 c) {
+    617            USART_DR   = (c & (OS_U16)0x01FF);
+    618            USART_CR1 |= 0x40;                           // Enable tx interrupt
+    619          }
+    620          
+    621          /*********************************************************************
+    622          *
+    623          *       OS_COM_Init()
+    624          *
+    625          *       Initialize the selected UART
+    626          */
+    627          void OS_COM_Init(void) {
+    628            OS_U8 Priority;
+    629          
+    630            //
+    631            // Initialize clock and port for USART, selection specific
+    632            //
+    633            OS_IncDI();
+    634          #if (OS_UART == 0)
+    635            RCC_APB2ENR |= RCC_USART1EN;  // Enable GPIO port used for USART and USART clock
+    636            GPIOA_CRH   = (GPIOA_CRH & 0xFFFFF00FuL) | 0x000004B0uL;
+    637          #elif (OS_UART == 1)
+    638            RCC_APB1ENR |= (1uL << 17);               // Enable USART2 clock
+    639            RCC_APB2ENR |= RCC_USART2EN  | (1uL << 0);// Enable GPIO port needed for USART, enable alternate function
+    640            GPIOA_CRL    = (GPIOA_CRL & 0xFFFF00FFuL) | 0x00004B00uL;
+    641          #elif (OS_UART == 2)
+    642            RCC_APB1ENR |= (1uL << 18);               // Enable USART3 clock
+    643            RCC_APB2ENR |= RCC_USART3EN  | (1uL << 0);// Enable GPIO port needed for USART, enable alternate function
+    644            GPIOC_CRH    = (GPIOB_CRH & 0xFFFF00FFuL) | 0x00004B00uL;
+    645            AFIO_MAPR   &= ~USART3_REMAP_MASK;
+    646            AFIO_MAPR   |= USART3_REMAP_PARTIAL;
+    647          #endif
+    648            //
+    649            // Initialize USART
+    650            //
+    651            USART_CR2   = 0x200;
+    652            USART_CR1   = 0x2C;
+    653            USART_CR3   = 0x00;
+    654            USART_BRR   = OS_BRR_VALUE;
+    655            USART_CR1  |= 0x2000;         // Enable uart
+    656            //
+    657            // Install USART Handler with preemtion level one above lowest level to ensure communication during PendSV
+    658            //
+    659            OS_ARM_InstallISRHandler(ISR_ID_USART, (OS_ISR_HANDLER*)OS_COM_IsrHandler);
+    660            OS_ARM_ISRSetPrio(ISR_ID_USART, 0xFFu);              // Set lowest Priority, ALL BITS set
+    661            Priority  = OS_ARM_ISRSetPrio(ISR_ID_USART, 0xFFu);  // Read back priority to examine preemption level bits
+    662            Priority -= 1;                                       // Set priority one level above lowest priority
+    663            OS_ARM_ISRSetPrio(ISR_ID_USART, Priority);
+    664            OS_ARM_EnableISR(ISR_ID_USART);
+    665            OS_DecRI();
+    666          }
+    667          
+    668          #elif OS_USE_JLINKMEM
+    669          
+    670          /*********************************************************************
+    671          *
+    672          *       _JLINKMEM_OnRx()
+    673          */
+
+   \                                 In section .text, align 2, keep-with-next
+    674          static void _JLINKMEM_OnRx(OS_U8 Data) {
+   \                     _JLINKMEM_OnRx: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    675            OS_OnRx(Data);
+   \   00000004   0x0020             MOVS     R0,R4
+   \   00000006   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000008   0x.... 0x....      BL       OS_OnRx
+    676          }
+   \   0000000C   0xBD10             POP      {R4,PC}          ;; return
+    677          
+    678          /*********************************************************************
+    679          *
+    680          *       _JLINKMEM_OnTx()
+    681          */
+
+   \                                 In section .text, align 2, keep-with-next
+    682          static void _JLINKMEM_OnTx(void) {
+   \                     _JLINKMEM_OnTx: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    683            OS_OnTx();
+   \   00000002   0x.... 0x....      BL       OS_OnTx
+    684          }
+   \   00000006   0xBD01             POP      {R0,PC}          ;; return
+    685          
+    686          /*********************************************************************
+    687          *
+    688          *       _JLINKMEM_GetNextChar()
+    689          */
+
+   \                                 In section .text, align 2, keep-with-next
+    690          static OS_INT _JLINKMEM_GetNextChar(void) {
+   \                     _JLINKMEM_GetNextChar: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    691            return OS_COM_GetNextChar();
+   \   00000002   0x.... 0x....      BL       OS_COM_GetNextChar
+   \   00000006   0xBD02             POP      {R1,PC}          ;; return
+    692          }
+    693          
+    694          /*********************************************************************
+    695          *
+    696          *       OS_COM_Init()
+    697          *       Initialize memory access for OSView
+    698          */
+
+   \                                 In section .text, align 2, keep-with-next
+    699          void OS_COM_Init(void) {
+   \                     OS_COM_Init: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    700            JLINKMEM_SetpfOnRx(_JLINKMEM_OnRx);
+   \   00000002   0x....             LDR.N    R0,??DataTable8_23
+   \   00000004   0x.... 0x....      BL       JLINKMEM_SetpfOnRx
+    701            JLINKMEM_SetpfOnTx(_JLINKMEM_OnTx);
+   \   00000008   0x....             LDR.N    R0,??DataTable8_24
+   \   0000000A   0x.... 0x....      BL       JLINKMEM_SetpfOnTx
+    702            JLINKMEM_SetpfGetNextChar(_JLINKMEM_GetNextChar);
+   \   0000000E   0x....             LDR.N    R0,??DataTable8_25
+   \   00000010   0x.... 0x....      BL       JLINKMEM_SetpfGetNextChar
+    703          }
+   \   00000014   0xBD01             POP      {R0,PC}          ;; return
+    704          
+    705          /*********************************************************************
+    706          *
+    707          *       OS_COM_Send1()
+    708          *       Send 1 character via memory
+    709          */
+
+   \                                 In section .text, align 2, keep-with-next
+    710          void OS_COM_Send1(OS_U8 c) {
+   \                     OS_COM_Send1: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    711            JLINKMEM_SendChar(c);
+   \   00000004   0x0020             MOVS     R0,R4
+   \   00000006   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000008   0x.... 0x....      BL       JLINKMEM_SendChar
+    712          }
+   \   0000000C   0xBD10             POP      {R4,PC}          ;; return
+    713          
+    714          #else // No UART communication for OS enabled, define dummy functions
+    715          /*********************************************************************
+    716          *
+    717          *       Communication for embOSView not selected
+    718          *
+    719          **********************************************************************
+    720          */
+    721          void OS_COM_Init(void) {}
+    722          void OS_COM_Send1(OS_U8 c) {
+    723            OS_USEPARA(c);
+    724            OS_COM_ClearTxActive();  /* Free OS transmitter buffer */
+    725          }
+    726          #endif /*  OS_UART_USED  */
+    727          
+    728          /****** Final check of configuration ********************************/
+    729          
+    730          #ifndef OS_UART_USED
+    731            #error "OS_UART_USED has to be defined"
+    732          #endif
+    733          
+    734          /*********************************************************************
+    735          *
+    736          *       OS interrupt handler and ISR specific functions
+    737          *
+    738          **********************************************************************
+    739          */
+    740          
+    741          #if OS_USE_VARINTTABLE
+    742            //
+    743            // The interrupt vector table may be located anywhere in RAM
+    744            //
+    745            #ifdef __ICCARM__  // IAR
+    746              #pragma data_alignment=512
+    747              __no_init void (*g_pfnRAMVectors[NUM_INTERRUPTS]) (void);
+    748            #endif  // __ICCARM__
+    749          
+    750            #ifdef __CC_ARM    // KEIL
+    751              __attribute__ (zero_init, aligned(512)) void (*g_pfnRAMVectors[NUM_INTERRUPTS])(void);
+    752            #endif
+    753          
+    754            #ifdef __GNUC__    // GCC
+    755              void (*g_pfnRAMVectors[NUM_INTERRUPTS]) (void) __attribute__ ((aligned (512)));
+    756            #endif
+    757          #endif
+    758          
+    759          /*********************************************************************
+    760          *
+    761          *       OS_ARM_InstallISRHandler
+    762          */
+
+   \                                 In section .text, align 2, keep-with-next
+    763          OS_ISR_HANDLER* OS_ARM_InstallISRHandler (int ISRIndex, OS_ISR_HANDLER* pISRHandler) {
+   \                     OS_ARM_InstallISRHandler: (+1)
+   \   00000000   0x0002             MOVS     R2,R0
+    764          #if OS_USE_VARINTTABLE
+    765            OS_ISR_HANDLER*  pOldHandler;
+    766            OS_U32           ulIdx;
+    767            OS_U32*          pVect;
+    768          
+    769            pOldHandler = NULL;
+    770            //
+    771            // Check whether the RAM vector table has been initialized.
+    772            //
+    773            if ((*(OS_U32*)NVIC_VTOREG_ADDR) != (unsigned long)g_pfnRAMVectors) {
+    774              //
+    775              // Copy the vector table from the beginning of FLASH to the RAM vector table.
+    776              //
+    777              pVect = (OS_U32*)(*(OS_U32*)NVIC_VTOREG_ADDR);
+    778              for(ulIdx = 0; ulIdx < NUM_INTERRUPTS; ulIdx++) {
+    779                g_pfnRAMVectors[ulIdx] = (void (*)(void))(pVect[ulIdx]);
+    780              }
+    781              //
+    782              // Program the NVIC vector base register to point at the RAM vector table.
+    783              //
+    784              *(OS_U32*)NVIC_VTOREG_ADDR = (OS_U32)g_pfnRAMVectors;
+    785            }
+    786            //
+    787            // Save the interrupt handler.
+    788            //
+    789            pOldHandler = g_pfnRAMVectors[ISRIndex];
+    790            g_pfnRAMVectors[ISRIndex] = pISRHandler;
+    791            return (pOldHandler);
+    792          #else
+    793            //
+    794            // The function does nothing if vector table is constant
+    795            //
+    796            OS_USEPARA(ISRIndex);
+    797            OS_USEPARA(pISRHandler);
+    798            return (NULL);
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004   0x4770             BX       LR               ;; return
+    799          #endif
+    800          }
+    801          
+    802          /*********************************************************************
+    803          *
+    804          *       OS_ARM_EnableISR
+    805          */
+
+   \                                 In section .text, align 2, keep-with-next
+    806          void OS_ARM_EnableISR(int ISRIndex) {
+   \                     OS_ARM_EnableISR: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    807            OS_DI();
+   \   00000004   0x2080             MOVS     R0,#+128
+   \   00000006   0xF380 0x8811      MSR      BASEPRI,R0
+   \   0000000A   0xBF00             Nop      
+   \   0000000C   0xBF00             Nop      
+    808            if (ISRIndex < NUM_INTERRUPTS) {
+   \   0000000E   0x2C4C             CMP      R4,#+76
+   \   00000010   0xDA2E             BGE.N    ??OS_ARM_EnableISR_0
+    809              if (ISRIndex >= 16) {
+   \   00000012   0x2C10             CMP      R4,#+16
+   \   00000014   0xDB09             BLT.N    ??OS_ARM_EnableISR_1
+    810                //
+    811                // Enable standard "external" interrupts, starting at index 16
+    812                //
+    813                ISRIndex -= 16;
+   \   00000016   0x3C10             SUBS     R4,R4,#+16
+    814                *(((OS_U32*) NVIC_ENABLE_ADDR) + (ISRIndex >> 5)) = (1uL << (ISRIndex & 0x1Fu));
+   \   00000018   0x2001             MOVS     R0,#+1
+   \   0000001A   0xF014 0x011F      ANDS     R1,R4,#0x1F
+   \   0000001E   0x4088             LSLS     R0,R0,R1
+   \   00000020   0x....             LDR.N    R1,??DataTable8_26  ;; 0xe000e100
+   \   00000022   0x1162             ASRS     R2,R4,#+5
+   \   00000024   0xF841 0x0022      STR      R0,[R1, R2, LSL #+2]
+   \   00000028   0xE022             B.N      ??OS_ARM_EnableISR_0
+    815              } else if (ISRIndex == ISR_ID_MPU) {
+   \                     ??OS_ARM_EnableISR_1: (+1)
+   \   0000002A   0x2C04             CMP      R4,#+4
+   \   0000002C   0xD106             BNE.N    ??OS_ARM_EnableISR_2
+    816                //
+    817                // Enable the MemManage interrupt.
+    818                //
+    819                SYSHND_CTRL |= NVIC_SYS_HND_CTRL_MEM;
+   \   0000002E   0x....             LDR.N    R0,??DataTable8_27  ;; 0xe000ed24
+   \   00000030   0x6800             LDR      R0,[R0, #+0]
+   \   00000032   0xF450 0x3080      ORRS     R0,R0,#0x10000
+   \   00000036   0x....             LDR.N    R1,??DataTable8_27  ;; 0xe000ed24
+   \   00000038   0x6008             STR      R0,[R1, #+0]
+   \   0000003A   0xE019             B.N      ??OS_ARM_EnableISR_0
+    820              } else if (ISRIndex == ISR_ID_BUS) {
+   \                     ??OS_ARM_EnableISR_2: (+1)
+   \   0000003C   0x2C05             CMP      R4,#+5
+   \   0000003E   0xD106             BNE.N    ??OS_ARM_EnableISR_3
+    821                //
+    822                // Enable the bus fault interrupt.
+    823                //
+    824                SYSHND_CTRL |= NVIC_SYS_HND_CTRL_BUS;
+   \   00000040   0x....             LDR.N    R0,??DataTable8_27  ;; 0xe000ed24
+   \   00000042   0x6800             LDR      R0,[R0, #+0]
+   \   00000044   0xF450 0x3000      ORRS     R0,R0,#0x20000
+   \   00000048   0x....             LDR.N    R1,??DataTable8_27  ;; 0xe000ed24
+   \   0000004A   0x6008             STR      R0,[R1, #+0]
+   \   0000004C   0xE010             B.N      ??OS_ARM_EnableISR_0
+    825              } else if (ISRIndex == ISR_ID_USAGE) {
+   \                     ??OS_ARM_EnableISR_3: (+1)
+   \   0000004E   0x2C06             CMP      R4,#+6
+   \   00000050   0xD106             BNE.N    ??OS_ARM_EnableISR_4
+    826                //
+    827                // Enable the usage fault interrupt.
+    828                //
+    829                SYSHND_CTRL |= NVIC_SYS_HND_CTRL_USAGE;
+   \   00000052   0x....             LDR.N    R0,??DataTable8_27  ;; 0xe000ed24
+   \   00000054   0x6800             LDR      R0,[R0, #+0]
+   \   00000056   0xF450 0x2080      ORRS     R0,R0,#0x40000
+   \   0000005A   0x....             LDR.N    R1,??DataTable8_27  ;; 0xe000ed24
+   \   0000005C   0x6008             STR      R0,[R1, #+0]
+   \   0000005E   0xE007             B.N      ??OS_ARM_EnableISR_0
+    830              } else if (ISRIndex == ISR_ID_SYSTICK) {
+   \                     ??OS_ARM_EnableISR_4: (+1)
+   \   00000060   0x2C0F             CMP      R4,#+15
+   \   00000062   0xD105             BNE.N    ??OS_ARM_EnableISR_0
+    831                //
+    832                // Enable the System Tick interrupt.
+    833                //
+    834                SYS_TICK_CONTROL |= (1uL << SYS_TICK_INT_ENABLE_BIT);
+   \   00000064   0x....             LDR.N    R0,??DataTable8_19  ;; 0xe000e010
+   \   00000066   0x6800             LDR      R0,[R0, #+0]
+   \   00000068   0xF050 0x0002      ORRS     R0,R0,#0x2
+   \   0000006C   0x....             LDR.N    R1,??DataTable8_19  ;; 0xe000e010
+   \   0000006E   0x6008             STR      R0,[R1, #+0]
+    835              }
+    836            }
+    837            OS_RestoreI();
+   \                     ??OS_ARM_EnableISR_0: (+1)
+   \   00000070   0x.... 0x....      BL       OS_RestoreI
+    838          }
+   \   00000074   0xBD10             POP      {R4,PC}          ;; return
+    839          
+    840          /*********************************************************************
+    841          *
+    842          *       OS_ARM_DisableISR
+    843          */
+
+   \                                 In section .text, align 2, keep-with-next
+    844          void OS_ARM_DisableISR(int ISRIndex) {
+   \                     OS_ARM_DisableISR: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    845            OS_DI();
+   \   00000004   0x2080             MOVS     R0,#+128
+   \   00000006   0xF380 0x8811      MSR      BASEPRI,R0
+   \   0000000A   0xBF00             Nop      
+   \   0000000C   0xBF00             Nop      
+    846            if (ISRIndex < NUM_INTERRUPTS) {
+   \   0000000E   0x2C4C             CMP      R4,#+76
+   \   00000010   0xDA2E             BGE.N    ??OS_ARM_DisableISR_0
+    847              if (ISRIndex >= 16) {
+   \   00000012   0x2C10             CMP      R4,#+16
+   \   00000014   0xDB09             BLT.N    ??OS_ARM_DisableISR_1
+    848                //
+    849                // Disable standard "external" interrupts
+    850                //
+    851                ISRIndex -= 16;
+   \   00000016   0x3C10             SUBS     R4,R4,#+16
+    852                *(((OS_U32*) NVIC_DISABLE_ADDR) + (ISRIndex >> 5)) = (1uL << (ISRIndex & 0x1Fu));
+   \   00000018   0x2001             MOVS     R0,#+1
+   \   0000001A   0xF014 0x011F      ANDS     R1,R4,#0x1F
+   \   0000001E   0x4088             LSLS     R0,R0,R1
+   \   00000020   0x....             LDR.N    R1,??DataTable8_28  ;; 0xe000e180
+   \   00000022   0x1162             ASRS     R2,R4,#+5
+   \   00000024   0xF841 0x0022      STR      R0,[R1, R2, LSL #+2]
+   \   00000028   0xE022             B.N      ??OS_ARM_DisableISR_0
+    853              } else if (ISRIndex == ISR_ID_MPU) {
+   \                     ??OS_ARM_DisableISR_1: (+1)
+   \   0000002A   0x2C04             CMP      R4,#+4
+   \   0000002C   0xD106             BNE.N    ??OS_ARM_DisableISR_2
+    854                //
+    855                // Disable the MemManage interrupt.
+    856                //
+    857                SYSHND_CTRL &= ~NVIC_SYS_HND_CTRL_MEM;
+   \   0000002E   0x....             LDR.N    R0,??DataTable8_27  ;; 0xe000ed24
+   \   00000030   0x6800             LDR      R0,[R0, #+0]
+   \   00000032   0xF430 0x3080      BICS     R0,R0,#0x10000
+   \   00000036   0x....             LDR.N    R1,??DataTable8_27  ;; 0xe000ed24
+   \   00000038   0x6008             STR      R0,[R1, #+0]
+   \   0000003A   0xE019             B.N      ??OS_ARM_DisableISR_0
+    858              } else if (ISRIndex == ISR_ID_BUS) {
+   \                     ??OS_ARM_DisableISR_2: (+1)
+   \   0000003C   0x2C05             CMP      R4,#+5
+   \   0000003E   0xD106             BNE.N    ??OS_ARM_DisableISR_3
+    859                //
+    860                // Disable the bus fault interrupt.
+    861                //
+    862                SYSHND_CTRL &= ~NVIC_SYS_HND_CTRL_BUS;
+   \   00000040   0x....             LDR.N    R0,??DataTable8_27  ;; 0xe000ed24
+   \   00000042   0x6800             LDR      R0,[R0, #+0]
+   \   00000044   0xF430 0x3000      BICS     R0,R0,#0x20000
+   \   00000048   0x....             LDR.N    R1,??DataTable8_27  ;; 0xe000ed24
+   \   0000004A   0x6008             STR      R0,[R1, #+0]
+   \   0000004C   0xE010             B.N      ??OS_ARM_DisableISR_0
+    863              } else if (ISRIndex == ISR_ID_USAGE) {
+   \                     ??OS_ARM_DisableISR_3: (+1)
+   \   0000004E   0x2C06             CMP      R4,#+6
+   \   00000050   0xD106             BNE.N    ??OS_ARM_DisableISR_4
+    864                //
+    865                // Disable the usage fault interrupt.
+    866                //
+    867                SYSHND_CTRL &= ~NVIC_SYS_HND_CTRL_USAGE;
+   \   00000052   0x....             LDR.N    R0,??DataTable8_27  ;; 0xe000ed24
+   \   00000054   0x6800             LDR      R0,[R0, #+0]
+   \   00000056   0xF430 0x2080      BICS     R0,R0,#0x40000
+   \   0000005A   0x....             LDR.N    R1,??DataTable8_27  ;; 0xe000ed24
+   \   0000005C   0x6008             STR      R0,[R1, #+0]
+   \   0000005E   0xE007             B.N      ??OS_ARM_DisableISR_0
+    868              } else if (ISRIndex == ISR_ID_SYSTICK) {
+   \                     ??OS_ARM_DisableISR_4: (+1)
+   \   00000060   0x2C0F             CMP      R4,#+15
+   \   00000062   0xD105             BNE.N    ??OS_ARM_DisableISR_0
+    869                //
+    870                // Enable the System Tick interrupt.
+    871                //
+    872                SYS_TICK_CONTROL &= ~(1uL << SYS_TICK_INT_ENABLE_BIT);
+   \   00000064   0x....             LDR.N    R0,??DataTable8_19  ;; 0xe000e010
+   \   00000066   0x6800             LDR      R0,[R0, #+0]
+   \   00000068   0xF030 0x0002      BICS     R0,R0,#0x2
+   \   0000006C   0x....             LDR.N    R1,??DataTable8_19  ;; 0xe000e010
+   \   0000006E   0x6008             STR      R0,[R1, #+0]
+    873              }
+    874            }
+    875            OS_RestoreI();
+   \                     ??OS_ARM_DisableISR_0: (+1)
+   \   00000070   0x.... 0x....      BL       OS_RestoreI
+    876          }
+   \   00000074   0xBD10             POP      {R4,PC}          ;; return
+    877          
+    878          /*********************************************************************
+    879          *
+    880          *       OS_ARM_ISRSetPrio
+    881          *
+    882          *   Notes:
+    883          *     (1) Some priorities of system handler are reserved
+    884          *         0..3 : Priority can not be set
+    885          *         7..10: Reserved
+    886          *         13   : Reserved
+    887          *     (2) System handler use different control register. This affects
+    888          *         ISRIndex 0..15
+    889          */
+
+   \                                 In section .text, align 2, keep-with-next
+    890          int OS_ARM_ISRSetPrio(int ISRIndex, int Prio) {
+   \                     OS_ARM_ISRSetPrio: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x0007             MOVS     R7,R0
+   \   00000004   0x000C             MOVS     R4,R1
+    891            OS_U8* pPrio;
+    892            int    OldPrio;
+    893          
+    894            OldPrio = 0;
+   \   00000006   0x2000             MOVS     R0,#+0
+   \   00000008   0x0006             MOVS     R6,R0
+    895            if (ISRIndex < NUM_INTERRUPTS) {
+   \   0000000A   0x2F4C             CMP      R7,#+76
+   \   0000000C   0xDA37             BGE.N    ??OS_ARM_ISRSetPrio_0
+    896              if (ISRIndex >= 16) {
+   \   0000000E   0x2F10             CMP      R7,#+16
+   \   00000010   0xDB10             BLT.N    ??OS_ARM_ISRSetPrio_1
+    897                //
+    898                // Handle standard "external" interrupts
+    899                //
+    900                ISRIndex -= 16;                   // Adjust index
+   \   00000012   0x3F10             SUBS     R7,R7,#+16
+    901                OS_DI();
+   \   00000014   0x2080             MOVS     R0,#+128
+   \   00000016   0xF380 0x8811      MSR      BASEPRI,R0
+   \   0000001A   0xBF00             Nop      
+   \   0000001C   0xBF00             Nop      
+    902                pPrio   = (OS_U8*)(NVIC_PRIOBASE_ADDR + ISRIndex);
+   \   0000001E   0xF107 0x4060      ADD      R0,R7,#-536870912
+   \   00000022   0xF510 0x4064      ADDS     R0,R0,#+58368
+   \   00000026   0x0005             MOVS     R5,R0
+    903                OldPrio = *pPrio;
+   \   00000028   0x7828             LDRB     R0,[R5, #+0]
+   \   0000002A   0x0006             MOVS     R6,R0
+    904                *pPrio  = Prio;
+   \   0000002C   0x702C             STRB     R4,[R5, #+0]
+    905                OS_RestoreI();
+   \   0000002E   0x.... 0x....      BL       OS_RestoreI
+   \   00000032   0xE024             B.N      ??OS_ARM_ISRSetPrio_0
+    906              } else {
+    907                //
+    908                // Handle System Interrupt controller
+    909                //
+    910                if ((ISRIndex < 4) | ((ISRIndex >= 7) && (ISRIndex <= 10)) | (ISRIndex == 13)) {
+   \                     ??OS_ARM_ISRSetPrio_1: (+1)
+   \   00000034   0x2F04             CMP      R7,#+4
+   \   00000036   0xDA01             BGE.N    ??OS_ARM_ISRSetPrio_2
+   \   00000038   0x2001             MOVS     R0,#+1
+   \   0000003A   0xE000             B.N      ??OS_ARM_ISRSetPrio_3
+   \                     ??OS_ARM_ISRSetPrio_2: (+1)
+   \   0000003C   0x2000             MOVS     R0,#+0
+   \                     ??OS_ARM_ISRSetPrio_3: (+1)
+   \   0000003E   0x2F07             CMP      R7,#+7
+   \   00000040   0xDB03             BLT.N    ??OS_ARM_ISRSetPrio_4
+   \   00000042   0x2F0B             CMP      R7,#+11
+   \   00000044   0xDA01             BGE.N    ??OS_ARM_ISRSetPrio_4
+   \   00000046   0x2101             MOVS     R1,#+1
+   \   00000048   0xE000             B.N      ??OS_ARM_ISRSetPrio_5
+   \                     ??OS_ARM_ISRSetPrio_4: (+1)
+   \   0000004A   0x2100             MOVS     R1,#+0
+   \                     ??OS_ARM_ISRSetPrio_5: (+1)
+   \   0000004C   0x2F0D             CMP      R7,#+13
+   \   0000004E   0xD101             BNE.N    ??OS_ARM_ISRSetPrio_6
+   \   00000050   0x2201             MOVS     R2,#+1
+   \   00000052   0xE000             B.N      ??OS_ARM_ISRSetPrio_7
+   \                     ??OS_ARM_ISRSetPrio_6: (+1)
+   \   00000054   0x2200             MOVS     R2,#+0
+   \                     ??OS_ARM_ISRSetPrio_7: (+1)
+   \   00000056   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000058   0xB2C9             UXTB     R1,R1            ;; ZeroExt  R1,R1,#+24,#+24
+   \   0000005A   0x4308             ORRS     R0,R1,R0
+   \   0000005C   0xB2D2             UXTB     R2,R2            ;; ZeroExt  R2,R2,#+24,#+24
+   \   0000005E   0x4310             ORRS     R0,R2,R0
+   \   00000060   0x2800             CMP      R0,#+0
+   \   00000062   0xD10C             BNE.N    ??OS_ARM_ISRSetPrio_0
+    911                  //
+    912                  // Reserved ISR channel, do nothing
+    913                  //
+    914                } else {
+    915                  //
+    916                  // Set priority in system interrupt priority control register
+    917                  //
+    918                  OS_DI();
+   \   00000064   0x2080             MOVS     R0,#+128
+   \   00000066   0xF380 0x8811      MSR      BASEPRI,R0
+   \   0000006A   0xBF00             Nop      
+   \   0000006C   0xBF00             Nop      
+    919                  pPrio = (OS_U8*)(SYSPRI1_ADDR);
+   \   0000006E   0x....             LDR.N    R0,??DataTable8_29  ;; 0xe000ed18
+   \   00000070   0x0005             MOVS     R5,R0
+    920                  ISRIndex -= 4;                  // Adjust Index
+   \   00000072   0x1F3F             SUBS     R7,R7,#+4
+    921                  OldPrio = pPrio[ISRIndex];
+   \   00000074   0x5D78             LDRB     R0,[R7, R5]
+   \   00000076   0x0006             MOVS     R6,R0
+    922                  pPrio[ISRIndex] = Prio;
+   \   00000078   0x557C             STRB     R4,[R7, R5]
+    923                  OS_RestoreI();
+   \   0000007A   0x.... 0x....      BL       OS_RestoreI
+    924                }
+    925              }
+    926            }
+    927            return OldPrio;
+   \                     ??OS_ARM_ISRSetPrio_0: (+1)
+   \   0000007E   0x0030             MOVS     R0,R6
+   \   00000080   0xBDF2             POP      {R1,R4-R7,PC}    ;; return
+    928          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8:
+   \   00000000   0xE000E018         DC32     0xe000e018
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_1:
+   \   00000000   0xE000ED04         DC32     0xe000ed04
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_2:
+   \   00000000   0x........         DC32     OS_InInt
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_3:
+   \   00000000   0x........         DC32     OS_Global
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_4:
+   \   00000000   0x........         DC32     ?_0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_5:
+   \   00000000   0x4002100C         DC32     0x4002100c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_6:
+   \   00000000   0x40021010         DC32     0x40021010
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_7:
+   \   00000000   0x40021014         DC32     0x40021014
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_8:
+   \   00000000   0x40021018         DC32     0x40021018
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_9:
+   \   00000000   0x4002101C         DC32     0x4002101c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_10:
+   \   00000000   0x40021000         DC32     0x40021000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_11:
+   \   00000000   0x40021004         DC32     0x40021004
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_12:
+   \   00000000   0xF8FF0000         DC32     0xf8ff0000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_13:
+   \   00000000   0xFEF6FFFF         DC32     0xfef6ffff
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_14:
+   \   00000000   0x40021008         DC32     0x40021008
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_15:
+   \   00000000   0x40022000         DC32     0x40022000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_16:
+   \   00000000   0x42420060         DC32     0x42420060
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_17:
+   \   00000000   0x0001193F         DC32     0x1193f
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_18:
+   \   00000000   0xE000E014         DC32     0xe000e014
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_19:
+   \   00000000   0xE000E010         DC32     0xe000e010
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_20:
+   \   00000000   0x........         DC32     SysTick_Handler
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_21:
+   \   00000000   0x........         DC32     __vector_table
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_22:
+   \   00000000   0xE000ED08         DC32     0xe000ed08
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_23:
+   \   00000000   0x........         DC32     _JLINKMEM_OnRx
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_24:
+   \   00000000   0x........         DC32     _JLINKMEM_OnTx
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_25:
+   \   00000000   0x........         DC32     _JLINKMEM_GetNextChar
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_26:
+   \   00000000   0xE000E100         DC32     0xe000e100
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_27:
+   \   00000000   0xE000ED24         DC32     0xe000ed24
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_28:
+   \   00000000   0xE000E180         DC32     0xe000e180
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_29:
+   \   00000000   0xE000ED18         DC32     0xe000ed18
+    929          
+    930          #if 0
+    931          /*********************************************************************
+    932          *
+    933          *       HardFault_Handler()
+    934          *
+    935          *       Using a debugger and setting a breakpoint here allows to analyze
+    936          *       the cause of the hardfault.
+    937          *       Normally, the CPU should not arrive here.
+    938          *
+    939          *   NOTE:
+    940          *       Do not modify the code. The function might fail if local
+    941          *       variables are used.
+    942          */
+    943          static volatile unsigned int _Continue;
+    944          
+    945          void HardFault_Handler(void) {
+    946            //
+    947            // In case we received a hard fault because
+    948            // of a breakpoint instruction we return.
+    949            // This may happen with the IAR compiler when
+    950            // using semihosting for printf outputs.
+    951            //
+    952            if (NVIC_HFSR & (1uL << 31)) {
+    953              NVIC_HFSR |=  (1uL << 31);   // Reset hardfault status
+    954              OS_HardFaultHandler();
+    955              return;                      // Return to interrupted application
+    956            }
+    957          
+    958          #if 0  
+    959             //const u16 KR_KEY_Reload = (u16)0xAAAA;
+    960             const unsigned short KR_KEY_Enable = (unsigned short)0xCCCC;
+    961          
+    962             IWDG->KR = IWDG_WriteAccess_Enable;
+    963             IWDG->PR = IWDG_Prescaler_4;
+    964             IWDG->RLR = 1;
+    965             IWDG->KR = KR_KEY_Enable;
+    966             //NVIC_GenerateSystemReset();
+    967          #endif
+    968             
+    969            _Continue = 0u;
+    970            //
+    971            // When stuck here, change the variable value to != 0 in order to step out
+    972            //
+    973            while (_Continue == 0u);
+    974          }
+    975          #endif
+    976          
+    977          /****** End Of File *************************************************/
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   OS_ARM_DisableISR
+         8   -> OS_RestoreI
+       8   OS_ARM_EnableISR
+         8   -> OS_RestoreI
+      24   OS_ARM_ISRSetPrio
+        24   -> OS_RestoreI
+       0   OS_ARM_InstallISRHandler
+       8   OS_COM_Init
+         8   -> JLINKMEM_SetpfGetNextChar
+         8   -> JLINKMEM_SetpfOnRx
+         8   -> JLINKMEM_SetpfOnTx
+       8   OS_COM_Send1
+         8   -> JLINKMEM_SendChar
+       0   OS_ConvertCycles2us
+       0   OS_GetTime_Cycles
+       0   OS_Idle
+      32   OS_InitHW
+        32   -> OS_ARM_EnableISR
+        32   -> OS_ARM_ISRSetPrio
+        32   -> OS_ARM_InstallISRHandler
+        32   -> OS_COM_Init
+        32   -> OS_Config_SysTimer
+        32   -> OS_Error
+        32   -> __aeabi_memcpy4
+       8   SysTick_Handler
+         8   -> JLINKMEM_Process
+         8   -> OS_AssertCPUInISRMode
+         8   -> OS_Error
+         8   -> OS_SwitchFromInt
+         8   -> OS_TICK_Handle
+       8   _JLINKMEM_GetNextChar
+         8   -> OS_COM_GetNextChar
+       8   _JLINKMEM_OnRx
+         8   -> OS_OnRx
+       8   _JLINKMEM_OnTx
+         8   -> OS_OnTx
+       0   _OS_GetHWTimerCycles
+       0   _OS_GetHWTimer_IntPending
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable8
+       4  ??DataTable8_1
+       4  ??DataTable8_10
+       4  ??DataTable8_11
+       4  ??DataTable8_12
+       4  ??DataTable8_13
+       4  ??DataTable8_14
+       4  ??DataTable8_15
+       4  ??DataTable8_16
+       4  ??DataTable8_17
+       4  ??DataTable8_18
+       4  ??DataTable8_19
+       4  ??DataTable8_2
+       4  ??DataTable8_20
+       4  ??DataTable8_21
+       4  ??DataTable8_22
+       4  ??DataTable8_23
+       4  ??DataTable8_24
+       4  ??DataTable8_25
+       4  ??DataTable8_26
+       4  ??DataTable8_27
+       4  ??DataTable8_28
+       4  ??DataTable8_29
+       4  ??DataTable8_3
+       4  ??DataTable8_4
+       4  ??DataTable8_5
+       4  ??DataTable8_6
+       4  ??DataTable8_7
+       4  ??DataTable8_8
+       4  ??DataTable8_9
+      20  ?_0
+     118  OS_ARM_DisableISR
+     118  OS_ARM_EnableISR
+     130  OS_ARM_ISRSetPrio
+       6  OS_ARM_InstallISRHandler
+      22  OS_COM_Init
+      14  OS_COM_Send1
+       8  OS_ConvertCycles2us
+      44  OS_GetTime_Cycles
+       2  OS_Idle
+     544  OS_InitHW
+       4  OS_JLINKMEM_BufferSize
+     124  SysTick_Handler
+       8  _JLINKMEM_GetNextChar
+      14  _JLINKMEM_OnRx
+       8  _JLINKMEM_OnTx
+       8  _OS_GetHWTimerCycles
+      12  _OS_GetHWTimer_IntPending
+
+ 
+    24 bytes in section .rodata
+ 1 300 bytes in section .text
+ 
+ 1 300 bytes of CODE  memory
+    24 bytes of CONST memory
+
+Errors: none
+Warnings: none

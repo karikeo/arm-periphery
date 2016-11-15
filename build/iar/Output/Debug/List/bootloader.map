@@ -1,0 +1,334 @@
+###############################################################################
+#
+# IAR ELF Linker V7.50.2.10312/W32 for ARM                20/Oct/2016  11:32:59
+# Copyright 2007-2015 IAR Systems AB.
+#
+#    Output file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Exe\bootloader.out
+#    Map file     =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\bootloader.map
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\bootloader.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\lcd_2x16.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\misc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_adc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_bkp.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_can.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_cec.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_crc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_dac.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_dbgmcu.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_dma.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_exti.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_flash.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_fsmc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_gpio.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_i2c.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_it.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_iwdg.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_pwr.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_rcc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_rtc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_sdio.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_spi.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_tim.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_usart.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_wwdg.o
+#        -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Exe\bootloader.out
+#        --redirect _Printf=_PrintfTiny --redirect _Scanf=_ScanfSmall --map
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\bootloader.map
+#        --config
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\setup\iar\bootloader.icf
+#        --entry __iar_program_start --no_exceptions --vfe
+#
+###############################################################################
+
+*******************************************************************************
+*** MESSAGES
+***
+
+Error[Li005]: no definition for "OS_Use" [referenced from C:\ilya\vendicont\arm
+          -periphery\build\iar\Output\Debug\Obj\lcd_2x16.o]
+Error[Li005]: no definition for "OS_Unuse" [referenced from C:\ilya\vendicont\a
+          rm-periphery\build\iar\Output\Debug\Obj\lcd_2x16.o]
+Error[Li005]: no definition for "OS_Delay" [referenced from C:\ilya\vendicont\a
+          rm-periphery\build\iar\Output\Debug\Obj\lcd_2x16.o]
+Error[Li005]: no definition for "OS_Running" [referenced from C:\ilya\vendicont
+          \arm-periphery\build\iar\Output\Debug\Obj\lcd_2x16.o]
+
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__SystemLibrary = DLib
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A1":  place at 0x08000000 { ro section .intvec };
+"P2":  place in [from 0x08000200 to 0x08003fff] { ro };
+"P3":  place in [from 0x20000000 to 0x20004fff] { rw, block CSTACK, block HEAP };
+
+  Section          Kind        Address    Size  Object
+  -------          ----        -------    ----  ------
+"A1":                                     0x40
+  .intvec          ro code  0x08000000    0x40  vector_table_M.o [4]
+                          - 0x08000040    0x40
+
+"P2":                                   0x148c
+  .text            ro code  0x08000200   0x628  bootloader.o [1]
+  .text            ro code  0x08000828   0x2a4  stm32f10x_rcc.o [1]
+  .text            ro code  0x08000acc   0x224  stm32f10x_gpio.o [1]
+  .text            ro code  0x08000cf0    0xee  stm32f10x_spi.o [1]
+  .text            ro code  0x08000dde     0xa  xsprout.o [3]
+  .text            ro code  0x08000de8   0x19c  stm32f10x_dma.o [1]
+  .text            ro code  0x08000f84    0x66  ABImemset.o [4]
+  .text            ro code  0x08000fec    0x10  stm32f10x_iwdg.o [1]
+  .text            ro code  0x08000ffc   0x31c  lcd_2x16.o [1]
+  .text            ro code  0x08001318    0x34  sprintf.o [3]
+  .text            ro code  0x0800134c    0x3c  stm32f10x_flash.o [1]
+  .text            ro code  0x08001388    0x9c  misc.o [1]
+  .text            ro code  0x08001424   0x14c  xprintftiny.o [3]
+  .text            ro code  0x08001570    0x36  strlen.o [4]
+  .text            ro code  0x080015a6    0x40  zero_init3.o [4]
+  .text            ro code  0x080015e8    0x28  data_init.o [4]
+  .iar.init_table  const    0x08001610    0x10  - Linker created -
+  .text            ro code  0x08001620    0x1a  cmain.o [4]
+  .text            ro code  0x0800163a     0x4  low_level_init.o [3]
+  .text            ro code  0x0800163e     0x4  exit.o [3]
+  .text            ro code  0x08001644     0xa  cexit.o [4]
+  .text            ro code  0x08001650     0xc  XXexit.o [4]
+  .text            ro code  0x0800165c    0x12  stm32f10x_it.o [1]
+  .rodata          const    0x08001670    0x10  bootloader.o [1]
+  .text            ro code  0x08001680     0xc  cstartup_M.o [4]
+  .rodata          const    0x0800168c     0x0  zero_init3.o [4]
+                          - 0x0800168c  0x148c
+
+"P3", part 1 of 2:                       0x164
+  .bss             zero     0x20000000    0x40  bootloader.o [1]
+  .bss             zero     0x20000040    0x40  bootloader.o [1]
+  .bss             zero     0x20000080    0x40  bootloader.o [1]
+  .bss             zero     0x200000c0    0x2c  bootloader.o [1]
+  .bss             zero     0x200000ec    0x20  bootloader.o [1]
+  .bss             zero     0x2000010c    0x14  bootloader.o [1]
+  .bss             zero     0x20000120    0x14  lcd_2x16.o [1]
+  .bss             zero     0x20000134    0x10  bootloader.o [1]
+  .bss             zero     0x20000144     0x4  bootloader.o [1]
+  .bss             zero     0x20000148     0x4  bootloader.o [1]
+  .bss             zero     0x2000014c     0x4  bootloader.o [1]
+  .bss             zero     0x20000150     0x4  bootloader.o [1]
+  .bss             zero     0x20000154     0x4  bootloader.o [1]
+  .bss             zero     0x20000158     0x4  bootloader.o [1]
+  .bss             zero     0x2000015c     0x1  bootloader.o [1]
+  .bss             zero     0x2000015d     0x1  bootloader.o [1]
+  .bss             zero     0x2000015e     0x1  bootloader.o [1]
+  .bss             zero     0x2000015f     0x1  bootloader.o [1]
+  .bss             zero     0x20000160     0x1  bootloader.o [1]
+                          - 0x20000161   0x161
+
+"P3", part 2 of 2:                       0x200
+  CSTACK                    0x20000168   0x200  <Block>
+    CSTACK         uninit   0x20000168   0x200  <Block tail>
+                          - 0x20000368   0x200
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address     Size
+          -------     ----
+Zero (__iar_zero_init3)
+    1 destination range, total size 0x161:
+          0x20000000  0x161
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module             ro code  ro data  rw data
+    ------             -------  -------  -------
+C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj: [1]
+    bootloader.o         1 576       16      333
+    lcd_2x16.o             796                20
+    misc.o                 156
+    stm32f10x_dma.o        412
+    stm32f10x_flash.o       60
+    stm32f10x_gpio.o       548
+    stm32f10x_it.o          18
+    stm32f10x_iwdg.o        16
+    stm32f10x_rcc.o        676
+    stm32f10x_spi.o        238
+    --------------------------------------------
+    Total:               4 496       16      353
+
+command line: [2]
+    --------------------------------------------
+    Total:
+
+dl7M_tln.a: [3]
+    exit.o                   4
+    low_level_init.o         4
+    sprintf.o               52
+    xprintftiny.o          332
+    xsprout.o               10
+    --------------------------------------------
+    Total:                 402
+
+rt7M_tl.a: [4]
+    ABImemset.o            102
+    XXexit.o                12
+    cexit.o                 10
+    cmain.o                 26
+    cstartup_M.o            12
+    data_init.o             40
+    strlen.o                54
+    vector_table_M.o        64
+    zero_init3.o            64
+    --------------------------------------------
+    Total:                 384
+
+    Gaps                     8        2
+    Linker created                   16      512
+------------------------------------------------
+    Grand Total:         5 290       34      865
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                      Address   Size  Type      Object
+-----                      -------   ----  ----      ------
+.iar.init_table$$Base   0x08001610          --   Gb  - Linker created -
+.iar.init_table$$Limit  0x08001620          --   Gb  - Linker created -
+?main                   0x08001621         Code  Gb  cmain.o [4]
+BusFault_Handler        0x08001663    0x2  Code  Gb  stm32f10x_it.o [1]
+CSTACK$$Base            0x20000168          --   Gb  - Linker created -
+CSTACK$$Limit           0x20000368          --   Gb  - Linker created -
+DMA_Cmd                 0x08000f31   0x1c  Code  Gb  stm32f10x_dma.o [1]
+DMA_DeInit              0x08000de9  0x10a  Code  Gb  stm32f10x_dma.o [1]
+DMA_Init                0x08000ef3   0x3e  Code  Gb  stm32f10x_dma.o [1]
+DMA_InitStructure       0x200000c0   0x2c  Data  Gb  bootloader.o [1]
+DebugMon_Handler        0x08001669    0x2  Code  Gb  stm32f10x_it.o [1]
+DelayuS                 0x080012f7   0x10  Code  Gb  lcd_2x16.o [1]
+FLASH_PrefetchBufferCmd
+                        0x08001365   0x20  Code  Gb  stm32f10x_flash.o [1]
+FLASH_SetLatency        0x0800134d   0x18  Code  Gb  stm32f10x_flash.o [1]
+GPIO_Configuration      0x080006e9   0x3a  Code  Gb  bootloader.o [1]
+GPIO_DeInit             0x08000acd   0xb4  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_Init               0x08000b81  0x136  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_InitStructure      0x20000144    0x4  Data  Gb  bootloader.o [1]
+GPIO_ResetBits          0x08000cbd    0x6  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_SetBits            0x08000cb7    0x6  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_WriteBit           0x08000cc3   0x12  Code  Gb  stm32f10x_gpio.o [1]
+HSEStartUpStatus        0x2000015c    0x1  Data  Gb  bootloader.o [1]
+HardFault_Handler       0x0800165f    0x2  Code  Gb  stm32f10x_it.o [1]
+IWDG_ReloadCounter      0x08000fed    0xa  Code  Gb  stm32f10x_iwdg.o [1]
+MemManage_Handler       0x08001661    0x2  Code  Gb  stm32f10x_it.o [1]
+NMI_Handler             0x0800165d    0x2  Code  Gb  stm32f10x_it.o [1]
+NVIC_Configuration      0x080007ad   0x7c  Code  Gb  bootloader.o [1]
+NVIC_Init               0x08001393   0x68  Code  Gb  misc.o [1]
+NVIC_PriorityGroupConfig
+                        0x08001389    0xa  Code  Gb  misc.o [1]
+NVIC_SetVectorTable     0x080013fb    0xc  Code  Gb  misc.o [1]
+NVIC_SystemReset        0x08000201   0x20  Code  Lc  bootloader.o [1]
+PendSV_Handler          0x0800166b    0x2  Code  Gb  stm32f10x_it.o [1]
+RCC_AHBPeriphClockCmd   0x080009a1   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB1PeriphClockCmd  0x080009dd   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB1PeriphResetCmd  0x08000a19   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB2PeriphClockCmd  0x080009bf   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB2PeriphResetCmd  0x080009fb   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_ClearFlag           0x08000a89    0xe  Code  Gb  stm32f10x_rcc.o [1]
+RCC_Configuration       0x0800065d   0x86  Code  Gb  bootloader.o [1]
+RCC_DeInit              0x08000829   0x60  Code  Gb  stm32f10x_rcc.o [1]
+RCC_GetFlagStatus       0x08000a37   0x52  Code  Gb  stm32f10x_rcc.o [1]
+RCC_GetSYSCLKSource     0x08000959    0xa  Code  Gb  stm32f10x_rcc.o [1]
+RCC_HCLKConfig          0x08000963   0x14  Code  Gb  stm32f10x_rcc.o [1]
+RCC_HSEConfig           0x08000889   0x56  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PCLK1Config         0x08000977   0x14  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PCLK2Config         0x0800098b   0x16  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PLLCmd              0x0800093b    0xa  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PLLConfig           0x0800091f   0x1c  Code  Gb  stm32f10x_rcc.o [1]
+RCC_SYSCLKConfig        0x08000945   0x14  Code  Gb  stm32f10x_rcc.o [1]
+RCC_WaitForHSEStartUp   0x080008df   0x40  Code  Gb  stm32f10x_rcc.o [1]
+Region$$Table$$Base     0x08001610          --   Gb  - Linker created -
+Region$$Table$$Limit    0x08001620          --   Gb  - Linker created -
+SPI_Cmd                 0x08000d95   0x1c  Code  Gb  stm32f10x_spi.o [1]
+SPI_I2S_DeInit          0x08000cf1   0x58  Code  Gb  stm32f10x_spi.o [1]
+SPI_I2S_ITConfig        0x08000db1   0x2e  Code  Gb  stm32f10x_spi.o [1]
+SPI_Init                0x08000d49   0x40  Code  Gb  stm32f10x_spi.o [1]
+SPI_InitStructure       0x2000010c   0x14  Data  Gb  bootloader.o [1]
+SVC_Handler             0x08001667    0x2  Code  Gb  stm32f10x_it.o [1]
+SemaLCD                 0x20000120   0x14  Data  Gb  lcd_2x16.o [1]
+SysTick_Handler         0x0800166d    0x2  Code  Gb  stm32f10x_it.o [1]
+UsageFault_Handler      0x08001665    0x2  Code  Gb  stm32f10x_it.o [1]
+_PrintfTiny             0x0800143d  0x134  Code  Gb  xprintftiny.o [3]
+_SProut                 0x08000ddf    0xa  Code  Gb  xsprout.o [3]
+__aeabi_memset          0x08000f85         Code  Gb  ABImemset.o [4]
+__cmain                 0x08001621         Code  Gb  cmain.o [4]
+__exit                  0x08001651         Code  Gb  XXexit.o [4]
+__iar_Memset            0x08000f85         Code  Gb  ABImemset.o [4]
+__iar_Memset_word       0x08000f8d         Code  Gb  ABImemset.o [4]
+__iar_data_init3        0x080015e9   0x28  Code  Gb  data_init.o [4]
+__iar_program_start     0x08001681         Code  Gb  cstartup_M.o [4]
+__iar_zero_init3        0x080015a7   0x40  Code  Gb  zero_init3.o [4]
+__low_level_init        0x0800163b    0x4  Code  Gb  low_level_init.o [3]
+__vector_table          0x08000000         Data  Gb  vector_table_M.o [4]
+_call_main              0x0800162d         Code  Gb  cmain.o [4]
+_exit                   0x08001645         Code  Gb  cexit.o [4]
+_main                   0x08001637         Code  Gb  cmain.o [4]
+buf                     0x20000080   0x40  Data  Gb  bootloader.o [1]
+busy_lcd                0x080012b5   0x20  Code  Gb  lcd_2x16.o [1]
+configure_spi           0x08000521  0x13c  Code  Gb  bootloader.o [1]
+deinit                  0x08000235   0x28  Code  Gb  bootloader.o [1]
+enable_lcd              0x080012d5   0x22  Code  Gb  lcd_2x16.o [1]
+exit                    0x0800163f    0x4  Code  Gb  exit.o [3]
+fw_programmed           0x20000154    0x4  Data  Gb  bootloader.o [1]
+fw_total_size           0x20000150    0x4  Data  Gb  bootloader.o [1]
+goto_cursor             0x08001267   0x1e  Code  Gb  lcd_2x16.o [1]
+init                    0x08000221   0x14  Code  Gb  bootloader.o [1]
+jump                    0x08000479   0x16  Code  Gb  bootloader.o [1]
+lcd_init                0x080010cf  0x198  Code  Gb  lcd_2x16.o [1]
+lcd_out_data4           0x08000ffd   0x76  Code  Gb  lcd_2x16.o [1]
+lcd_print               0x08001285   0x30  Code  Gb  lcd_2x16.o [1]
+lcd_write_ascii         0x080010b5   0x1a  Code  Gb  lcd_2x16.o [1]
+lcd_write_byte          0x08001073   0x28  Code  Gb  lcd_2x16.o [1]
+lcd_write_control       0x0800109b   0x1a  Code  Gb  lcd_2x16.o [1]
+led1_cnt                0x20000158    0x4  Data  Gb  bootloader.o [1]
+load                    0x0800025d  0x21c  Code  Gb  bootloader.o [1]
+main                    0x0800048f   0x34  Code  Gb  bootloader.o [1]
+out                     0x08001425   0x18  Code  Lc  xprintftiny.o [3]
+pages_erased            0x20000134   0x10  Data  Gb  bootloader.o [1]
+prev_spi_out            0x200000ec   0x20  Data  Gb  bootloader.o [1]
+spi_cs_wait             0x20000148    0x4  Data  Gb  bootloader.o [1]
+spi_in                  0x20000040   0x40  Data  Gb  bootloader.o [1]
+spi_mgr_desc            0x2000014c    0x4  Data  Gb  bootloader.o [1]
+spi_out                 0x20000000   0x40  Data  Gb  bootloader.o [1]
+spi_resync              0x2000015d    0x1  Data  Gb  bootloader.o [1]
+spi_slave_init          0x080004c3   0x5e  Code  Gb  bootloader.o [1]
+sprintf                 0x08001319   0x34  Code  Gb  sprintf.o [3]
+strlen                  0x08001571         Code  Gb  strlen.o [4]
+trigger1                0x2000015e    0x1  Data  Gb  bootloader.o [1]
+trigger2                0x2000015f    0x1  Data  Gb  bootloader.o [1]
+trigger3                0x20000160    0x1  Data  Gb  bootloader.o [1]
+
+
+[1] = C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj
+[2] = command line
+[3] = dl7M_tln.a
+[4] = rt7M_tl.a
+
+  5 290 bytes of readonly  code memory
+     34 bytes of readonly  data memory
+    865 bytes of readwrite data memory
+
+Errors: 4
+Warnings: none

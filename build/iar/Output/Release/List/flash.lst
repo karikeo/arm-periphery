@@ -1,0 +1,211 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       12/Sep/2016  16:26:12
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  C:\ilya\vendicont\arm-periphery\Application\flash.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\flash.c -D STM32F10X_HD -D
+#        USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\flash.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\flash.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\flash.c
+      1          #include "stm32f10x.h"
+      2          #include "RTOS.h"
+      3          #include "flash.h"
+      4          #include "setjmp.h"
+      5          
+      6          /* Flash Control Register bits */
+      7          #define CR_PG_Set                ((u32)0x00000001)
+      8          #define CR_PG_Reset              ((u32)0x00001FFE) 
+      9          
+     10          #define CR_PER_Set               ((u32)0x00000002)
+     11          #define CR_PER_Reset             ((u32)0x00001FFD)
+     12          
+     13          #define CR_MER_Set               ((u32)0x00000004)
+     14          #define CR_MER_Reset             ((u32)0x00001FFB)
+     15          
+     16          #define CR_OPTPG_Set             ((u32)0x00000010)
+     17          #define CR_OPTPG_Reset           ((u32)0x00001FEF)
+     18          
+     19          #define CR_OPTER_Set             ((u32)0x00000020)
+     20          #define CR_OPTER_Reset           ((u32)0x00001FDF)
+     21          
+     22          #define CR_STRT_Set              ((u32)0x00000040)
+     23          							 
+     24          #define CR_LOCK_Set              ((u32)0x00000080)
+     25          
+     26          
+     27          #define FLASH_KEY1               ((u32)0x45670123)
+     28          #define FLASH_KEY2               ((u32)0xCDEF89AB)
+     29          
+     30          /* Delay definition */   
+     31          #define EraseTimeout             ((u32)0x00000FFF)
+     32          #define ProgramTimeout           ((u32)0x0000000F)
+     33          
+     34          extern void __iar_program_start(void);
+     35          
+
+   \                                 In section .bss, align 4
+     36          volatile u32 ep;//__iar_program_start;
+   \                     ep:
+   \   00000000                      DS8 4
+     37          
+     38          #if 0
+     39          #pragma location = ".bootloader"
+     40          void flash_unlock( ) {
+     41             if ( ( flash->CR & CR_LOCK_Set ) == CR_LOCK_Set ) {
+     42                flash->KEYR = FLASH_KEY1;
+     43                flash->KEYR = FLASH_KEY2;     
+     44             }  
+     45          }
+     46          #endif
+     47          
+     48          #ifdef __ICCARM__  // IAR
+     49             #pragma location = ".bootloader"
+     50          #endif
+     51          #ifdef __CC_ARM    // KEIL
+     52             #pragma arm section code = ".bootloader"
+     53          #endif
+     54          #ifdef __GNUC__    // GCC
+     55            #warning no segment specified
+     56          #endif
+     57          
+
+   \                                 In section .bootloader, align 4, keep-with-next
+     58          void fwupdate( u8* pData, u16 size, FLASH_TypeDef* flash ) {
+     59          
+     60             //static FLASH_Status st;
+     61             static u32 i = 0;      
+     62             
+     63          //   if ( !pData || size == 0 )
+     64          //     return;
+     65               
+     66             if ( ( flash->CR & CR_LOCK_Set ) == CR_LOCK_Set ) {
+   \                     fwupdate: (+1)
+   \   00000000   0x6910             LDR      R0,[R2, #+16]
+   \   00000002   0x0600             LSLS     R0,R0,#+24
+   \   00000004   0xD503             BPL.N    ??fwupdate_0
+     67                flash->KEYR = FLASH_KEY1;
+   \   00000006   0x4808             LDR.N    R0,??fwupdate_1  ;; 0x45670123
+   \   00000008   0x6050             STR      R0,[R2, #+4]
+     68                flash->KEYR = FLASH_KEY2;     
+   \   0000000A   0x4808             LDR.N    R0,??fwupdate_1+0x4  ;; 0xcdef89ab
+   \   0000000C   0x6050             STR      R0,[R2, #+4]
+     69             }
+     70             
+     71          #if 0   
+     72             volatile u32* volatile p = (u32*) 0x08000004;
+     73             ep = *p;
+     74          #endif     
+     75             
+     76             //st = FLASH_COMPLETE;
+     77          
+     78            /* Wait for last operation to be completed */
+     79             for ( i = 0; i < 0xFFFF; i++ ) {
+   \                     ??fwupdate_0: (+1)
+   \   0000000E   0xF64F 0x70FF      MOVW     R0,#+65535
+     80                if ( ( flash->SR & FLASH_FLAG_BSY ) != FLASH_FLAG_BSY ) {
+   \                     ??fwupdate_2: (+1)
+   \   00000012   0x68D1             LDR      R1,[R2, #+12]
+   \   00000014   0x07C9             LSLS     R1,R1,#+31
+   \   00000016   0xD501             BPL.N    ??fwupdate_3
+     81                   break;
+     82                }
+     83             }
+   \   00000018   0x1E40             SUBS     R0,R0,#+1
+   \   0000001A   0xD1FA             BNE.N    ??fwupdate_2
+     84          
+     85          #if 0  
+     86             if ( st == FLASH_COMPLETE )  { 
+     87              /* if the previous operation is completed, proceed to erase the page */
+     88                flash->CR |= CR_PER_Set;
+     89                flash->AR = (u32)pData; 
+     90                flash->CR |= CR_STRT_Set;
+     91              
+     92                /* Wait for last operation to be completed */      
+     93                for ( i = 0; i < 0xFFFF; i++ ) {
+     94                   if ( ( flash->SR & FLASH_FLAG_BSY ) != FLASH_FLAG_BSY ) {
+     95                      break;
+     96                   }
+     97                }
+     98          
+     99                if ( st != FLASH_BUSY ) {
+    100                   /* if the erase operation is completed, disable the PER Bit */
+    101                   flash->CR &= CR_PER_Reset;
+    102                }
+    103             }   
+    104             
+    105          #endif
+    106             
+    107             flash->CR |= CR_LOCK_Set;   
+   \                     ??fwupdate_3: (+1)
+   \   0000001C   0x6910             LDR      R0,[R2, #+16]
+   \   0000001E   0xF040 0x0080      ORR      R0,R0,#0x80
+   \   00000022   0x6110             STR      R0,[R2, #+16]
+    108          
+    109          #if 0   
+    110             NVIC_GenerateSystemReset();
+    111          #endif
+    112             
+    113          #if 0      
+    114             __asm("    mov     r0, sp\n"
+    115                   "    bl      ep\n"
+    116                   "    bx      lr");   
+    117          #endif   
+    118                
+    119          }
+   \   00000024   0x4770             BX       LR               ;; return
+   \   00000026   0xBF00             Nop      
+   \                     ??fwupdate_1:
+   \   00000028   0x45670123         DC32     0x45670123
+   \   0000002C   0xCDEF89AB         DC32     0xcdef89ab
+
+   \                                 In section .bss, align 4
+   \   00000000                      DS8 4
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   fwupdate
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ep
+      48  fwupdate
+       4  i
+
+ 
+ 48 bytes in section .bootloader
+  8 bytes in section .bss
+ 
+ 48 bytes of CODE memory
+  8 bytes of DATA memory
+
+Errors: none
+Warnings: none

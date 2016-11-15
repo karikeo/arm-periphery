@@ -1,0 +1,2054 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       15/Nov/2016  14:53:02
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  C:\ilya\vendicont\arm-periphery\Application\spi_slave.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\spi_slave.c -D
+#        STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\spi_slave.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\spi_slave.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\spi_slave.c
+      1          #include "stm32f10x.h"
+      2          #include "stm32f10x_dbgmcu.h"
+      3          #include "RTOS.h"
+      4          #include "BSP.h"
+      5          #include "spi_slave.h"
+      6          #include "spi_comm.h"
+      7          #if defined LCD
+      8          #include "lcd_2x16.h"
+      9          #endif
+     10          #include "stdio.h"
+     11          #include "log.h"
+     12          #include "vending/pt-vending.h"
+     13          #include "vending/dex.h"
+     14          #include "vending/mdb.h"
+     15          #include "utils.h"
+     16          
+     17          extern const u8 verMajor;
+     18          extern const u8 verMinor;
+     19          
+     20          extern GPIO_InitTypeDef GPIO_InitStructure;
+
+   \                                 In section .bss, align 4
+     21          SPI_InitTypeDef SPI_InitStructure;
+   \                     SPI_InitStructure:
+   \   00000000                      DS8 20
+
+   \                                 In section .bss, align 4
+     22          DMA_InitTypeDef DMA_InitStructure;
+   \                     DMA_InitStructure:
+   \   00000000                      DS8 44
+     23          //EXTI_InitTypeDef EXTI_InitStructure;
+     24          //NVIC_InitTypeDef NVIC_InitStructure;
+     25          
+     26          extern OS_TASK TCB1; //SPI
+     27          extern OS_TASK TCB2; //Vending
+     28          extern OS_Q fb_evt_q;
+     29          extern t_fb_desc fb;
+     30          #if defined DEX
+     31          extern tDex dex;
+     32          #endif   
+     33          
+     34          
+     35          #ifdef __ICCARM__  // IAR
+     36             __task void jump(void);
+
+   \                                 In section .bss, align 4
+     37             __absolute t_spi_in spi_in[2];
+   \                     spi_in:
+   \   00000000                      DS8 64
+
+   \                                 In section .bss, align 4
+     38             __absolute t_spi_out spi_out[2];   
+   \                     spi_out:
+   \   00000000                      DS8 64
+     39          #elif __CC_ARM    // KEIL
+     40             void jump(void);
+     41             t_spi_in spi_in[2];
+     42             t_spi_out spi_out[2];   
+     43          #elif __GNUC__    // GCC
+     44            #warning watch me
+     45          #endif
+     46          
+
+   \                                 In section .bss, align 4
+     47          t_spi_out prev_spi_out;
+   \                     prev_spi_out:
+   \   00000000                      DS8 32
+     48          
+     49          
+     50          //OS_MAILBOX spi_out_mb;
+     51          //extern OS_RSEMA SemaLCD;
+
+   \                                 In section .bss, align 4
+     52          OS_TIMER timer100;
+   \                     timer100:
+   \   00000000                      DS8 20
+
+   \                                 In section .bss, align 4
+     53          OS_TIMER spi_ok_timer;
+   \                     spi_ok_timer:
+   \   00000000                      DS8 20
+
+   \                                 In section .bss, align 4
+     54          OS_TIMER spi_sync_timer;
+   \                     spi_sync_timer:
+   \   00000000                      DS8 20
+     55          
+
+   \                                 In section .bss, align 2
+     56          u16 gpiob_idr;
+   \                     gpiob_idr:
+   \   00000000                      DS8 2
+
+   \                                 In section .bss, align 4
+     57          u32 spi_cs_wait = 0;
+   \                     spi_cs_wait:
+   \   00000000                      DS8 4
+     58          
+     59          //#define SPI_OUT_MB_SIZE 4
+     60          //u8 spi_out_mb_buf[ sizeof(t_spi_out) * SPI_OUT_MB_SIZE ];
+     61          
+     62          #define ISR_ID_SYSTICK                (15)               // System Tick
+     63          
+     64          ////////////////////////////////////////////////////////////////////////////////
+     65          #ifdef __ICCARM__  // IAR
+
+   \                                 In section .bss, align 4
+     66             __absolute t_spi_mgr spi_mgr_desc;
+   \                     spi_mgr_desc:
+   \   00000000                      DS8 4
+     67          #elif __CC_ARM    // KEIL
+     68             t_spi_mgr spi_mgr_desc;
+     69          #elif __GNUC__    // GCC
+     70            #warning watch me
+     71          #endif
+     72          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+     73          void timer100_cb( void ) {
+   \                     timer100_cb: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     74          
+     75             if ( spi_out[1].fields.padding[ 1 ] == 'i'
+     76               && spi_out[1].fields.padding[ 2 ] == 'v'
+     77               && spi_out[1].fields.padding[ 3 ] == 'a'
+     78             ) {
+     79                //GPIO_ResetBits(GPIOC, GPIO_Pin_9);
+     80             } else {
+     81                //GPIO_SetBits(GPIOC, GPIO_Pin_9);
+     82             }
+     83          
+     84             IWDG_ReloadCounter();
+   \   00000002   0x.... 0x....      BL       IWDG_ReloadCounter
+     85             OS_RetriggerTimer( &timer100 );   /* Make timer periodical */
+   \   00000006   0x.... 0x....      LDR.W    R0,??DataTable9
+   \   0000000A   0x.... 0x....      BL       OS_RetriggerTimer
+     86             
+     87             OS_SignalEvent( SPI_TASK_EVT_100MS, &TCB1 );
+   \   0000000E   0x.... 0x....      LDR.W    R1,??DataTable9_1
+   \   00000012   0x2010             MOVS     R0,#+16
+   \   00000014   0x.... 0x....      BL       OS_SignalEvent
+     88          
+     89          }
+   \   00000018   0xBD01             POP      {R0,PC}          ;; return
+     90          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+     91          void spi_ok_timer_cb( void ) {
+   \                     spi_ok_timer_cb: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     92             //char buf[ 32 ];
+     93             //GPIO_SetBits(GPIOC, GPIO_Pin_9);
+     94             OS_RetriggerTimer( &timer100 );
+   \   00000002   0x.... 0x....      LDR.W    R0,??DataTable9
+   \   00000006   0x.... 0x....      BL       OS_RetriggerTimer
+     95             //log("spi timeout\r\n");
+     96          }
+   \   0000000A   0xBD01             POP      {R0,PC}          ;; return
+     97          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+     98          void spi_sync_timer_cb( void ) {
+     99          //   if ( DMA1_Channel5->CNDTR < 31 ) {
+    100          //   }
+    101          }
+   \                     spi_sync_timer_cb: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    102          ////////////////////////////////////////////////////////////////////////////////
+    103          #ifdef __ICCARM__  // IAR
+
+   \                                 In section .text, align 2, keep-with-next
+    104          __task void jump(void) {
+   \                     jump: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    105             pEntryPoint ep;
+    106             disable_interrupt();
+   \   00000002   0xB672             CPSID    I
+    107             NVIC_SetVectorTable( NVIC_VectTab_FLASH, 0x4000 );
+   \   00000004   0xF44F 0x4180      MOV      R1,#+16384
+   \   00000008   0xF05F 0x6000      MOVS     R0,#+134217728
+   \   0000000C   0x.... 0x....      BL       NVIC_SetVectorTable
+    108             __set_MSP(*((u32*)0x08000000));
+   \   00000010   0xF05F 0x6000      MOVS     R0,#+134217728
+   \   00000014   0x6800             LDR      R0,[R0, #+0]
+   \   00000016   0xF380 0x8808      MSR      MSP,R0
+    109             ep = (pEntryPoint) (*((u32*)(0x08000000 + 7*4) ));
+   \   0000001A   0x.... 0x....      LDR.W    R0,??DataTable9_2  ;; 0x800001c
+   \   0000001E   0x6800             LDR      R0,[R0, #+0]
+   \   00000020   0x0004             MOVS     R4,R0
+    110             ep();
+   \   00000022   0x47A0             BLX      R4
+    111          }
+   \   00000024   0xBD01             POP      {R0,PC}          ;; return
+    112          #elif __CC_ARM    // KEIL
+    113          void jump(void) {
+    114             pEntryPoint ep;
+    115             disable_interrupt();
+    116             NVIC_SetVectorTable( NVIC_VectTab_FLASH, 0x4000 );
+    117             __set_MSP(*((u32*)0x08000000));
+    118             ep = (pEntryPoint) (*((u32*)(0x08000000 + 7*4) ));
+    119             ep();
+    120          }
+    121          #elif __GNUC__    // GCC
+    122            #warning watch me
+    123          #endif
+    124          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+    125          int spi_mgr( ) {
+   \                     spi_mgr: (+1)
+   \   00000000   0xE92D 0x41F0      PUSH     {R4-R8,LR}
+   \   00000004   0xB08A             SUB      SP,SP,#+40
+    126          //   u32 adr;
+    127          //   u32 i;
+    128             char buf[ 32 ];
+    129          
+    130             switch ( spi_mgr_desc.state ) {
+   \   00000006   0x.... 0x....      LDR.W    R0,??DataTable9_3
+   \   0000000A   0x8800             LDRH     R0,[R0, #+0]
+   \   0000000C   0x2800             CMP      R0,#+0
+   \   0000000E   0xF040 0x8178      BNE.W    ??spi_mgr_0
+    131          
+    132                case spiState_Idle:
+    133                   switch ( spi_out[1].fields.cmd ) {
+   \   00000012   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000016   0x8C40             LDRH     R0,[R0, #+34]
+   \   00000018   0x2800             CMP      R0,#+0
+   \   0000001A   0xF000 0x8086      BEQ.W    ??spi_mgr_1
+   \   0000001E   0x2801             CMP      R0,#+1
+   \   00000020   0xD011             BEQ.N    ??spi_mgr_2
+   \   00000022   0x2802             CMP      R0,#+2
+   \   00000024   0xD016             BEQ.N    ??spi_mgr_3
+   \   00000026   0x2803             CMP      R0,#+3
+   \   00000028   0xD015             BEQ.N    ??spi_mgr_4
+   \   0000002A   0x2804             CMP      R0,#+4
+   \   0000002C   0xD052             BEQ.N    ??spi_mgr_5
+   \   0000002E   0x2809             CMP      R0,#+9
+   \   00000030   0xD012             BEQ.N    ??spi_mgr_6
+   \   00000032   0x280A             CMP      R0,#+10
+   \   00000034   0xF000 0x80A0      BEQ.W    ??spi_mgr_7
+   \   00000038   0x280B             CMP      R0,#+11
+   \   0000003A   0xF000 0x80D7      BEQ.W    ??spi_mgr_8
+   \   0000003E   0x280C             CMP      R0,#+12
+   \   00000040   0xF000 0x8109      BEQ.W    ??spi_mgr_9
+   \   00000044   0xE14B             B.N      ??spi_mgr_10
+    134                      case spiCmd_FwUpdateInit:
+    135          #if defined LCD
+    136                         goto_cursor( 0x00 );
+    137                         lcd_print("to bootloader  ");
+    138          #endif
+    139                         OS_ARM_DisableISR( ISR_ID_SYSTICK );
+   \                     ??spi_mgr_2: (+1)
+   \   00000046   0x200F             MOVS     R0,#+15
+   \   00000048   0x.... 0x....      BL       OS_ARM_DisableISR
+    140                         disable_interrupt();
+   \   0000004C   0xB672             CPSID    I
+    141                         jump();
+   \   0000004E   0x.... 0x....      BL       jump
+    142                         for ( ; ; ) {
+   \                     ??spi_mgr_11: (+1)
+   \   00000052   0xE7FE             B.N      ??spi_mgr_11
+    143                            ;
+    144                         }
+    145                         break;
+    146          
+    147                      case spiCmd_FwUpdateData:
+    148                         break;
+   \                     ??spi_mgr_3: (+1)
+   \   00000054   0xE154             B.N      ??spi_mgr_12
+    149          
+    150                      case spiCmd_FwUpdateComplete:
+    151                         break;
+   \                     ??spi_mgr_4: (+1)
+   \   00000056   0xE153             B.N      ??spi_mgr_12
+    152          
+    153                      case spiCmd_GetFwVersion:
+    154                         spi_in[0].fields.status.bits.spi_busy = 1;
+   \                     ??spi_mgr_6: (+1)
+   \   00000058   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   0000005C   0x8800             LDRH     R0,[R0, #+0]
+   \   0000005E   0xF050 0x0010      ORRS     R0,R0,#0x10
+   \   00000062   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000066   0x8008             STRH     R0,[R1, #+0]
+    155                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \   00000068   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000006C   0x8C40             LDRH     R0,[R0, #+34]
+   \   0000006E   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   00000072   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000076   0x8048             STRH     R0,[R1, #+2]
+    156                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+   \   00000078   0x2410             MOVS     R4,#+16
+   \   0000007A   0x2500             MOVS     R5,#+0
+   \   0000007C   0x.... 0x....      LDR.W    R6,??DataTable9_6
+   \   00000080   0x002A             MOVS     R2,R5
+   \   00000082   0x0021             MOVS     R1,R4
+   \   00000084   0x0030             MOVS     R0,R6
+   \   00000086   0x.... 0x....      BL       __aeabi_memset
+    157                         spi_in[0].fields.param1 = verMajor;
+   \   0000008A   0x.... 0x....      LDR.W    R0,??DataTable9_7
+   \   0000008E   0x7800             LDRB     R0,[R0, #+0]
+   \   00000090   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000094   0x6048             STR      R0,[R1, #+4]
+    158                         spi_in[0].fields.param2 = verMinor;
+   \   00000096   0x.... 0x....      LDR.W    R0,??DataTable9_8
+   \   0000009A   0x7800             LDRB     R0,[R0, #+0]
+   \   0000009C   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000000A0   0x6088             STR      R0,[R1, #+8]
+    159                         build_dt( buf );
+   \   000000A2   0xA801             ADD      R0,SP,#+4
+   \   000000A4   0x.... 0x....      BL       build_dt
+    160                         buf[ sizeof(spi_in[0].fields.data) - 1 ] = 0;
+   \   000000A8   0x2000             MOVS     R0,#+0
+   \   000000AA   0xF88D 0x0013      STRB     R0,[SP, #+19]
+    161                         memcpy( spi_in[0].fields.data, buf, sizeof(spi_in[0].fields.data) );
+   \   000000AE   0x2610             MOVS     R6,#+16
+   \   000000B0   0xAF01             ADD      R7,SP,#+4
+   \   000000B2   0x.... 0x....      LDR.W    R8,??DataTable9_6
+   \   000000B6   0x0032             MOVS     R2,R6
+   \   000000B8   0x0039             MOVS     R1,R7
+   \   000000BA   0x4640             MOV      R0,R8
+   \   000000BC   0x.... 0x....      BL       __aeabi_memcpy
+    162                         spi_in[0].fields.status.bits.spi_busy = 0;               
+   \   000000C0   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   000000C4   0x8800             LDRH     R0,[R0, #+0]
+   \   000000C6   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   000000CA   0x4008             ANDS     R0,R1,R0
+   \   000000CC   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000000D0   0x8008             STRH     R0,[R1, #+0]
+    163                         break;
+   \   000000D2   0xE115             B.N      ??spi_mgr_12
+    164          
+    165          
+    166                      case spiCmd_ReadLog:
+    167                         spi_in[0].fields.status.bits.spi_busy = 1;
+   \                     ??spi_mgr_5: (+1)
+   \   000000D4   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   000000D8   0x8800             LDRH     R0,[R0, #+0]
+   \   000000DA   0xF050 0x0010      ORRS     R0,R0,#0x10
+   \   000000DE   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000000E2   0x8008             STRH     R0,[R1, #+0]
+    168                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \   000000E4   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   000000E8   0x8C40             LDRH     R0,[R0, #+34]
+   \   000000EA   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   000000EE   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000000F2   0x8048             STRH     R0,[R1, #+2]
+    169                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+   \   000000F4   0x2410             MOVS     R4,#+16
+   \   000000F6   0x2500             MOVS     R5,#+0
+   \   000000F8   0x.... 0x....      LDR.W    R6,??DataTable9_6
+   \   000000FC   0x002A             MOVS     R2,R5
+   \   000000FE   0x0021             MOVS     R1,R4
+   \   00000100   0x0030             MOVS     R0,R6
+   \   00000102   0x.... 0x....      BL       __aeabi_memset
+    170                         spi_in[0].fields.param1 =
+    171                            logRead( (char*)spi_in[0].fields.data, sizeof( spi_in[0].fields.data ));
+   \   00000106   0x2110             MOVS     R1,#+16
+   \   00000108   0x.... 0x....      LDR.W    R0,??DataTable9_6
+   \   0000010C   0x.... 0x....      BL       logRead
+   \   00000110   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000114   0x6048             STR      R0,[R1, #+4]
+    172                         spi_in[0].fields.status.bits.spi_busy = 0;
+   \   00000116   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   0000011A   0x8800             LDRH     R0,[R0, #+0]
+   \   0000011C   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   00000120   0x4008             ANDS     R0,R1,R0
+   \   00000122   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000126   0x8008             STRH     R0,[R1, #+0]
+    173                         break;
+   \   00000128   0xE0EA             B.N      ??spi_mgr_12
+    174          
+    175                      case spiCmd_NoCmd:
+    176                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \                     ??spi_mgr_1: (+1)
+   \   0000012A   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000012E   0x8C40             LDRH     R0,[R0, #+34]
+   \   00000130   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   00000134   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000138   0x8048             STRH     R0,[R1, #+2]
+    177                         spi_in[0].fields.param1 = 0;
+   \   0000013A   0x2000             MOVS     R0,#+0
+   \   0000013C   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000140   0x6048             STR      R0,[R1, #+4]
+    178                         spi_in[0].fields.param2 = 0;
+   \   00000142   0x2000             MOVS     R0,#+0
+   \   00000144   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000148   0x6088             STR      R0,[R1, #+8]
+    179                         memset( spi_in[0].fields.data, 0, sizeof( spi_in[0].fields.data ));
+   \   0000014A   0x2410             MOVS     R4,#+16
+   \   0000014C   0x2500             MOVS     R5,#+0
+   \   0000014E   0x.... 0x....      LDR.W    R6,??DataTable9_6
+   \   00000152   0x002A             MOVS     R2,R5
+   \   00000154   0x0021             MOVS     R1,R4
+   \   00000156   0x0030             MOVS     R0,R6
+   \   00000158   0x.... 0x....      BL       __aeabi_memset
+    180                         spi_in[0].fields.status.bits.spi_busy = 0;
+   \   0000015C   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000160   0x8800             LDRH     R0,[R0, #+0]
+   \   00000162   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   00000166   0x4008             ANDS     R0,R1,R0
+   \   00000168   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   0000016C   0x8008             STRH     R0,[R1, #+0]
+    181                         spi_mgr_desc.state = spiState_Idle;
+   \   0000016E   0x2000             MOVS     R0,#+0
+   \   00000170   0x.... 0x....      LDR.W    R1,??DataTable9_3
+   \   00000174   0x8008             STRH     R0,[R1, #+0]
+    182                         break;
+   \   00000176   0xE0C3             B.N      ??spi_mgr_12
+    183          
+    184          #if defined DEX                 
+    185                      case spiCmd_DexQueryStart:
+    186                         spi_in[0].fields.status.bits.spi_busy = 1;
+    187                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+    188                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+    189                         OS_SignalEvent( EVT_DEX_START, &TCB2 );
+    190                         spi_in[0].fields.param1 =  dex.state;
+    191                         spi_in[0].fields.status.bits.spi_busy = 0;
+    192                         break;
+    193          
+    194                      case spiCmd_DexQueryAbort:
+    195                         spi_in[0].fields.status.bits.spi_busy = 1;
+    196                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+    197                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+    198                         OS_SignalEvent( EVT_DEX_ABORT, &TCB2 );
+    199                         spi_in[0].fields.param1 =  dex.state;
+    200                         spi_in[0].fields.status.bits.spi_busy = 0;
+    201                         break;
+    202          
+    203                      case spiCmd_DexQueryRead: {
+    204                         u32 sizeLeft = 0;
+    205                         u32 chunkSize = sizeof(spi_in[0].fields.data);
+    206                         spi_in[0].fields.status.bits.spi_busy = 1;
+    207                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+    208                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+    209          
+    210                         if ( spi_out[1].fields.param1 == 0 ) {
+    211                            dex.audit_ptr = 0;
+    212                         }
+    213                         sizeLeft = dex.audit_size - dex.audit_ptr;
+    214          
+    215                         if ( sizeLeft <  chunkSize )
+    216                            chunkSize = sizeLeft;
+    217          
+    218                         memcpy( spi_in[0].fields.data, &dex.audit_data[ dex.audit_ptr ], chunkSize );
+    219                         spi_in[0].fields.param1 =  dex.audit_ptr;
+    220                         spi_in[0].fields.param2 =  sizeLeft;
+    221          
+    222                         dex.audit_ptr += chunkSize;
+    223          
+    224                         spi_in[0].fields.status.bits.spi_busy = 0;
+    225          #if 0 //defined LCD
+    226                         goto_cursor(0x00);
+    227                         sprintf( (char*)buf, "tx %u of %u", (char*)dex.audit_ptr, (char*)dex.audit_size );
+    228                         lcd_print( buf );
+    229          #endif
+    230                         if ( sizeLeft == 0 ) {
+    231                            dex.triggers.bits.query_cmplt = 0;
+    232                         }
+    233                         break;
+    234                      }
+    235          #endif
+    236                      
+    237                      case spiCmd_GetFbEvent: {
+    238                         int len;
+    239                         u8* p = 0;               
+   \                     ??spi_mgr_7: (+1)
+   \   00000178   0x2000             MOVS     R0,#+0
+   \   0000017A   0x9000             STR      R0,[SP, #+0]
+    240                         spi_in[0].fields.status.bits.spi_busy = 1;
+   \   0000017C   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000180   0x8800             LDRH     R0,[R0, #+0]
+   \   00000182   0xF050 0x0010      ORRS     R0,R0,#0x10
+   \   00000186   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   0000018A   0x8008             STRH     R0,[R1, #+0]
+    241                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \   0000018C   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000190   0x8C40             LDRH     R0,[R0, #+34]
+   \   00000192   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   00000196   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   0000019A   0x8048             STRH     R0,[R1, #+2]
+    242                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+   \   0000019C   0x2510             MOVS     R5,#+16
+   \   0000019E   0x2600             MOVS     R6,#+0
+   \   000001A0   0x.... 0x....      LDR.W    R7,??DataTable9_6
+   \   000001A4   0x0032             MOVS     R2,R6
+   \   000001A6   0x0029             MOVS     R1,R5
+   \   000001A8   0x0038             MOVS     R0,R7
+   \   000001AA   0x.... 0x....      BL       __aeabi_memset
+    243                         len = OS_Q_GetPtrCond( &fb_evt_q, (void**)&p );           /* Check message   */
+   \   000001AE   0x4669             MOV      R1,SP
+   \   000001B0   0x.... 0x....      LDR.W    R0,??DataTable9_9
+   \   000001B4   0x.... 0x....      BL       OS_Q_GetPtrCond
+   \   000001B8   0x0004             MOVS     R4,R0
+    244                         if ( len > 0 ) {
+   \   000001BA   0x2C01             CMP      R4,#+1
+   \   000001BC   0xDB0C             BLT.N    ??spi_mgr_13
+    245                            if ( len > 16 )
+   \   000001BE   0x2C11             CMP      R4,#+17
+   \   000001C0   0xDB01             BLT.N    ??spi_mgr_14
+    246                               len = 16;
+   \   000001C2   0x2010             MOVS     R0,#+16
+   \   000001C4   0x0004             MOVS     R4,R0
+    247                            spi_in[0].fields.param1 =  ((u32*) p ) [ 0 ];
+   \                     ??spi_mgr_14: (+1)
+   \   000001C6   0x9800             LDR      R0,[SP, #+0]
+   \   000001C8   0x6800             LDR      R0,[R0, #+0]
+   \   000001CA   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000001CE   0x6048             STR      R0,[R1, #+4]
+    248          
+    249                            OS_Q_Purge( &fb_evt_q );
+   \   000001D0   0x.... 0x....      LDR.W    R0,??DataTable9_9
+   \   000001D4   0x.... 0x....      BL       OS_Q_Purge
+    250                         } else {
+    251          
+    252                         }
+    253          #if 0
+    254                         log( "l=%d %d %d\r\n"
+    255                             ,len
+    256                             ,spi_in[0].fields.status.bits.fb_evt
+    257                             ,OS_Q_GetMessageCnt( &fb_evt_q )
+    258                         );
+    259          #endif
+    260                         spi_in[0].fields.status.bits.spi_busy = 0;
+   \                     ??spi_mgr_13: (+1)
+   \   000001D8   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   000001DC   0x8800             LDRH     R0,[R0, #+0]
+   \   000001DE   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   000001E2   0x4008             ANDS     R0,R1,R0
+   \   000001E4   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000001E8   0x8008             STRH     R0,[R1, #+0]
+    261                         break;
+   \   000001EA   0xE089             B.N      ??spi_mgr_12
+    262                      }
+    263                      case spiCmd_EmuFbEvent:
+    264                         spi_in[0].fields.status.bits.spi_busy = 1;
+   \                     ??spi_mgr_8: (+1)
+   \   000001EC   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   000001F0   0x8800             LDRH     R0,[R0, #+0]
+   \   000001F2   0xF050 0x0010      ORRS     R0,R0,#0x10
+   \   000001F6   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000001FA   0x8008             STRH     R0,[R1, #+0]
+    265                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \   000001FC   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000200   0x8C40             LDRH     R0,[R0, #+34]
+   \   00000202   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   00000206   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   0000020A   0x8048             STRH     R0,[R1, #+2]
+    266                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+   \   0000020C   0x2410             MOVS     R4,#+16
+   \   0000020E   0x2500             MOVS     R5,#+0
+   \   00000210   0x.... 0x....      LDR.W    R6,??DataTable9_6
+   \   00000214   0x002A             MOVS     R2,R5
+   \   00000216   0x0021             MOVS     R1,R4
+   \   00000218   0x0030             MOVS     R0,R6
+   \   0000021A   0x.... 0x....      BL       __aeabi_memset
+    267                         fb.emu_evt = spi_out[1].fields.param1;
+   \   0000021E   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000222   0x6A40             LDR      R0,[R0, #+36]
+   \   00000224   0x.... 0x....      LDR.W    R1,??DataTable9_10
+   \   00000228   0x6088             STR      R0,[R1, #+8]
+    268                         OS_SignalEvent( EVT_FB_EMU, &TCB2 );
+   \   0000022A   0x.... 0x....      LDR.W    R1,??DataTable9_11
+   \   0000022E   0x2001             MOVS     R0,#+1
+   \   00000230   0x.... 0x....      BL       OS_SignalEvent
+    269                         spi_in[0].fields.status.bits.spi_busy = 0;
+   \   00000234   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000238   0x8800             LDRH     R0,[R0, #+0]
+   \   0000023A   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   0000023E   0x4008             ANDS     R0,R1,R0
+   \   00000240   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000244   0x8008             STRH     R0,[R1, #+0]
+    270                         log( "fb_emu: %d\r\n", fb.emu_evt );
+   \   00000246   0x.... 0x....      LDR.W    R0,??DataTable9_10
+   \   0000024A   0x6881             LDR      R1,[R0, #+8]
+   \   0000024C   0x.... 0x....      LDR.W    R0,??DataTable9_12
+   \   00000250   0x.... 0x....      BL       log1
+    271                         break;
+   \   00000254   0xE054             B.N      ??spi_mgr_12
+    272                         
+    273                      case spiCmd_ReadData:
+    274                         spi_in[0].fields.status.bits.spi_busy = 1;
+   \                     ??spi_mgr_9: (+1)
+   \   00000256   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   0000025A   0x8800             LDRH     R0,[R0, #+0]
+   \   0000025C   0xF050 0x0010      ORRS     R0,R0,#0x10
+   \   00000260   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000264   0x8008             STRH     R0,[R1, #+0]
+    275                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \   00000266   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000026A   0x8C40             LDRH     R0,[R0, #+34]
+   \   0000026C   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   00000270   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000274   0x8048             STRH     R0,[R1, #+2]
+    276                         memset( spi_in[0].fields.data, 0, sizeof(spi_in[0].fields.data));
+   \   00000276   0x2410             MOVS     R4,#+16
+   \   00000278   0x2500             MOVS     R5,#+0
+   \   0000027A   0x.... 0x....      LDR.W    R6,??DataTable9_6
+   \   0000027E   0x002A             MOVS     R2,R5
+   \   00000280   0x0021             MOVS     R1,R4
+   \   00000282   0x0030             MOVS     R0,R6
+   \   00000284   0x.... 0x....      BL       __aeabi_memset
+    277                         switch( spi_out[1].fields.param1 ) {
+   \   00000288   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000028C   0x6A40             LDR      R0,[R0, #+36]
+   \   0000028E   0x2800             CMP      R0,#+0
+   \   00000290   0x2801             CMP      R0,#+1
+   \   00000292   0xD812             BHI.N    ??spi_mgr_15
+    278                            case 0:
+    279                            case 1:                    
+    280                               spi_in[0].fields.param1 = spi_out[1].fields.param1;
+   \                     ??spi_mgr_16: (+1)
+   \   00000294   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000298   0x6A40             LDR      R0,[R0, #+36]
+   \   0000029A   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   0000029E   0x6048             STR      R0,[R1, #+4]
+    281                               spi_in[0].fields.param2 = spi_out[1].fields.param2;
+   \   000002A0   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   000002A4   0x6A80             LDR      R0,[R0, #+40]
+   \   000002A6   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002AA   0x6088             STR      R0,[R1, #+8]
+    282                               extern float t_18b20;                     
+    283                               *((float*)(spi_in[0].fields.data)) = t_18b20;
+   \   000002AC   0x.... 0x....      LDR.W    R0,??DataTable9_13
+   \   000002B0   0x6800             LDR      R0,[R0, #+0]
+   \   000002B2   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002B6   0x60C8             STR      R0,[R1, #+12]
+    284                               break;
+   \   000002B8   0xE007             B.N      ??spi_mgr_17
+    285                            default:
+    286                               spi_in[0].fields.param1 = 0;
+   \                     ??spi_mgr_15: (+1)
+   \   000002BA   0x2000             MOVS     R0,#+0
+   \   000002BC   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002C0   0x6048             STR      R0,[R1, #+4]
+    287                               spi_in[0].fields.param2 = 0;
+   \   000002C2   0x2000             MOVS     R0,#+0
+   \   000002C4   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002C8   0x6088             STR      R0,[R1, #+8]
+    288                               break;
+    289                         }
+    290                         spi_in[0].fields.status.bits.spi_busy = 0;
+   \                     ??spi_mgr_17: (+1)
+   \   000002CA   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   000002CE   0x8800             LDRH     R0,[R0, #+0]
+   \   000002D0   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   000002D4   0x4008             ANDS     R0,R1,R0
+   \   000002D6   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002DA   0x8008             STRH     R0,[R1, #+0]
+    291                         break;
+   \   000002DC   0xE010             B.N      ??spi_mgr_12
+    292                         
+    293                      default:
+    294                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;              
+   \                     ??spi_mgr_10: (+1)
+   \   000002DE   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   000002E2   0x8C40             LDRH     R0,[R0, #+34]
+   \   000002E4   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   000002E8   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002EC   0x8048             STRH     R0,[R1, #+2]
+    295                         spi_in[0].fields.status.bits.spi_busy = 0;              
+   \   000002EE   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   000002F2   0x8800             LDRH     R0,[R0, #+0]
+   \   000002F4   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   000002F8   0x4008             ANDS     R0,R1,R0
+   \   000002FA   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000002FE   0x8008             STRH     R0,[R1, #+0]
+    296                         break;
+    297                   }
+    298                   break;
+   \                     ??spi_mgr_12: (+1)
+   \   00000300   0xE008             B.N      ??spi_mgr_18
+    299                   
+    300                default:
+    301                   spi_in[0].fields.status.bits.spi_busy = 0;              
+   \                     ??spi_mgr_0: (+1)
+   \   00000302   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000306   0x8800             LDRH     R0,[R0, #+0]
+   \   00000308   0xF64F 0x71EF      MOVW     R1,#+65519
+   \   0000030C   0x4008             ANDS     R0,R1,R0
+   \   0000030E   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000312   0x8008             STRH     R0,[R1, #+0]
+    302                   break;
+    303                  
+    304             }
+    305          
+    306             return 0;
+   \                     ??spi_mgr_18: (+1)
+   \   00000314   0x2000             MOVS     R0,#+0
+   \   00000316   0xB00A             ADD      SP,SP,#+40
+   \   00000318   0xE8BD 0x81F0      POP      {R4-R8,PC}       ;; return
+    307          }
+    308          
+    309          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+    310          void Task_spi(void) {
+   \                     Task_spi: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+    311             OS_TASK_EVENT evt;
+    312          #if defined LCD
+    313             char buf[ 64 ];   
+    314             goto_cursor(0x00);
+    315             sprintf( (char*)buf, "hallo %d.%d", verMajor, verMinor );
+    316             lcd_print((u8*)buf);
+    317             goto_cursor(0x40);
+    318             sprintf( buf, "%s%s", __DATE__, __TIME__);
+    319             lcd_print((u8*)buf);
+    320          
+    321             //OS_Delay (500);
+    322          
+    323             lcd_clear();
+    324          #endif
+    325             spi_slave_init();
+   \   00000002   0x.... 0x....      BL       spi_slave_init
+    326          
+    327             OS_ARM_ISRSetPrio( DMA1_Channel4_IRQn + 16, 140 );   // Set lowest Priority, ALL BITS set
+   \   00000006   0x218C             MOVS     R1,#+140
+   \   00000008   0x201E             MOVS     R0,#+30
+   \   0000000A   0x.... 0x....      BL       OS_ARM_ISRSetPrio
+    328             OS_ARM_ISRSetPrio( DMA1_Channel5_IRQn + 16, 140 );   // Set lowest Priority, ALL BITS set
+   \   0000000E   0x218C             MOVS     R1,#+140
+   \   00000010   0x201F             MOVS     R0,#+31
+   \   00000012   0x.... 0x....      BL       OS_ARM_ISRSetPrio
+    329             OS_ARM_EnableISR( SPI2_IRQn + 16 );
+   \   00000016   0x2034             MOVS     R0,#+52
+   \   00000018   0x.... 0x....      BL       OS_ARM_EnableISR
+    330             OS_ARM_EnableISR( DMA1_Channel4_IRQn + 16 );
+   \   0000001C   0x201E             MOVS     R0,#+30
+   \   0000001E   0x.... 0x....      BL       OS_ARM_EnableISR
+    331             OS_ARM_EnableISR( DMA1_Channel5_IRQn + 16 );
+   \   00000022   0x201F             MOVS     R0,#+31
+   \   00000024   0x.... 0x....      BL       OS_ARM_EnableISR
+    332          
+    333             OS_CreateTimer( &timer100, timer100_cb, 100 );
+   \   00000028   0x2264             MOVS     R2,#+100
+   \   0000002A   0x.... 0x....      LDR.W    R1,??DataTable9_14
+   \   0000002E   0x.... 0x....      LDR.W    R0,??DataTable9
+   \   00000032   0x.... 0x....      BL       OS_CreateTimer
+    334             OS_CreateTimer( &spi_ok_timer, spi_ok_timer_cb, 2000 );
+   \   00000036   0xF44F 0x62FA      MOV      R2,#+2000
+   \   0000003A   0x.... 0x....      LDR.W    R1,??DataTable9_15
+   \   0000003E   0x.... 0x....      LDR.W    R0,??DataTable9_16
+   \   00000042   0x.... 0x....      BL       OS_CreateTimer
+    335             OS_CreateTimer( &spi_sync_timer, spi_sync_timer_cb, 50 );
+   \   00000046   0x2232             MOVS     R2,#+50
+   \   00000048   0x.... 0x....      LDR.W    R1,??DataTable9_17
+   \   0000004C   0x.... 0x....      LDR.W    R0,??DataTable9_18
+   \   00000050   0x.... 0x....      BL       OS_CreateTimer
+    336             OS_StartTimer( &timer100 );
+   \   00000054   0x.... 0x....      LDR.W    R0,??DataTable9
+   \   00000058   0x.... 0x....      BL       OS_StartTimer
+    337             OS_StartTimer( &spi_ok_timer );
+   \   0000005C   0x.... 0x....      LDR.W    R0,??DataTable9_16
+   \   00000060   0x.... 0x....      BL       OS_StartTimer
+    338          
+    339             for ( ; ; ) {
+    340          
+    341                evt = OS_WaitEvent( SPI_TASK_EVT_RX
+    342                                  | SPI_TASK_EVT_RX_SYNC
+    343                                  | SPI_TASK_EVT
+    344                                  | SPI_TASK_EVT_100MS );
+   \                     ??Task_spi_0: (+1)
+   \   00000064   0x201E             MOVS     R0,#+30
+   \   00000066   0x.... 0x....      BL       OS_WaitEvent
+   \   0000006A   0x0004             MOVS     R4,R0
+    345          
+    346                if ( evt & SPI_TASK_EVT_RX_SYNC ) {
+   \   0000006C   0x0720             LSLS     R0,R4,#+28
+   \   0000006E   0xD524             BPL.N    ??Task_spi_1
+    347          
+    348                   for ( spi_cs_wait = 0; spi_cs_wait < 20; spi_cs_wait++ ) {
+   \   00000070   0x2000             MOVS     R0,#+0
+   \   00000072   0x.... 0x....      LDR.W    R1,??DataTable9_19
+   \   00000076   0x6008             STR      R0,[R1, #+0]
+   \                     ??Task_spi_2: (+1)
+   \   00000078   0x.... 0x....      LDR.W    R0,??DataTable9_19
+   \   0000007C   0x6800             LDR      R0,[R0, #+0]
+   \   0000007E   0x2814             CMP      R0,#+20
+   \   00000080   0xD20F             BCS.N    ??Task_spi_3
+    349                      if ( GPIOB->IDR & GPIO_Pin_12 )
+   \   00000082   0x.... 0x....      LDR.W    R0,??DataTable9_20  ;; 0x40010c08
+   \   00000086   0x6800             LDR      R0,[R0, #+0]
+   \   00000088   0x04C0             LSLS     R0,R0,#+19
+   \   0000008A   0xD40A             BMI.N    ??Task_spi_3
+    350                         break;
+    351                      OS_Delay(1);
+   \                     ??Task_spi_4: (+1)
+   \   0000008C   0x2001             MOVS     R0,#+1
+   \   0000008E   0x.... 0x....      BL       OS_Delay
+    352                   }
+   \   00000092   0x.... 0x....      LDR.W    R0,??DataTable9_19
+   \   00000096   0x6800             LDR      R0,[R0, #+0]
+   \   00000098   0x1C40             ADDS     R0,R0,#+1
+   \   0000009A   0x.... 0x....      LDR.W    R1,??DataTable9_19
+   \   0000009E   0x6008             STR      R0,[R1, #+0]
+   \   000000A0   0xE7EA             B.N      ??Task_spi_2
+    353          
+    354                   configure_spi();
+   \                     ??Task_spi_3: (+1)
+   \   000000A2   0x.... 0x....      BL       configure_spi
+    355          #if defined LCD
+    356                   sprintf( buf, "[%.4X] %lu", gpiob_idr, spi_cs_wait );
+    357                   goto_cursor( 0x40 );
+    358                   lcd_print( buf );
+    359          #endif
+    360                   OS_Delay(1);
+   \   000000A6   0x2001             MOVS     R0,#+1
+   \   000000A8   0x.... 0x....      BL       OS_Delay
+    361                   log("spi resync, %lums\r\n", spi_cs_wait );
+   \   000000AC   0x.... 0x....      LDR.W    R0,??DataTable9_19
+   \   000000B0   0x6801             LDR      R1,[R0, #+0]
+   \   000000B2   0x.... 0x....      LDR.W    R0,??DataTable9_21
+   \   000000B6   0x.... 0x....      BL       log1
+    362                }
+    363          
+    364                if ( evt & SPI_TASK_EVT ) {
+   \                     ??Task_spi_1: (+1)
+   \   000000BA   0x0760             LSLS     R0,R4,#+29
+   \   000000BC   0xD501             BPL.N    ??Task_spi_5
+    365                   spi_mgr( );
+   \   000000BE   0x.... 0x....      BL       spi_mgr
+    366                }
+    367          
+    368                if ( evt & SPI_TASK_EVT_RX ) {
+    369          #if defined LCD        
+    370          #if 0
+    371                   sprintf( buf,"[%.2X]", spi_out[1].fields.padding[0]);
+    372                   goto_cursor( 0x40 );
+    373                   lcd_print( buf );
+    374          #endif
+    375          #if 0
+    376                   sprintf( buf, "[%lu]", DMA1_Channel5->CNDTR );
+    377                   goto_cursor( 0x04 );
+    378                   lcd_print( buf );
+    379          #endif
+    380          #endif         
+    381                }
+    382          
+    383                if ( evt & SPI_TASK_EVT_100MS ) {
+   \                     ??Task_spi_5: (+1)
+   \   000000C2   0xE7CF             B.N      ??Task_spi_0
+    384          #if defined LCD
+    385                   sprintf( buf, "[%.2X]%.2X%.2X%.2X"
+    386                           , spi_out[1].raw[ 28 ]
+    387                           , spi_out[1].raw[ 29 ]
+    388                           , spi_out[1].raw[ 30 ]
+    389                           , spi_out[1].raw[ 31 ]
+    390                   );
+    391                   goto_cursor( 0x06 );
+    392                   lcd_print( buf );
+    393          #endif
+    394                }
+    395             }
+    396          }
+    397          ////////////////////////////////////////////////////////////////////////////////
+    398          /* DMA Channel4 Interrupt ----------------------------------------------*/
+
+   \                                 In section .text, align 2, keep-with-next
+    399          __irq void DMA1_Channel4_IRQHandler(void) {
+   \                     DMA1_Channel4_IRQHandler: (+1)
+   \   00000000   0xE92D 0x41F0      PUSH     {R4-R8,LR}
+    400          
+    401             u8 valid;
+    402             u8 changes;
+    403             
+    404             OS_EnterNestableInterrupt();
+   \   00000004   0x.... 0x....      LDR.W    R0,??DataTable9_22
+   \   00000008   0x7800             LDRB     R0,[R0, #+0]
+   \   0000000A   0x1C40             ADDS     R0,R0,#+1
+   \   0000000C   0x.... 0x....      LDR.W    R1,??DataTable9_22
+   \   00000010   0x7008             STRB     R0,[R1, #+0]
+   \   00000012   0x.... 0x....      LDR.W    R0,??DataTable9_23
+   \   00000016   0x7800             LDRB     R0,[R0, #+0]
+   \   00000018   0x1C40             ADDS     R0,R0,#+1
+   \   0000001A   0x.... 0x....      LDR.W    R1,??DataTable9_23
+   \   0000001E   0x7008             STRB     R0,[R1, #+0]
+   \   00000020   0x.... 0x....      BL       OS_AssertCPUInISRMode
+    405          
+    406             valid = 0;
+   \   00000024   0x2000             MOVS     R0,#+0
+   \   00000026   0x0004             MOVS     R4,R0
+    407             changes = 0;
+   \   00000028   0x2000             MOVS     R0,#+0
+   \   0000002A   0x0005             MOVS     R5,R0
+    408             
+    409             if ( spi_out[1].fields.padding[ 1 ] == 'i'
+    410               && spi_out[1].fields.padding[ 2 ] == 'v'
+    411               && spi_out[1].fields.padding[ 3 ] == 'a'
+    412             ) {
+   \   0000002C   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000030   0xF890 0x003D      LDRB     R0,[R0, #+61]
+   \   00000034   0x2869             CMP      R0,#+105
+   \   00000036   0xD118             BNE.N    ??DMA1_Channel4_IRQHandler_0
+   \   00000038   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000003C   0xF890 0x003E      LDRB     R0,[R0, #+62]
+   \   00000040   0x2876             CMP      R0,#+118
+   \   00000042   0xD112             BNE.N    ??DMA1_Channel4_IRQHandler_0
+   \   00000044   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000048   0xF890 0x003F      LDRB     R0,[R0, #+63]
+   \   0000004C   0x2861             CMP      R0,#+97
+   \   0000004E   0xD10C             BNE.N    ??DMA1_Channel4_IRQHandler_0
+    413                LED4_ON;
+   \   00000050   0xF44F 0x7100      MOV      R1,#+512
+   \   00000054   0x.... 0x....      LDR.W    R0,??DataTable9_24  ;; 0x40011000
+   \   00000058   0x.... 0x....      BL       GPIO_ResetBits
+    414                OS_RetriggerTimer( &spi_ok_timer );
+   \   0000005C   0x.... 0x....      LDR.W    R0,??DataTable9_16
+   \   00000060   0x.... 0x....      BL       OS_RetriggerTimer
+    415                valid = 1;
+   \   00000064   0x2001             MOVS     R0,#+1
+   \   00000066   0x0004             MOVS     R4,R0
+   \   00000068   0xE005             B.N      ??DMA1_Channel4_IRQHandler_1
+    416             } else {
+    417                LED4_OFF;
+   \                     ??DMA1_Channel4_IRQHandler_0: (+1)
+   \   0000006A   0xF44F 0x7100      MOV      R1,#+512
+   \   0000006E   0x.... 0x....      LDR.W    R0,??DataTable9_24  ;; 0x40011000
+   \   00000072   0x.... 0x....      BL       GPIO_SetBits
+    418             }
+    419          
+    420             changes = ( spi_out[1].fields.cmd !=  prev_spi_out.fields.cmd )
+    421                    || ( spi_out[1].fields.param1 !=  prev_spi_out.fields.param1 );
+   \                     ??DMA1_Channel4_IRQHandler_1: (+1)
+   \   00000076   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000007A   0x8C40             LDRH     R0,[R0, #+34]
+   \   0000007C   0x.... 0x....      LDR.W    R1,??DataTable9_25
+   \   00000080   0x8849             LDRH     R1,[R1, #+2]
+   \   00000082   0x4288             CMP      R0,R1
+   \   00000084   0xD107             BNE.N    ??DMA1_Channel4_IRQHandler_2
+   \   00000086   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   0000008A   0x6A40             LDR      R0,[R0, #+36]
+   \   0000008C   0x.... 0x....      LDR.W    R1,??DataTable9_25
+   \   00000090   0x6849             LDR      R1,[R1, #+4]
+   \   00000092   0x4288             CMP      R0,R1
+   \   00000094   0xD001             BEQ.N    ??DMA1_Channel4_IRQHandler_3
+   \                     ??DMA1_Channel4_IRQHandler_2: (+1)
+   \   00000096   0x2501             MOVS     R5,#+1
+   \   00000098   0xE000             B.N      ??DMA1_Channel4_IRQHandler_4
+   \                     ??DMA1_Channel4_IRQHandler_3: (+1)
+   \   0000009A   0x2500             MOVS     R5,#+0
+    422          
+    423             if ( valid && changes ) {
+   \                     ??DMA1_Channel4_IRQHandler_4: (+1)
+   \   0000009C   0xB2E4             UXTB     R4,R4            ;; ZeroExt  R4,R4,#+24,#+24
+   \   0000009E   0x2C00             CMP      R4,#+0
+   \   000000A0   0xD02D             BEQ.N    ??DMA1_Channel4_IRQHandler_5
+   \   000000A2   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   000000A4   0x2D00             CMP      R5,#+0
+   \   000000A6   0xD02A             BEQ.N    ??DMA1_Channel4_IRQHandler_5
+    424                memcpy( prev_spi_out.raw, spi_out[1].raw, sizeof( spi_out[1].raw ) );
+   \   000000A8   0x2620             MOVS     R6,#+32
+   \   000000AA   0x.... 0x....      LDR.W    R7,??DataTable9_26
+   \   000000AE   0x.... 0x....      LDR.W    R8,??DataTable9_25
+   \   000000B2   0x0032             MOVS     R2,R6
+   \   000000B4   0x0039             MOVS     R1,R7
+   \   000000B6   0x4640             MOV      R0,R8
+   \   000000B8   0x.... 0x....      BL       __aeabi_memcpy
+    425                if ( spi_mgr_desc.state == spiState_Idle ){
+   \   000000BC   0x.... 0x....      LDR.W    R0,??DataTable9_3
+   \   000000C0   0x8800             LDRH     R0,[R0, #+0]
+   \   000000C2   0x2800             CMP      R0,#+0
+   \   000000C4   0xD11B             BNE.N    ??DMA1_Channel4_IRQHandler_5
+    426                   u16 cmd = spi_out[1].fields.cmd;
+   \   000000C6   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   000000CA   0x8C46             LDRH     R6,[R0, #+34]
+    427                   switch ( cmd ) {
+   \   000000CC   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   000000CE   0x0030             MOVS     R0,R6
+   \   000000D0   0x2800             CMP      R0,#+0
+   \   000000D2   0x2801             CMP      R0,#+1
+   \   000000D4   0xD905             BLS.N    ??DMA1_Channel4_IRQHandler_6
+   \   000000D6   0x1F00             SUBS     R0,R0,#+4
+   \   000000D8   0x2803             CMP      R0,#+3
+   \   000000DA   0xD902             BLS.N    ??DMA1_Channel4_IRQHandler_6
+   \   000000DC   0x1F40             SUBS     R0,R0,#+5
+   \   000000DE   0x2803             CMP      R0,#+3
+   \   000000E0   0xD805             BHI.N    ??DMA1_Channel4_IRQHandler_7
+    428                      case spiCmd_NoCmd:
+    429                      case spiCmd_FwUpdateInit:
+    430                      case spiCmd_ReadLog:
+    431                      case spiCmd_DexQueryStart:
+    432                      case spiCmd_DexQueryAbort:
+    433                      case spiCmd_DexQueryRead:
+    434                      case spiCmd_GetFwVersion:
+    435                      case spiCmd_EmuFbEvent:
+    436                      case spiCmd_GetFbEvent:
+    437                      case spiCmd_ReadData:
+    438                         OS_SignalEvent( SPI_TASK_EVT, &TCB1 );
+   \                     ??DMA1_Channel4_IRQHandler_6: (+1)
+   \   000000E2   0x.... 0x....      LDR.W    R1,??DataTable9_1
+   \   000000E6   0x2004             MOVS     R0,#+4
+   \   000000E8   0x.... 0x....      BL       OS_SignalEvent
+    439                         //spi_mgr();
+    440                         break;
+   \   000000EC   0xE007             B.N      ??DMA1_Channel4_IRQHandler_5
+    441          
+    442                      default:
+    443                         spi_in[0].fields.state = spi_out[1].fields.cmd | spiCmd_Ack;
+   \                     ??DMA1_Channel4_IRQHandler_7: (+1)
+   \   000000EE   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   000000F2   0x8C40             LDRH     R0,[R0, #+34]
+   \   000000F4   0xF450 0x4000      ORRS     R0,R0,#0x8000
+   \   000000F8   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   000000FC   0x8048             STRH     R0,[R1, #+2]
+    444                         break;
+    445                   }
+    446                }
+    447             }
+    448          
+    449             fb.en_log = spi_out[1].fields.control.bits.en_fb_log;
+   \                     ??DMA1_Channel4_IRQHandler_5: (+1)
+   \   000000FE   0x.... 0x....      LDR.W    R0,??DataTable9_4
+   \   00000102   0x8C00             LDRH     R0,[R0, #+32]
+   \   00000104   0x.... 0x....      LDR.W    R1,??DataTable9_10
+   \   00000108   0x6849             LDR      R1,[R1, #+4]
+   \   0000010A   0xF360 0x0182      BFI      R1,R0,#+2,#+1
+   \   0000010E   0x.... 0x....      LDR.W    R0,??DataTable9_10
+   \   00000112   0x6041             STR      R1,[R0, #+4]
+    450          #if defined DEX   
+    451             dex.enable = spi_out[1].fields.control.bits.en_dex;
+    452          #endif
+    453             DMA1->IFCR |= DMA1_IT_GL4;
+   \   00000114   0x.... 0x....      LDR.W    R0,??DataTable9_27  ;; 0x40020004
+   \   00000118   0x6800             LDR      R0,[R0, #+0]
+   \   0000011A   0xF450 0x5080      ORRS     R0,R0,#0x1000
+   \   0000011E   0x.... 0x....      LDR.W    R1,??DataTable9_27  ;; 0x40020004
+   \   00000122   0x6008             STR      R0,[R1, #+0]
+    454          
+    455             if ( valid ) {
+   \   00000124   0xB2E4             UXTB     R4,R4            ;; ZeroExt  R4,R4,#+24,#+24
+   \   00000126   0x2C00             CMP      R4,#+0
+   \   00000128   0xD005             BEQ.N    ??DMA1_Channel4_IRQHandler_8
+    456                OS_SignalEvent( SPI_TASK_EVT_RX, &TCB1 );
+   \   0000012A   0x.... 0x....      LDR.W    R1,??DataTable9_1
+   \   0000012E   0x2002             MOVS     R0,#+2
+   \   00000130   0x.... 0x....      BL       OS_SignalEvent
+   \   00000134   0xE00F             B.N      ??DMA1_Channel4_IRQHandler_9
+    457             } else if ( ( GPIOB->IDR & GPIO_Pin_12 ) == 0 ) {
+   \                     ??DMA1_Channel4_IRQHandler_8: (+1)
+   \   00000136   0x.... 0x....      LDR.W    R0,??DataTable9_20  ;; 0x40010c08
+   \   0000013A   0x6800             LDR      R0,[R0, #+0]
+   \   0000013C   0x04C0             LSLS     R0,R0,#+19
+   \   0000013E   0xD40A             BMI.N    ??DMA1_Channel4_IRQHandler_9
+    458                OS_SignalEvent( SPI_TASK_EVT_RX_SYNC, &TCB1 );
+   \   00000140   0x.... 0x....      LDR.W    R1,??DataTable9_1
+   \   00000144   0x2008             MOVS     R0,#+8
+   \   00000146   0x.... 0x....      BL       OS_SignalEvent
+    459                gpiob_idr = GPIOB->IDR;     
+   \   0000014A   0x.... 0x....      LDR.W    R0,??DataTable9_20  ;; 0x40010c08
+   \   0000014E   0x6800             LDR      R0,[R0, #+0]
+   \   00000150   0x.... 0x....      LDR.W    R1,??DataTable9_28
+   \   00000154   0x8008             STRH     R0,[R1, #+0]
+    460             }
+    461             OS_LeaveNestableInterrupt();
+   \                     ??DMA1_Channel4_IRQHandler_9: (+1)
+   \   00000156   0x2080             MOVS     R0,#+128
+   \   00000158   0xF380 0x8811      MSR      BASEPRI,R0
+   \   0000015C   0xBF00             Nop      
+   \   0000015E   0xBF00             Nop      
+   \   00000160   0x.... 0x....      LDR.W    R0,??DataTable9_22
+   \   00000164   0x7800             LDRB     R0,[R0, #+0]
+   \   00000166   0x1E41             SUBS     R1,R0,#+1
+   \   00000168   0x.... 0x....      LDR.W    R2,??DataTable9_22
+   \   0000016C   0x7011             STRB     R1,[R2, #+0]
+   \   0000016E   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000170   0x2800             CMP      R0,#+0
+   \   00000172   0xD102             BNE.N    ??DMA1_Channel4_IRQHandler_10
+   \   00000174   0x2098             MOVS     R0,#+152
+   \   00000176   0x.... 0x....      BL       OS_Error
+   \                     ??DMA1_Channel4_IRQHandler_10: (+1)
+   \   0000017A   0x.... 0x....      LDR.W    R0,??DataTable9_23
+   \   0000017E   0x7800             LDRB     R0,[R0, #+0]
+   \   00000180   0x2801             CMP      R0,#+1
+   \   00000182   0xD106             BNE.N    ??DMA1_Channel4_IRQHandler_11
+   \   00000184   0x.... 0x....      LDR.W    R0,??DataTable9_23
+   \   00000188   0x6840             LDR      R0,[R0, #+4]
+   \   0000018A   0x2800             CMP      R0,#+0
+   \   0000018C   0xD001             BEQ.N    ??DMA1_Channel4_IRQHandler_11
+   \   0000018E   0x.... 0x....      BL       OS_SwitchFromInt
+   \                     ??DMA1_Channel4_IRQHandler_11: (+1)
+   \   00000192   0x.... 0x....      LDR.W    R0,??DataTable9_23
+   \   00000196   0x7800             LDRB     R0,[R0, #+0]
+   \   00000198   0x1E40             SUBS     R0,R0,#+1
+   \   0000019A   0x.... 0x....      LDR.W    R1,??DataTable9_23
+   \   0000019E   0x7008             STRB     R0,[R1, #+0]
+   \   000001A0   0x2000             MOVS     R0,#+0
+   \   000001A2   0xF380 0x8811      MSR      BASEPRI,R0
+    462          }
+   \   000001A6   0xE8BD 0x81F0      POP      {R4-R8,PC}       ;; return
+    463          ////////////////////////////////////////////////////////////////////////////////
+    464          /* DMA Channel5 Interrupt ----------------------------------------------*/
+
+   \                                 In section .text, align 2, keep-with-next
+    465          __irq void DMA1_Channel5_IRQHandler(void) {
+   \                     DMA1_Channel5_IRQHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    466          
+    467             OS_EnterNestableInterrupt();
+   \   00000002   0x.... 0x....      LDR.W    R0,??DataTable9_22
+   \   00000006   0x7800             LDRB     R0,[R0, #+0]
+   \   00000008   0x1C40             ADDS     R0,R0,#+1
+   \   0000000A   0x.... 0x....      LDR.W    R1,??DataTable9_22
+   \   0000000E   0x7008             STRB     R0,[R1, #+0]
+   \   00000010   0x.... 0x....      LDR.W    R0,??DataTable9_23
+   \   00000014   0x7800             LDRB     R0,[R0, #+0]
+   \   00000016   0x1C40             ADDS     R0,R0,#+1
+   \   00000018   0x.... 0x....      LDR.W    R1,??DataTable9_23
+   \   0000001C   0x7008             STRB     R0,[R1, #+0]
+   \   0000001E   0x.... 0x....      BL       OS_AssertCPUInISRMode
+    468          
+    469             spi_in[0].fields.status.bits.bootloader = 0;
+   \   00000022   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000026   0x8800             LDRH     R0,[R0, #+0]
+   \   00000028   0xF64F 0x71FE      MOVW     R1,#+65534
+   \   0000002C   0x4008             ANDS     R0,R1,R0
+   \   0000002E   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000032   0x8008             STRH     R0,[R1, #+0]
+    470             spi_in[0].fields.status.bits.error = 0;
+   \   00000034   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000038   0x8800             LDRH     R0,[R0, #+0]
+   \   0000003A   0xF64F 0x71FD      MOVW     R1,#+65533
+   \   0000003E   0x4008             ANDS     R0,R1,R0
+   \   00000040   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000044   0x8008             STRH     R0,[R1, #+0]
+    471             spi_in[0].fields.status.bits.nda = 0;
+   \   00000046   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   0000004A   0x8800             LDRH     R0,[R0, #+0]
+   \   0000004C   0xF64F 0x71FB      MOVW     R1,#+65531
+   \   00000050   0x4008             ANDS     R0,R1,R0
+   \   00000052   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000056   0x8008             STRH     R0,[R1, #+0]
+    472             spi_in[0].fields.status.bits.log = ( isLogEmpty() >  0 );
+   \   00000058   0x.... 0x....      BL       isLogEmpty
+   \   0000005C   0x2800             CMP      R0,#+0
+   \   0000005E   0xD001             BEQ.N    ??DMA1_Channel5_IRQHandler_0
+   \   00000060   0x2001             MOVS     R0,#+1
+   \   00000062   0xE000             B.N      ??DMA1_Channel5_IRQHandler_1
+   \                     ??DMA1_Channel5_IRQHandler_0: (+1)
+   \   00000064   0x2000             MOVS     R0,#+0
+   \                     ??DMA1_Channel5_IRQHandler_1: (+1)
+   \   00000066   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000068   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   0000006C   0x8809             LDRH     R1,[R1, #+0]
+   \   0000006E   0xF360 0x01C3      BFI      R1,R0,#+3,#+1
+   \   00000072   0x.... 0x....      LDR.W    R0,??DataTable9_5
+   \   00000076   0x8001             STRH     R1,[R0, #+0]
+    473          #if defined DEX     
+    474             spi_in[0].fields.status.bits.dex_rdy = ( dex.state == dexState_Idle );
+    475             spi_in[0].fields.status.bits.dex_cmplt = dex.triggers.bits.query_cmplt;
+    476          #endif   
+    477             //spi_in[0].fields.status.bits.ve_inhibit = ?
+    478             spi_in[0].fields.status.bits.fb_m_tmo = fb.m_tmo;
+   \   00000078   0x.... 0x....      LDR.W    R0,??DataTable9_10
+   \   0000007C   0x6840             LDR      R0,[R0, #+4]
+   \   0000007E   0x.... 0x....      LDR.W    R1,??DataTable9_5
+   \   00000082   0x8809             LDRH     R1,[R1, #+0]
+   \   00000084   0xF360 0x2108      BFI      R1,R0,#+8,#+1
+   \   00000088   0x....             LDR.N    R0,??DataTable9_5
+   \   0000008A   0x8001             STRH     R1,[R0, #+0]
+    479             spi_in[0].fields.status.bits.fb_s_tmo = fb.s_tmo;
+   \   0000008C   0x.... 0x....      LDR.W    R0,??DataTable9_10
+   \   00000090   0x6840             LDR      R0,[R0, #+4]
+   \   00000092   0x0840             LSRS     R0,R0,#+1
+   \   00000094   0x....             LDR.N    R1,??DataTable9_5
+   \   00000096   0x8809             LDRH     R1,[R1, #+0]
+   \   00000098   0xF360 0x2149      BFI      R1,R0,#+9,#+1
+   \   0000009C   0x....             LDR.N    R0,??DataTable9_5
+   \   0000009E   0x8001             STRH     R1,[R0, #+0]
+    480             spi_in[0].fields.status.bits.fb_type = fb.type;
+   \   000000A0   0x....             LDR.N    R0,??DataTable9_10
+   \   000000A2   0x6800             LDR      R0,[R0, #+0]
+   \   000000A4   0x....             LDR.N    R1,??DataTable9_5
+   \   000000A6   0x8809             LDRH     R1,[R1, #+0]
+   \   000000A8   0xF360 0x218B      BFI      R1,R0,#+10,#+2
+   \   000000AC   0x....             LDR.N    R0,??DataTable9_5
+   \   000000AE   0x8001             STRH     R1,[R0, #+0]
+    481             spi_in[0].fields.status.bits.fb_evt = OS_Q_GetMessageCnt( &fb_evt_q ) > 0;
+   \   000000B0   0x....             LDR.N    R0,??DataTable9_9
+   \   000000B2   0x.... 0x....      BL       OS_Q_GetMessageCnt
+   \   000000B6   0x2801             CMP      R0,#+1
+   \   000000B8   0xDB01             BLT.N    ??DMA1_Channel5_IRQHandler_2
+   \   000000BA   0x2001             MOVS     R0,#+1
+   \   000000BC   0xE000             B.N      ??DMA1_Channel5_IRQHandler_3
+   \                     ??DMA1_Channel5_IRQHandler_2: (+1)
+   \   000000BE   0x2000             MOVS     R0,#+0
+   \                     ??DMA1_Channel5_IRQHandler_3: (+1)
+   \   000000C0   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   000000C2   0x....             LDR.N    R1,??DataTable9_5
+   \   000000C4   0x8809             LDRH     R1,[R1, #+0]
+   \   000000C6   0xF360 0x310C      BFI      R1,R0,#+12,#+1
+   \   000000CA   0x....             LDR.N    R0,??DataTable9_5
+   \   000000CC   0x8001             STRH     R1,[R0, #+0]
+    482          
+    483             spi_in[0].fields.padding[ 0 ] = spi_out[1].fields.padding[ 0 ];
+   \   000000CE   0x....             LDR.N    R0,??DataTable9_4
+   \   000000D0   0xF890 0x003C      LDRB     R0,[R0, #+60]
+   \   000000D4   0x....             LDR.N    R1,??DataTable9_5
+   \   000000D6   0x7708             STRB     R0,[R1, #+28]
+    484             spi_in[0].fields.padding[ 1 ] = 'i';
+   \   000000D8   0x2069             MOVS     R0,#+105
+   \   000000DA   0x....             LDR.N    R1,??DataTable9_5
+   \   000000DC   0x7748             STRB     R0,[R1, #+29]
+    485             spi_in[0].fields.padding[ 2 ] = 'v';
+   \   000000DE   0x2076             MOVS     R0,#+118
+   \   000000E0   0x....             LDR.N    R1,??DataTable9_5
+   \   000000E2   0x7788             STRB     R0,[R1, #+30]
+    486             spi_in[0].fields.padding[ 3 ] = 'a';
+   \   000000E4   0x2061             MOVS     R0,#+97
+   \   000000E6   0x....             LDR.N    R1,??DataTable9_5
+   \   000000E8   0x77C8             STRB     R0,[R1, #+31]
+    487          
+    488             DMA1->IFCR |= DMA1_IT_GL5;
+   \   000000EA   0x....             LDR.N    R0,??DataTable9_27  ;; 0x40020004
+   \   000000EC   0x6800             LDR      R0,[R0, #+0]
+   \   000000EE   0xF450 0x3080      ORRS     R0,R0,#0x10000
+   \   000000F2   0x....             LDR.N    R1,??DataTable9_27  ;; 0x40020004
+   \   000000F4   0x6008             STR      R0,[R1, #+0]
+    489          
+    490             OS_RetriggerTimer( &spi_sync_timer );
+   \   000000F6   0x....             LDR.N    R0,??DataTable9_18
+   \   000000F8   0x.... 0x....      BL       OS_RetriggerTimer
+    491             OS_LeaveNestableInterrupt();
+   \   000000FC   0x2080             MOVS     R0,#+128
+   \   000000FE   0xF380 0x8811      MSR      BASEPRI,R0
+   \   00000102   0xBF00             Nop      
+   \   00000104   0xBF00             Nop      
+   \   00000106   0x....             LDR.N    R0,??DataTable9_22
+   \   00000108   0x7800             LDRB     R0,[R0, #+0]
+   \   0000010A   0x1E41             SUBS     R1,R0,#+1
+   \   0000010C   0x....             LDR.N    R2,??DataTable9_22
+   \   0000010E   0x7011             STRB     R1,[R2, #+0]
+   \   00000110   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000112   0x2800             CMP      R0,#+0
+   \   00000114   0xD102             BNE.N    ??DMA1_Channel5_IRQHandler_4
+   \   00000116   0x2098             MOVS     R0,#+152
+   \   00000118   0x.... 0x....      BL       OS_Error
+   \                     ??DMA1_Channel5_IRQHandler_4: (+1)
+   \   0000011C   0x....             LDR.N    R0,??DataTable9_23
+   \   0000011E   0x7800             LDRB     R0,[R0, #+0]
+   \   00000120   0x2801             CMP      R0,#+1
+   \   00000122   0xD105             BNE.N    ??DMA1_Channel5_IRQHandler_5
+   \   00000124   0x....             LDR.N    R0,??DataTable9_23
+   \   00000126   0x6840             LDR      R0,[R0, #+4]
+   \   00000128   0x2800             CMP      R0,#+0
+   \   0000012A   0xD001             BEQ.N    ??DMA1_Channel5_IRQHandler_5
+   \   0000012C   0x.... 0x....      BL       OS_SwitchFromInt
+   \                     ??DMA1_Channel5_IRQHandler_5: (+1)
+   \   00000130   0x....             LDR.N    R0,??DataTable9_23
+   \   00000132   0x7800             LDRB     R0,[R0, #+0]
+   \   00000134   0x1E40             SUBS     R0,R0,#+1
+   \   00000136   0x....             LDR.N    R1,??DataTable9_23
+   \   00000138   0x7008             STRB     R0,[R1, #+0]
+   \   0000013A   0x2000             MOVS     R0,#+0
+   \   0000013C   0xF380 0x8811      MSR      BASEPRI,R0
+    492          }
+   \   00000140   0xBD01             POP      {R0,PC}          ;; return
+    493          ////////////////////////////////////////////////////////////////////////////////
+    494          /* SPI2 Interrupt ----------------------------------------------*/
+
+   \                                 In section .text, align 2, keep-with-next
+    495          __irq void SPI2_IRQHandler(void) {
+    496          }
+   \                     SPI2_IRQHandler: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    497          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+    498          void configure_spi(void) {
+   \                     configure_spi: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+    499          
+    500             DMA_DeInit(DMA1_Channel4);
+   \   00000002   0x....             LDR.N    R0,??DataTable9_29  ;; 0x40020044
+   \   00000004   0x.... 0x....      BL       DMA_DeInit
+    501             DMA_DeInit(DMA1_Channel5);
+   \   00000008   0x....             LDR.N    R0,??DataTable9_30  ;; 0x40020058
+   \   0000000A   0x.... 0x....      BL       DMA_DeInit
+    502             SPI_I2S_DeInit(SPI2);
+   \   0000000E   0x....             LDR.N    R0,??DataTable9_31  ;; 0x40003800
+   \   00000010   0x.... 0x....      BL       SPI_I2S_DeInit
+    503          
+    504          /* DMA Channel4 Configuration ----------------------------------------------*/
+    505             DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&SPI2->DR;
+   \   00000014   0x....             LDR.N    R0,??DataTable9_32  ;; 0x4000380c
+   \   00000016   0x....             LDR.N    R1,??DataTable9_33
+   \   00000018   0x6008             STR      R0,[R1, #+0]
+    506             DMA_InitStructure.DMA_MemoryBaseAddr = (u32)spi_out[0].raw;
+   \   0000001A   0x....             LDR.N    R0,??DataTable9_4
+   \   0000001C   0x....             LDR.N    R1,??DataTable9_33
+   \   0000001E   0x6048             STR      R0,[R1, #+4]
+    507             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+   \   00000020   0x2000             MOVS     R0,#+0
+   \   00000022   0x....             LDR.N    R1,??DataTable9_33
+   \   00000024   0x6088             STR      R0,[R1, #+8]
+    508             DMA_InitStructure.DMA_BufferSize = 2 * SPI_RX_SIZE;
+   \   00000026   0x2040             MOVS     R0,#+64
+   \   00000028   0x....             LDR.N    R1,??DataTable9_33
+   \   0000002A   0x60C8             STR      R0,[R1, #+12]
+    509             DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+   \   0000002C   0x2000             MOVS     R0,#+0
+   \   0000002E   0x....             LDR.N    R1,??DataTable9_33
+   \   00000030   0x6108             STR      R0,[R1, #+16]
+    510             DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+   \   00000032   0x2080             MOVS     R0,#+128
+   \   00000034   0x....             LDR.N    R1,??DataTable9_33
+   \   00000036   0x6148             STR      R0,[R1, #+20]
+    511             DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+   \   00000038   0x2000             MOVS     R0,#+0
+   \   0000003A   0x....             LDR.N    R1,??DataTable9_33
+   \   0000003C   0x6188             STR      R0,[R1, #+24]
+    512             DMA_InitStructure.DMA_MemoryDataSize = DMA_PeripheralDataSize_Byte;
+   \   0000003E   0x2000             MOVS     R0,#+0
+   \   00000040   0x....             LDR.N    R1,??DataTable9_33
+   \   00000042   0x61C8             STR      R0,[R1, #+28]
+    513             DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+   \   00000044   0x2020             MOVS     R0,#+32
+   \   00000046   0x....             LDR.N    R1,??DataTable9_33
+   \   00000048   0x6208             STR      R0,[R1, #+32]
+    514             DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+   \   0000004A   0xF44F 0x5040      MOV      R0,#+12288
+   \   0000004E   0x....             LDR.N    R1,??DataTable9_33
+   \   00000050   0x6248             STR      R0,[R1, #+36]
+    515             DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+   \   00000052   0x2000             MOVS     R0,#+0
+   \   00000054   0x....             LDR.N    R1,??DataTable9_33
+   \   00000056   0x6288             STR      R0,[R1, #+40]
+    516             DMA_Init(DMA1_Channel4, &DMA_InitStructure);
+   \   00000058   0x....             LDR.N    R1,??DataTable9_33
+   \   0000005A   0x....             LDR.N    R0,??DataTable9_29  ;; 0x40020044
+   \   0000005C   0x.... 0x....      BL       DMA_Init
+    517          
+    518          /* DMA Channel5 Configuration ----------------------------------------------*/
+    519             memset(&DMA_InitStructure, 0, sizeof(DMA_InitStructure));
+   \   00000060   0x242C             MOVS     R4,#+44
+   \   00000062   0x2500             MOVS     R5,#+0
+   \   00000064   0x....             LDR.N    R6,??DataTable9_33
+   \   00000066   0x002A             MOVS     R2,R5
+   \   00000068   0x0021             MOVS     R1,R4
+   \   0000006A   0x0030             MOVS     R0,R6
+   \   0000006C   0x.... 0x....      BL       __aeabi_memset
+    520             DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&SPI2->DR;
+   \   00000070   0x....             LDR.N    R0,??DataTable9_32  ;; 0x4000380c
+   \   00000072   0x....             LDR.N    R1,??DataTable9_33
+   \   00000074   0x6008             STR      R0,[R1, #+0]
+    521             DMA_InitStructure.DMA_MemoryBaseAddr = (u32)spi_in[0].raw;
+   \   00000076   0x....             LDR.N    R0,??DataTable9_5
+   \   00000078   0x....             LDR.N    R1,??DataTable9_33
+   \   0000007A   0x6048             STR      R0,[R1, #+4]
+    522             DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;
+   \   0000007C   0x2010             MOVS     R0,#+16
+   \   0000007E   0x....             LDR.N    R1,??DataTable9_33
+   \   00000080   0x6088             STR      R0,[R1, #+8]
+    523             DMA_InitStructure.DMA_BufferSize = SPI_TX_SIZE;
+   \   00000082   0x2020             MOVS     R0,#+32
+   \   00000084   0x....             LDR.N    R1,??DataTable9_33
+   \   00000086   0x60C8             STR      R0,[R1, #+12]
+    524             DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+   \   00000088   0x2000             MOVS     R0,#+0
+   \   0000008A   0x....             LDR.N    R1,??DataTable9_33
+   \   0000008C   0x6108             STR      R0,[R1, #+16]
+    525             DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+   \   0000008E   0x2080             MOVS     R0,#+128
+   \   00000090   0x....             LDR.N    R1,??DataTable9_33
+   \   00000092   0x6148             STR      R0,[R1, #+20]
+    526             DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+   \   00000094   0x2000             MOVS     R0,#+0
+   \   00000096   0x....             LDR.N    R1,??DataTable9_33
+   \   00000098   0x6188             STR      R0,[R1, #+24]
+    527             DMA_InitStructure.DMA_MemoryDataSize = DMA_PeripheralDataSize_Byte;
+   \   0000009A   0x2000             MOVS     R0,#+0
+   \   0000009C   0x....             LDR.N    R1,??DataTable9_33
+   \   0000009E   0x61C8             STR      R0,[R1, #+28]
+    528             DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;//DMA_Mode_Normal;//
+   \   000000A0   0x2020             MOVS     R0,#+32
+   \   000000A2   0x....             LDR.N    R1,??DataTable9_33
+   \   000000A4   0x6208             STR      R0,[R1, #+32]
+    529             DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;
+   \   000000A6   0xF44F 0x5040      MOV      R0,#+12288
+   \   000000AA   0x....             LDR.N    R1,??DataTable9_33
+   \   000000AC   0x6248             STR      R0,[R1, #+36]
+    530             DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+   \   000000AE   0x2000             MOVS     R0,#+0
+   \   000000B0   0x....             LDR.N    R1,??DataTable9_33
+   \   000000B2   0x6288             STR      R0,[R1, #+40]
+    531             DMA_Init(DMA1_Channel5, &DMA_InitStructure);
+   \   000000B4   0x....             LDR.N    R1,??DataTable9_33
+   \   000000B6   0x....             LDR.N    R0,??DataTable9_30  ;; 0x40020058
+   \   000000B8   0x.... 0x....      BL       DMA_Init
+    532          
+    533             DMA_Cmd(DMA1_Channel4, ENABLE );
+   \   000000BC   0x2101             MOVS     R1,#+1
+   \   000000BE   0x....             LDR.N    R0,??DataTable9_29  ;; 0x40020044
+   \   000000C0   0x.... 0x....      BL       DMA_Cmd
+    534             DMA_Cmd(DMA1_Channel5, ENABLE );
+   \   000000C4   0x2101             MOVS     R1,#+1
+   \   000000C6   0x....             LDR.N    R0,??DataTable9_30  ;; 0x40020058
+   \   000000C8   0x.... 0x....      BL       DMA_Cmd
+    535          
+    536          /* Config SPI[2] = Master */
+    537             SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+   \   000000CC   0x2000             MOVS     R0,#+0
+   \   000000CE   0x....             LDR.N    R1,??DataTable9_34
+   \   000000D0   0x8008             STRH     R0,[R1, #+0]
+    538             SPI_InitStructure.SPI_Mode = SPI_Mode_Slave;
+   \   000000D2   0x2000             MOVS     R0,#+0
+   \   000000D4   0x....             LDR.N    R1,??DataTable9_34
+   \   000000D6   0x8048             STRH     R0,[R1, #+2]
+    539             SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+   \   000000D8   0x2000             MOVS     R0,#+0
+   \   000000DA   0x....             LDR.N    R1,??DataTable9_34
+   \   000000DC   0x8088             STRH     R0,[R1, #+4]
+    540             SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;//SPI_CPOL_High;//SPI_CPOL_Low
+   \   000000DE   0x2000             MOVS     R0,#+0
+   \   000000E0   0x....             LDR.N    R1,??DataTable9_34
+   \   000000E2   0x80C8             STRH     R0,[R1, #+6]
+    541             SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;//SPI_CPHA_2Edge
+   \   000000E4   0x2001             MOVS     R0,#+1
+   \   000000E6   0x....             LDR.N    R1,??DataTable9_34
+   \   000000E8   0x8108             STRH     R0,[R1, #+8]
+    542             SPI_InitStructure.SPI_NSS = SPI_NSS_Hard;//;SPI_NSS_Soft
+   \   000000EA   0x2000             MOVS     R0,#+0
+   \   000000EC   0x....             LDR.N    R1,??DataTable9_34
+   \   000000EE   0x8148             STRH     R0,[R1, #+10]
+    543             SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
+   \   000000F0   0x2008             MOVS     R0,#+8
+   \   000000F2   0x....             LDR.N    R1,??DataTable9_34
+   \   000000F4   0x8188             STRH     R0,[R1, #+12]
+    544             SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+   \   000000F6   0x2000             MOVS     R0,#+0
+   \   000000F8   0x....             LDR.N    R1,??DataTable9_34
+   \   000000FA   0x81C8             STRH     R0,[R1, #+14]
+    545             SPI_InitStructure.SPI_CRCPolynomial = 1;
+   \   000000FC   0x2001             MOVS     R0,#+1
+   \   000000FE   0x....             LDR.N    R1,??DataTable9_34
+   \   00000100   0x8208             STRH     R0,[R1, #+16]
+    546             SPI_Init(SPI2, &SPI_InitStructure);
+   \   00000102   0x....             LDR.N    R1,??DataTable9_34
+   \   00000104   0x....             LDR.N    R0,??DataTable9_31  ;; 0x40003800
+   \   00000106   0x.... 0x....      BL       SPI_Init
+    547          
+    548             SPI_I2S_ITConfig( SPI2, SPI_I2S_IT_RXNE | SPI_I2S_IT_TXE | SPI_I2S_IT_ERR, ENABLE );
+   \   0000010A   0x2201             MOVS     R2,#+1
+   \   0000010C   0x2171             MOVS     R1,#+113
+   \   0000010E   0x....             LDR.N    R0,??DataTable9_31  ;; 0x40003800
+   \   00000110   0x.... 0x....      BL       SPI_I2S_ITConfig
+    549          
+    550             SPI2->CR2 = SPI_I2S_DMAReq_Rx | SPI_I2S_DMAReq_Tx;
+   \   00000114   0x2003             MOVS     R0,#+3
+   \   00000116   0x....             LDR.N    R1,??DataTable9_35  ;; 0x40003804
+   \   00000118   0x8008             STRH     R0,[R1, #+0]
+    551          
+    552             DMA1_Channel4->CCR |= 3;
+   \   0000011A   0x....             LDR.N    R0,??DataTable9_29  ;; 0x40020044
+   \   0000011C   0x6800             LDR      R0,[R0, #+0]
+   \   0000011E   0xF050 0x0003      ORRS     R0,R0,#0x3
+   \   00000122   0x....             LDR.N    R1,??DataTable9_29  ;; 0x40020044
+   \   00000124   0x6008             STR      R0,[R1, #+0]
+    553             DMA1_Channel5->CCR |= 3;
+   \   00000126   0x....             LDR.N    R0,??DataTable9_30  ;; 0x40020058
+   \   00000128   0x6800             LDR      R0,[R0, #+0]
+   \   0000012A   0xF050 0x0003      ORRS     R0,R0,#0x3
+   \   0000012E   0x....             LDR.N    R1,??DataTable9_30  ;; 0x40020058
+   \   00000130   0x6008             STR      R0,[R1, #+0]
+    554          
+    555             /* Enable SPI2 */
+    556             SPI_Cmd(SPI2, ENABLE);
+   \   00000132   0x2101             MOVS     R1,#+1
+   \   00000134   0x....             LDR.N    R0,??DataTable9_31  ;; 0x40003800
+   \   00000136   0x.... 0x....      BL       SPI_Cmd
+    557          }
+   \   0000013A   0xBD70             POP      {R4-R6,PC}       ;; return
+    558          ////////////////////////////////////////////////////////////////////////////////
+
+   \                                 In section .text, align 2, keep-with-next
+    559          void spi_slave_init() {
+   \                     spi_slave_init: (+1)
+   \   00000000   0xE92D 0x4FF0      PUSH     {R4-R11,LR}
+   \   00000004   0xB085             SUB      SP,SP,#+20
+    560          
+    561             memset( spi_out[0].raw, 0 , sizeof( spi_out[0].raw ) );
+   \   00000006   0x2020             MOVS     R0,#+32
+   \   00000008   0x9004             STR      R0,[SP, #+16]
+   \   0000000A   0x2000             MOVS     R0,#+0
+   \   0000000C   0x9003             STR      R0,[SP, #+12]
+   \   0000000E   0x....             LDR.N    R4,??DataTable9_4
+   \   00000010   0x9A03             LDR      R2,[SP, #+12]
+   \   00000012   0x9904             LDR      R1,[SP, #+16]
+   \   00000014   0x0020             MOVS     R0,R4
+   \   00000016   0x.... 0x....      BL       __aeabi_memset
+    562             memset( spi_out[1].raw, 0 , sizeof( spi_out[1].raw ) );
+   \   0000001A   0x2020             MOVS     R0,#+32
+   \   0000001C   0x9002             STR      R0,[SP, #+8]
+   \   0000001E   0x2000             MOVS     R0,#+0
+   \   00000020   0x9001             STR      R0,[SP, #+4]
+   \   00000022   0x....             LDR.N    R4,??DataTable9_26
+   \   00000024   0x9A01             LDR      R2,[SP, #+4]
+   \   00000026   0x9902             LDR      R1,[SP, #+8]
+   \   00000028   0x0020             MOVS     R0,R4
+   \   0000002A   0x.... 0x....      BL       __aeabi_memset
+    563             memset( spi_in[0].raw, 0 , sizeof( spi_in[0].raw ) );
+   \   0000002E   0x2020             MOVS     R0,#+32
+   \   00000030   0x9000             STR      R0,[SP, #+0]
+   \   00000032   0x2400             MOVS     R4,#+0
+   \   00000034   0x....             LDR.N    R5,??DataTable9_5
+   \   00000036   0x0022             MOVS     R2,R4
+   \   00000038   0x9900             LDR      R1,[SP, #+0]
+   \   0000003A   0x0028             MOVS     R0,R5
+   \   0000003C   0x.... 0x....      BL       __aeabi_memset
+    564             memset( spi_in[1].raw, 0 , sizeof( spi_in[1].raw ) );
+   \   00000040   0x2520             MOVS     R5,#+32
+   \   00000042   0x2600             MOVS     R6,#+0
+   \   00000044   0x....             LDR.N    R7,??DataTable9_36
+   \   00000046   0x0032             MOVS     R2,R6
+   \   00000048   0x0029             MOVS     R1,R5
+   \   0000004A   0x0038             MOVS     R0,R7
+   \   0000004C   0x.... 0x....      BL       __aeabi_memset
+    565             memset( prev_spi_out.raw, 0 , sizeof( prev_spi_out.raw ) );
+   \   00000050   0x2720             MOVS     R7,#+32
+   \   00000052   0xF05F 0x0800      MOVS     R8,#+0
+   \   00000056   0x.... 0x....      LDR.W    R9,??DataTable9_25
+   \   0000005A   0x4642             MOV      R2,R8
+   \   0000005C   0x0039             MOVS     R1,R7
+   \   0000005E   0x4648             MOV      R0,R9
+   \   00000060   0x.... 0x....      BL       __aeabi_memset
+    566             memset( &spi_mgr_desc, 0 , sizeof( spi_mgr_desc ) );
+   \   00000064   0xF05F 0x0902      MOVS     R9,#+2
+   \   00000068   0xF05F 0x0A00      MOVS     R10,#+0
+   \   0000006C   0x.... 0x....      LDR.W    R11,??DataTable9_3
+   \   00000070   0x4652             MOV      R2,R10
+   \   00000072   0x4649             MOV      R1,R9
+   \   00000074   0x4658             MOV      R0,R11
+   \   00000076   0x.... 0x....      BL       __aeabi_memset
+    567          
+    568             /* Enable write access to IWDG_PR and IWDG_RLR registers */
+    569             IWDG_WriteAccessCmd( IWDG_WriteAccess_Enable );
+   \   0000007A   0xF245 0x5055      MOVW     R0,#+21845
+   \   0000007E   0x.... 0x....      BL       IWDG_WriteAccessCmd
+    570             /* IWDG counter clock: 40KHz(LSI) / 32 = 1.25 KHz */
+    571             IWDG_SetPrescaler( IWDG_Prescaler_32 );
+   \   00000082   0x2003             MOVS     R0,#+3
+   \   00000084   0x.... 0x....      BL       IWDG_SetPrescaler
+    572             /* Set counter reload value to 349 */
+    573             IWDG_SetReload(349*3);
+   \   00000088   0xF240 0x4017      MOVW     R0,#+1047
+   \   0000008C   0x.... 0x....      BL       IWDG_SetReload
+    574             /* Reload IWDG counter */
+    575             IWDG_ReloadCounter();
+   \   00000090   0x.... 0x....      BL       IWDG_ReloadCounter
+    576             /* Enable IWDG (the LSI oscillator will be enabled by hardware) */
+    577          
+    578             DBGMCU_Config( DBGMCU_IWDG_STOP, ENABLE );
+   \   00000094   0x2101             MOVS     R1,#+1
+   \   00000096   0xF44F 0x7080      MOV      R0,#+256
+   \   0000009A   0x.... 0x....      BL       DBGMCU_Config
+    579             IWDG_Enable();
+   \   0000009E   0x.... 0x....      BL       IWDG_Enable
+    580          
+    581          #if 1
+    582          /* Configure SPI2 pins: SCK(PB13) and MOSI(PB15) */
+    583             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;
+   \   000000A2   0xF44F 0x4070      MOV      R0,#+61440
+   \   000000A6   0x....             LDR.N    R1,??DataTable9_37
+   \   000000A8   0x8008             STRH     R0,[R1, #+0]
+    584             GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+   \   000000AA   0x2003             MOVS     R0,#+3
+   \   000000AC   0x....             LDR.N    R1,??DataTable9_37
+   \   000000AE   0x7088             STRB     R0,[R1, #+2]
+    585             GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+   \   000000B0   0x2018             MOVS     R0,#+24
+   \   000000B2   0x....             LDR.N    R1,??DataTable9_37
+   \   000000B4   0x70C8             STRB     R0,[R1, #+3]
+    586             GPIO_Init(GPIOB, &GPIO_InitStructure);
+   \   000000B6   0x....             LDR.N    R1,??DataTable9_37
+   \   000000B8   0x....             LDR.N    R0,??DataTable9_38  ;; 0x40010c00
+   \   000000BA   0x.... 0x....      BL       GPIO_Init
+    587          
+    588             //LED3
+    589             GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+   \   000000BE   0xF44F 0x7000      MOV      R0,#+512
+   \   000000C2   0x....             LDR.N    R1,??DataTable9_37
+   \   000000C4   0x8008             STRH     R0,[R1, #+0]
+    590             GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
+   \   000000C6   0x2014             MOVS     R0,#+20
+   \   000000C8   0x....             LDR.N    R1,??DataTable9_37
+   \   000000CA   0x70C8             STRB     R0,[R1, #+3]
+    591             GPIO_Init(GPIOC, &GPIO_InitStructure);
+   \   000000CC   0x....             LDR.N    R1,??DataTable9_37
+   \   000000CE   0x....             LDR.N    R0,??DataTable9_24  ;; 0x40011000
+   \   000000D0   0x.... 0x....      BL       GPIO_Init
+    592             GPIO_ResetBits(GPIOC, GPIO_Pin_9);   
+   \   000000D4   0xF44F 0x7100      MOV      R1,#+512
+   \   000000D8   0x....             LDR.N    R0,??DataTable9_24  ;; 0x40011000
+   \   000000DA   0x.... 0x....      BL       GPIO_ResetBits
+    593             GPIO_SetBits(GPIOC, GPIO_Pin_9);
+   \   000000DE   0xF44F 0x7100      MOV      R1,#+512
+   \   000000E2   0x....             LDR.N    R0,??DataTable9_24  ;; 0x40011000
+   \   000000E4   0x.... 0x....      BL       GPIO_SetBits
+    594          #endif
+    595          
+    596             configure_spi();
+   \   000000E8   0x.... 0x....      BL       configure_spi
+    597          
+    598          }
+   \   000000EC   0xB005             ADD      SP,SP,#+20
+   \   000000EE   0xE8BD 0x8FF0      POP      {R4-R11,PC}      ;; return
+    599          
+    600          
+
+   \                                 In section .text, align 2, keep-with-next
+    601          void HardFault_Handler   (void) {
+    602             //const u16 KR_KEY_Reload = (u16)0xAAAA;
+    603             const u16 KR_KEY_Enable = (u16)0xCCCC;
+   \                     HardFault_Handler: (+1)
+   \   00000000   0xF64C 0x40CC      MOVW     R0,#+52428
+    604          
+    605             IWDG->KR = IWDG_WriteAccess_Enable;
+   \   00000004   0xF245 0x5155      MOVW     R1,#+21845
+   \   00000008   0x....             LDR.N    R2,??DataTable9_39  ;; 0x40003000
+   \   0000000A   0x6011             STR      R1,[R2, #+0]
+    606             IWDG->PR = IWDG_Prescaler_4;
+   \   0000000C   0x2100             MOVS     R1,#+0
+   \   0000000E   0x....             LDR.N    R2,??DataTable9_40  ;; 0x40003004
+   \   00000010   0x6011             STR      R1,[R2, #+0]
+    607             IWDG->RLR = 1;
+   \   00000012   0x2101             MOVS     R1,#+1
+   \   00000014   0x....             LDR.N    R2,??DataTable9_41  ;; 0x40003008
+   \   00000016   0x6011             STR      R1,[R2, #+0]
+    608             IWDG->KR = KR_KEY_Enable;
+   \   00000018   0xB280             UXTH     R0,R0            ;; ZeroExt  R0,R0,#+16,#+16
+   \   0000001A   0x....             LDR.N    R1,??DataTable9_39  ;; 0x40003000
+   \   0000001C   0x6008             STR      R0,[R1, #+0]
+    609             //NVIC_GenerateSystemReset();
+    610          }
+   \   0000001E   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9:
+   \   00000000   0x........         DC32     timer100
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_1:
+   \   00000000   0x........         DC32     TCB1
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_2:
+   \   00000000   0x0800001C         DC32     0x800001c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_3:
+   \   00000000   0x........         DC32     spi_mgr_desc
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_4:
+   \   00000000   0x........         DC32     spi_out
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_5:
+   \   00000000   0x........         DC32     spi_in
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_6:
+   \   00000000   0x........         DC32     spi_in+0xC
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_7:
+   \   00000000   0x........         DC32     verMajor
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_8:
+   \   00000000   0x........         DC32     verMinor
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_9:
+   \   00000000   0x........         DC32     fb_evt_q
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_10:
+   \   00000000   0x........         DC32     fb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_11:
+   \   00000000   0x........         DC32     TCB2
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_12:
+   \   00000000   0x........         DC32     ?_0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_13:
+   \   00000000   0x........         DC32     t_18b20
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_14:
+   \   00000000   0x........         DC32     timer100_cb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_15:
+   \   00000000   0x........         DC32     spi_ok_timer_cb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_16:
+   \   00000000   0x........         DC32     spi_ok_timer
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_17:
+   \   00000000   0x........         DC32     spi_sync_timer_cb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_18:
+   \   00000000   0x........         DC32     spi_sync_timer
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_19:
+   \   00000000   0x........         DC32     spi_cs_wait
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_20:
+   \   00000000   0x40010C08         DC32     0x40010c08
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_21:
+   \   00000000   0x........         DC32     ?_1
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_22:
+   \   00000000   0x........         DC32     OS_InInt
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_23:
+   \   00000000   0x........         DC32     OS_Global
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_24:
+   \   00000000   0x40011000         DC32     0x40011000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_25:
+   \   00000000   0x........         DC32     prev_spi_out
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_26:
+   \   00000000   0x........         DC32     spi_out+0x20
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_27:
+   \   00000000   0x40020004         DC32     0x40020004
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_28:
+   \   00000000   0x........         DC32     gpiob_idr
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_29:
+   \   00000000   0x40020044         DC32     0x40020044
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_30:
+   \   00000000   0x40020058         DC32     0x40020058
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_31:
+   \   00000000   0x40003800         DC32     0x40003800
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_32:
+   \   00000000   0x4000380C         DC32     0x4000380c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_33:
+   \   00000000   0x........         DC32     DMA_InitStructure
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_34:
+   \   00000000   0x........         DC32     SPI_InitStructure
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_35:
+   \   00000000   0x40003804         DC32     0x40003804
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_36:
+   \   00000000   0x........         DC32     spi_in+0x20
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_37:
+   \   00000000   0x........         DC32     GPIO_InitStructure
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_38:
+   \   00000000   0x40010C00         DC32     0x40010c00
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_39:
+   \   00000000   0x40003000         DC32     0x40003000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_40:
+   \   00000000   0x40003004         DC32     0x40003004
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable9_41:
+   \   00000000   0x40003008         DC32     0x40003008
+
+   \                                 In section .rodata, align 4
+   \                     ?_0:
+   \   00000000   0x66 0x62          DC8 "fb_emu: %d\015\012"
+   \              0x5F 0x65    
+   \              0x6D 0x75    
+   \              0x3A 0x20    
+   \              0x25 0x64    
+   \              0x0D 0x0A    
+   \              0x00         
+   \   0000000D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4
+   \                     ?_1:
+   \   00000000   0x73 0x70          DC8 "spi resync, %lums\015\012"
+   \              0x69 0x20    
+   \              0x72 0x65    
+   \              0x73 0x79    
+   \              0x6E 0x63    
+   \              0x2C 0x20    
+   \              0x25 0x6C    
+   \              0x75 0x6D    
+   \              0x73 0x0D    
+   \              0x0A 0x00    
+    611          
+    612          
+    613          #if 0
+    614          /*******************************************************************************
+    615          * Function Name  : EXTI15_10_IRQHandler
+    616          * Description    : This function handles External lines 15 to 10 interrupt request.
+    617          * Input          : None
+    618          * Output         : None
+    619          * Return         : None
+    620          *******************************************************************************/
+    621          __irq void EXTI15_10_IRQHandler(void) {
+    622            if(EXTI_GetITStatus(EXTI_Line12) != RESET)
+    623            {
+    624             //SelFunc();
+    625              /* Clear the EXTI Line 15 */
+    626             EXTI_ClearITPendingBit(EXTI_Line15);
+    627            }
+    628            if(EXTI_GetITStatus(EXTI_Line12) != RESET)
+    629            {
+    630              //DownFunc();
+    631              /* Clear the EXTI Line 13 */
+    632              EXTI_ClearITPendingBit(EXTI_Line12);
+    633            }
+    634            if(EXTI_GetITStatus(EXTI_Line12) != RESET)
+    635              {
+    636                /* SEL function */
+    637                //UpFunc();
+    638                /* Clear the EXTI Line 14 */
+    639                EXTI_ClearITPendingBit(EXTI_Line12);
+    640              }
+    641          }
+    642          #endif
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   DMA1_Channel4_IRQHandler
+        24   -> GPIO_ResetBits
+        24   -> GPIO_SetBits
+        24   -> OS_AssertCPUInISRMode
+        24   -> OS_Error
+        24   -> OS_RetriggerTimer
+        24   -> OS_SignalEvent
+        24   -> OS_SwitchFromInt
+        24   -> __aeabi_memcpy
+       8   DMA1_Channel5_IRQHandler
+         8   -> OS_AssertCPUInISRMode
+         8   -> OS_Error
+         8   -> OS_Q_GetMessageCnt
+         8   -> OS_RetriggerTimer
+         8   -> OS_SwitchFromInt
+         8   -> isLogEmpty
+       0   HardFault_Handler
+       0   SPI2_IRQHandler
+       8   Task_spi
+         8   -> OS_ARM_EnableISR
+         8   -> OS_ARM_ISRSetPrio
+         8   -> OS_CreateTimer
+         8   -> OS_Delay
+         8   -> OS_StartTimer
+         8   -> OS_WaitEvent
+         8   -> configure_spi
+         8   -> log1
+         8   -> spi_mgr
+         8   -> spi_slave_init
+      16   configure_spi
+        16   -> DMA_Cmd
+        16   -> DMA_DeInit
+        16   -> DMA_Init
+        16   -> SPI_Cmd
+        16   -> SPI_I2S_DeInit
+        16   -> SPI_I2S_ITConfig
+        16   -> SPI_Init
+        16   -> __aeabi_memset
+       8   jump
+         8   -- Indirect call
+         8   -> NVIC_SetVectorTable
+      64   spi_mgr
+        64   -> OS_ARM_DisableISR
+        64   -> OS_Q_GetPtrCond
+        64   -> OS_Q_Purge
+        64   -> OS_SignalEvent
+        64   -> __aeabi_memcpy
+        64   -> __aeabi_memset
+        64   -> build_dt
+        64   -> jump
+        64   -> log1
+        64   -> logRead
+       8   spi_ok_timer_cb
+         8   -> OS_RetriggerTimer
+      56   spi_slave_init
+        56   -> DBGMCU_Config
+        56   -> GPIO_Init
+        56   -> GPIO_ResetBits
+        56   -> GPIO_SetBits
+        56   -> IWDG_Enable
+        56   -> IWDG_ReloadCounter
+        56   -> IWDG_SetPrescaler
+        56   -> IWDG_SetReload
+        56   -> IWDG_WriteAccessCmd
+        56   -> __aeabi_memset
+        56   -> configure_spi
+       0   spi_sync_timer_cb
+       8   timer100_cb
+         8   -> IWDG_ReloadCounter
+         8   -> OS_RetriggerTimer
+         8   -> OS_SignalEvent
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable9
+       4  ??DataTable9_1
+       4  ??DataTable9_10
+       4  ??DataTable9_11
+       4  ??DataTable9_12
+       4  ??DataTable9_13
+       4  ??DataTable9_14
+       4  ??DataTable9_15
+       4  ??DataTable9_16
+       4  ??DataTable9_17
+       4  ??DataTable9_18
+       4  ??DataTable9_19
+       4  ??DataTable9_2
+       4  ??DataTable9_20
+       4  ??DataTable9_21
+       4  ??DataTable9_22
+       4  ??DataTable9_23
+       4  ??DataTable9_24
+       4  ??DataTable9_25
+       4  ??DataTable9_26
+       4  ??DataTable9_27
+       4  ??DataTable9_28
+       4  ??DataTable9_29
+       4  ??DataTable9_3
+       4  ??DataTable9_30
+       4  ??DataTable9_31
+       4  ??DataTable9_32
+       4  ??DataTable9_33
+       4  ??DataTable9_34
+       4  ??DataTable9_35
+       4  ??DataTable9_36
+       4  ??DataTable9_37
+       4  ??DataTable9_38
+       4  ??DataTable9_39
+       4  ??DataTable9_4
+       4  ??DataTable9_40
+       4  ??DataTable9_41
+       4  ??DataTable9_5
+       4  ??DataTable9_6
+       4  ??DataTable9_7
+       4  ??DataTable9_8
+       4  ??DataTable9_9
+      16  ?_0
+      20  ?_1
+     426  DMA1_Channel4_IRQHandler
+     322  DMA1_Channel5_IRQHandler
+      44  DMA_InitStructure
+      32  HardFault_Handler
+       2  SPI2_IRQHandler
+      20  SPI_InitStructure
+     196  Task_spi
+     316  configure_spi
+       2  gpiob_idr
+      38  jump
+      32  prev_spi_out
+       4  spi_cs_wait
+      64  spi_in
+     796  spi_mgr
+       4  spi_mgr_desc
+      20  spi_ok_timer
+      12  spi_ok_timer_cb
+      64  spi_out
+     242  spi_slave_init
+      20  spi_sync_timer
+       2  spi_sync_timer_cb
+      20  timer100
+      26  timer100_cb
+
+ 
+   294 bytes in section .bss
+    36 bytes in section .rodata
+ 2 578 bytes in section .text
+ 
+ 2 578 bytes of CODE  memory
+    36 bytes of CONST memory
+   294 bytes of DATA  memory
+
+Errors: none
+Warnings: none

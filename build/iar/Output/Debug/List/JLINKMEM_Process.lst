@@ -1,0 +1,1053 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       09/Nov/2016  14:39:59
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\JLINKMEM_Process.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\JLINKMEM_Process.c
+#        -D STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\JLINKMEM_Process.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\JLINKMEM_Process.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\rtos\embos\iar\setup\JLINKMEM_Process.c
+      1          /*********************************************************************
+      2          *               SEGGER MICROCONTROLLER GmbH & Co KG                  *
+      3          *       Solutions for real time microcontroller applications         *
+      4          **********************************************************************
+      5          *                                                                    *
+      6          *       (c) 1995 - 2014  SEGGER Microcontroller GmbH & Co KG         *
+      7          *                                                                    *
+      8          *       www.segger.com     Support: support@segger.com               *
+      9          *                                                                    *
+     10          **********************************************************************
+     11          *                                                                    *
+     12          *       embOS * Real time operating system for microcontrollers      *
+     13          *                                                                    *
+     14          *                                                                    *
+     15          *       Please note:                                                 *
+     16          *                                                                    *
+     17          *       Knowledge of this file may under no circumstances            *
+     18          *       be used to write a similar product or a real-time            *
+     19          *       operating system for in-house use.                           *
+     20          *                                                                    *
+     21          *       Thank you for your fairness !                                *
+     22          *                                                                    *
+     23          **********************************************************************
+     24          *                                                                    *
+     25          *       OS version: 4.02a                                            *
+     26          *                                                                    *
+     27          **********************************************************************
+     28          
+     29          ----------------------------------------------------------------------
+     30          File    : JLINKMEM_Process.c
+     31          Purpose : Data handler for ARM J-Link communication over memory
+     32          
+     33          Layout of communication area:
+     34          
+     35            +----------+  TOS - TX_SIZE - RX_SIZE - 6
+     36            |          |
+     37            | RX_BUF   |
+     38            |          |
+     39            +----------+  TOS - TX_SIZE - 6
+     40            | RX_CNT   |
+     41            +----------+  TOS - TX_SIZE - 5
+     42            | HOST_ACT |
+     43            +----------+  TOS - TX_SIZE - 4
+     44            | TX_CNT   |
+     45            +----------+  TOS - TX_SIZE - 3
+     46            |          |
+     47            | TX_BUF   |
+     48            |          |
+     49            +----------+  TOS - 3
+     50            | TX_SIZE  |
+     51            +----------+  TOS - 2
+     52            | RX_SIZE  |
+     53            +----------+  TOS - 1
+     54            | PROT_ID  |
+     55            +----------+  TOS
+     56          
+     57          TOS       Initial top of stack as defined by linker settings (top of CSTACK)
+     58          PROT_ID   Magic number indicating the start of communication area
+     59          RX_SIZE   Size of receiving buffer in bytes
+     60          TX_SIZE   Size of sending buffer in bytes
+     61          TX_BUF    Sending buffer
+     62          TX_CNT    Number of bytes in sending buffer
+     63          HOST_ACT  Set to oen by host to indicate it is still active
+     64          RX_CNT    Number of bytes in the receiving buffer
+     65          RX_BUF    Receiving buffer
+     66          
+     67          ---------------------------END-OF-HEADER------------------------------
+     68          */
+     69          
+     70          #include "RTOS.h"
+     71          #include "JLINKMEM.h"
+     72          
+     73          /*********************************************************************
+     74          *
+     75          *       Defines, configurable
+     76          *
+     77          **********************************************************************
+     78          */
+     79          
+     80          /*********************************************************************
+     81          *
+     82          *       Sizes of receiving and sending buffer.
+     83          *
+     84          * NOTE:
+     85          *   Before you change any of these values make sure OS_Start()
+     86          *   reserves enough bytes for the communication area.
+     87          */
+     88          #define RX_BUF_SIZE   8
+     89          #define TX_BUF_SIZE   18
+     90          
+     91          /*********************************************************************
+     92          *
+     93          *       Defines, non- configurable
+     94          *
+     95          **********************************************************************
+     96          */
+     97          
+     98          #define U8  unsigned char
+     99          #define U16 unsigned short
+    100          #define U32 unsigned int
+    101          
+    102          #define MAGIC_NUM   0x52 /* Identifies the start of our communication area. */
+    103          
+    104          #define PROT_ID     (*(volatile U8 *)(_BaseAddr - 1))  /* Id of the protocol. Always set to MAGIC_NUM */
+    105          #define RX_SIZE     (*(volatile U8 *)(_BaseAddr - 2))  /* Size of receiving buffer in bytes */
+    106          #define TX_SIZE     (*(volatile U8 *)(_BaseAddr - 3))  /* Size of sending buffer in bytes */
+    107          #define TX_CNT      (*(volatile U8 *)(_BaseAddr - TX_BUF_SIZE - 4))  /* Stores the number of bytes we send to host */
+    108          /* Set by host to a non-null value when it connects to target.
+    109           * The target sets this to null when it detects a communication timeout.
+    110           */
+    111          
+    112          #define HOST_CON    (*(volatile U8 *)(_BaseAddr - TX_BUF_SIZE - 5))
+    113          #define RX_CNT      (*(volatile U8 *)(_BaseAddr - TX_BUF_SIZE - 6)) /* Stores the number of bytes the host sent to us */
+    114          
+    115          #define TX_TIMEOUT  1000 /* Time to wait for host to fetch the data from sending buffer (in ms) */
+    116          
+    117          #define VTOR_ADDR   (*(volatile OS_U32*) (0xE000ED08)) /* Vector table base register address */
+    118          
+    119          /*********************************************************************
+    120          *
+    121          *       Static data
+    122          *
+    123          **********************************************************************
+    124          */
+    125          
+    126          /* Pointer to user callbacks */
+
+   \                                 In section .bss, align 4
+    127          void (* _pfOnRx) (U8 Data);
+   \                     _pfOnRx:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    128          void (* _pfOnTx) (void);
+   \                     _pfOnTx:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    129          OS_INT (* _pfGetNextChar) (void);
+   \                     _pfGetNextChar:
+   \   00000000                      DS8 4
+    130          
+
+   \                                 In section .bss, align 4
+    131          static U32  _BaseAddr;
+   \                     _BaseAddr:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    132          static int  _TxIsPending;    /* Set when there is a character waiting to be sent */
+   \                     _TxIsPending:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 1
+    133          static U8   _TxPendingData;  /* Holds tha character waiting to be sent */
+   \                     _TxPendingData:
+   \   00000000                      DS8 1
+
+   \                                 In section .bss, align 4
+    134          static int  _IsInited;       /* Set when the communication is initialised */
+   \                     _IsInited:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    135          static U8*  _pRxBuf;         /* Start of receiving buffer */
+   \                     _pRxBuf:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    136          static U8*  _pTxBuf;         /* Start of sending buffer */
+   \                     _pTxBuf:
+   \   00000000                      DS8 4
+    137          
+    138          /* Supervises the connection to host */
+
+   \                                 In section .bss, align 4
+    139          static int  _TxTimeout;      /* Set when the host fails to fetch our data */
+   \                     _TxTimeout:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    140          static int  _TxTimeoutTimer;
+   \                     _TxTimeoutTimer:
+   \   00000000                      DS8 4
+
+   \                                 In section .bss, align 4
+    141          static int  _TxBufLocked;    /* Serialises the access to our sending buffer */
+   \                     _TxBufLocked:
+   \   00000000                      DS8 4
+    142          
+    143          /*********************************************************************
+    144          *
+    145          *       Static code
+    146          *
+    147          **********************************************************************
+    148          */
+    149          
+    150          /*********************************************************************
+    151          *
+    152          *       _RetriggerTimer
+    153          *
+    154          * Function description
+    155          */
+
+   \                                 In section .text, align 2, keep-with-next
+    156          static void _RetriggerTimer(void) {
+    157            _TxTimeoutTimer = TX_TIMEOUT;
+   \                     _RetriggerTimer: (+1)
+   \   00000000   0xF44F 0x707A      MOV      R0,#+1000
+   \   00000004   0x....             LDR.N    R1,??DataTable13
+   \   00000006   0x6008             STR      R0,[R1, #+0]
+    158          }
+   \   00000008   0x4770             BX       LR               ;; return
+    159          
+    160          /*********************************************************************
+    161          *
+    162          *       _HandleTxTimeout
+    163          *
+    164          * Function description
+    165          *   Sets the connection to host to inactive when the host fails to
+    166          *   fetch the data we send to it. Called when the send timeout
+    167          *   expires.
+    168          */
+
+   \                                 In section .text, align 2, keep-with-next
+    169          static void _StopTimer(void) {
+    170            _TxTimeoutTimer = 0;
+   \                     _StopTimer: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x....             LDR.N    R1,??DataTable13
+   \   00000004   0x6008             STR      R0,[R1, #+0]
+    171          }
+   \   00000006   0x4770             BX       LR               ;; return
+    172          
+    173          /*********************************************************************
+    174          *
+    175          *       _Init
+    176          *
+    177          * Function description
+    178          *   Performs initalisation of memory locations used for communication.
+    179          */
+
+   \                                 In section .text, align 2, keep-with-next
+    180          static void _Init(void) {
+    181            OS_U32 VectorTableBaseAddr;
+    182            /* On Cortex-M initial top of stack is stored at address defined by VTOR */
+    183            VectorTableBaseAddr  = VTOR_ADDR;
+   \                     _Init: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable13_1  ;; 0xe000ed08
+   \   00000002   0x6809             LDR      R1,[R1, #+0]
+   \   00000004   0x0008             MOVS     R0,R1
+    184            VectorTableBaseAddr &= ~(0x3FuL);  // Mask b6..b0 as those might not be zero ARM DDI 0403D chapter B3.2.5 page B3-716
+   \   00000006   0x0980             LSRS     R0,R0,#+6
+   \   00000008   0x0180             LSLS     R0,R0,#+6
+    185            _BaseAddr = (*(OS_U32*)VectorTableBaseAddr);
+   \   0000000A   0x6801             LDR      R1,[R0, #+0]
+   \   0000000C   0x....             LDR.N    R2,??DataTable13_2
+   \   0000000E   0x6011             STR      R1,[R2, #+0]
+    186            HOST_CON  = 0;
+   \   00000010   0x2100             MOVS     R1,#+0
+   \   00000012   0x....             LDR.N    R2,??DataTable13_2
+   \   00000014   0x6812             LDR      R2,[R2, #+0]
+   \   00000016   0xF802 0x1C17      STRB     R1,[R2, #-23]
+    187            RX_SIZE   = RX_BUF_SIZE;
+   \   0000001A   0x2108             MOVS     R1,#+8
+   \   0000001C   0x....             LDR.N    R2,??DataTable13_2
+   \   0000001E   0x6812             LDR      R2,[R2, #+0]
+   \   00000020   0xF802 0x1C02      STRB     R1,[R2, #-2]
+    188            TX_SIZE   = TX_BUF_SIZE;
+   \   00000024   0x2112             MOVS     R1,#+18
+   \   00000026   0x....             LDR.N    R2,??DataTable13_2
+   \   00000028   0x6812             LDR      R2,[R2, #+0]
+   \   0000002A   0xF802 0x1C03      STRB     R1,[R2, #-3]
+    189            RX_CNT    = 0;
+   \   0000002E   0x2100             MOVS     R1,#+0
+   \   00000030   0x....             LDR.N    R2,??DataTable13_2
+   \   00000032   0x6812             LDR      R2,[R2, #+0]
+   \   00000034   0xF802 0x1C18      STRB     R1,[R2, #-24]
+    190            TX_CNT    = 0;
+   \   00000038   0x2100             MOVS     R1,#+0
+   \   0000003A   0x....             LDR.N    R2,??DataTable13_2
+   \   0000003C   0x6812             LDR      R2,[R2, #+0]
+   \   0000003E   0xF802 0x1C16      STRB     R1,[R2, #-22]
+    191            PROT_ID   = MAGIC_NUM;
+   \   00000042   0x2152             MOVS     R1,#+82
+   \   00000044   0x....             LDR.N    R2,??DataTable13_2
+   \   00000046   0x6812             LDR      R2,[R2, #+0]
+   \   00000048   0xF802 0x1C01      STRB     R1,[R2, #-1]
+    192            _pTxBuf   = (U8 *)(_BaseAddr - TX_BUF_SIZE - 3);
+   \   0000004C   0x....             LDR.N    R1,??DataTable13_2
+   \   0000004E   0x6809             LDR      R1,[R1, #+0]
+   \   00000050   0x3915             SUBS     R1,R1,#+21
+   \   00000052   0x....             LDR.N    R2,??DataTable13_3
+   \   00000054   0x6011             STR      R1,[R2, #+0]
+    193            _pRxBuf   = (U8 *)(_BaseAddr - TX_BUF_SIZE - RX_BUF_SIZE - 6);
+   \   00000056   0x....             LDR.N    R1,??DataTable13_2
+   \   00000058   0x6809             LDR      R1,[R1, #+0]
+   \   0000005A   0x3920             SUBS     R1,R1,#+32
+   \   0000005C   0x....             LDR.N    R2,??DataTable13_4
+   \   0000005E   0x6011             STR      R1,[R2, #+0]
+    194            _TxIsPending = 0;
+   \   00000060   0x2100             MOVS     R1,#+0
+   \   00000062   0x....             LDR.N    R2,??DataTable13_5
+   \   00000064   0x6011             STR      R1,[R2, #+0]
+    195          }
+   \   00000066   0x4770             BX       LR               ;; return
+    196          
+    197          /*********************************************************************
+    198          *
+    199          *       _LockTxBuf
+    200          *
+    201          * Function description
+    202          *   Gains exclusive access to sending buffer.
+    203          *
+    204          * Return value
+    205          *   1   Sending buffer locked
+    206          *   0   Sending buffer couldn't be locked as already in use.
+    207          */
+
+   \                                 In section .text, align 2, keep-with-next
+    208          static int _LockTxBuf(void) {
+   \                     _LockTxBuf: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+    209            int Locked = 0;
+   \   00000002   0x2400             MOVS     R4,#+0
+    210          
+    211            OS_DI();
+   \   00000004   0x2080             MOVS     R0,#+128
+   \   00000006   0xF380 0x8811      MSR      BASEPRI,R0
+   \   0000000A   0xBF00             Nop      
+   \   0000000C   0xBF00             Nop      
+    212            if (!_TxBufLocked) {
+   \   0000000E   0x....             LDR.N    R0,??DataTable13_6
+   \   00000010   0x6800             LDR      R0,[R0, #+0]
+   \   00000012   0x2800             CMP      R0,#+0
+   \   00000014   0xD104             BNE.N    ??_LockTxBuf_0
+    213              _TxBufLocked = 1;
+   \   00000016   0x2001             MOVS     R0,#+1
+   \   00000018   0x....             LDR.N    R1,??DataTable13_6
+   \   0000001A   0x6008             STR      R0,[R1, #+0]
+    214              Locked = 1;
+   \   0000001C   0x2001             MOVS     R0,#+1
+   \   0000001E   0x0004             MOVS     R4,R0
+    215            }
+    216            OS_RestoreI();
+   \                     ??_LockTxBuf_0: (+1)
+   \   00000020   0x.... 0x....      BL       OS_RestoreI
+    217            return Locked;
+   \   00000024   0x0020             MOVS     R0,R4
+   \   00000026   0xBD10             POP      {R4,PC}          ;; return
+    218          }
+    219          
+    220          /*********************************************************************
+    221          *
+    222          *       _UnlockTxBuf
+    223          *
+    224          * Function description
+    225          *   Releases the exclusive access to sending buffer.
+    226          */
+
+   \                                 In section .text, align 2, keep-with-next
+    227          static void _UnlockTxBuf(void) {
+    228            _TxBufLocked = 0;
+   \                     _UnlockTxBuf: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x....             LDR.N    R1,??DataTable13_6
+   \   00000004   0x6008             STR      R0,[R1, #+0]
+    229          }
+   \   00000006   0x4770             BX       LR               ;; return
+    230          
+    231          /*********************************************************************
+    232          *
+    233          *       _Receive
+    234          *
+    235          *  Function description
+    236          *    Performs Command / data read from host
+    237          */
+
+   \                                 In section .text, align 2, keep-with-next
+    238          static void _Receive(void) {
+   \                     _Receive: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+    239            int i;
+    240            U8 *pBuf;
+    241          
+    242            if (RX_CNT > 0) {    /* Data received ? */
+   \   00000002   0x....             LDR.N    R0,??DataTable13_2
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0xF810 0x0C18      LDRB     R0,[R0, #-24]
+   \   0000000A   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   0000000C   0x2800             CMP      R0,#+0
+   \   0000000E   0xD022             BEQ.N    ??_Receive_0
+    243              if (_pfOnRx != NULL) {
+   \   00000010   0x....             LDR.N    R0,??DataTable13_7
+   \   00000012   0x6800             LDR      R0,[R0, #+0]
+   \   00000014   0x2800             CMP      R0,#+0
+   \   00000016   0xD019             BEQ.N    ??_Receive_1
+    244                pBuf = _pRxBuf + (RX_BUF_SIZE - RX_CNT);
+   \   00000018   0x....             LDR.N    R0,??DataTable13_4
+   \   0000001A   0x6800             LDR      R0,[R0, #+0]
+   \   0000001C   0x....             LDR.N    R1,??DataTable13_2
+   \   0000001E   0x6809             LDR      R1,[R1, #+0]
+   \   00000020   0xF811 0x1C18      LDRB     R1,[R1, #-24]
+   \   00000024   0xB2C9             UXTB     R1,R1            ;; ZeroExt  R1,R1,#+24,#+24
+   \   00000026   0x1A40             SUBS     R0,R0,R1
+   \   00000028   0x3008             ADDS     R0,R0,#+8
+   \   0000002A   0x0005             MOVS     R5,R0
+    245                for (i = 0; i < RX_CNT; ++i) {
+   \   0000002C   0x2000             MOVS     R0,#+0
+   \   0000002E   0x0004             MOVS     R4,R0
+   \                     ??_Receive_2: (+1)
+   \   00000030   0x....             LDR.N    R0,??DataTable13_2
+   \   00000032   0x6800             LDR      R0,[R0, #+0]
+   \   00000034   0xF810 0x0C18      LDRB     R0,[R0, #-24]
+   \   00000038   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   0000003A   0x4284             CMP      R4,R0
+   \   0000003C   0xDA06             BGE.N    ??_Receive_1
+    246                  _pfOnRx(*pBuf);
+   \   0000003E   0x7828             LDRB     R0,[R5, #+0]
+   \   00000040   0x....             LDR.N    R1,??DataTable13_7
+   \   00000042   0x6809             LDR      R1,[R1, #+0]
+   \   00000044   0x4788             BLX      R1
+    247                  ++pBuf;
+   \   00000046   0x1C6D             ADDS     R5,R5,#+1
+    248                }
+   \   00000048   0x1C64             ADDS     R4,R4,#+1
+   \   0000004A   0xE7F1             B.N      ??_Receive_2
+    249              }
+    250              RX_CNT = 0;
+   \                     ??_Receive_1: (+1)
+   \   0000004C   0x2000             MOVS     R0,#+0
+   \   0000004E   0x....             LDR.N    R1,??DataTable13_2
+   \   00000050   0x6809             LDR      R1,[R1, #+0]
+   \   00000052   0xF801 0x0C18      STRB     R0,[R1, #-24]
+    251            }
+    252          }
+   \                     ??_Receive_0: (+1)
+   \   00000056   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    253          
+    254          /*********************************************************************
+    255          *
+    256          *       _FillTxBuf
+    257          *
+    258          *  Function description
+    259          *    Stores bytes in the sending buffer.
+    260          */
+
+   \                                 In section .text, align 2, keep-with-next
+    261          static void _FillTxBuf(U8 Data) {
+   \                     _FillTxBuf: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    262            int Cnt = 0;
+   \   00000004   0x2700             MOVS     R7,#+0
+    263            OS_INT Byte;
+    264            U8 *pBuf;
+    265          
+    266            pBuf = _pTxBuf;
+   \   00000006   0x....             LDR.N    R0,??DataTable13_3
+   \   00000008   0x6800             LDR      R0,[R0, #+0]
+   \   0000000A   0x0006             MOVS     R6,R0
+    267            *pBuf = Data;
+   \   0000000C   0x7034             STRB     R4,[R6, #+0]
+    268            ++pBuf;
+   \   0000000E   0x1C76             ADDS     R6,R6,#+1
+    269            ++Cnt;
+   \   00000010   0x1C7F             ADDS     R7,R7,#+1
+    270            if (_pfGetNextChar != NULL) {
+   \   00000012   0x....             LDR.N    R0,??DataTable13_8
+   \   00000014   0x6800             LDR      R0,[R0, #+0]
+   \   00000016   0x2800             CMP      R0,#+0
+   \   00000018   0xD00B             BEQ.N    ??_FillTxBuf_0
+    271              /* Get more bytes from the communication state machine
+    272               * until the sending buffer is full.
+    273               */
+    274              while (1) {
+    275                if (Cnt >= TX_BUF_SIZE) {
+   \                     ??_FillTxBuf_1: (+1)
+   \   0000001A   0x2F12             CMP      R7,#+18
+   \   0000001C   0xDA09             BGE.N    ??_FillTxBuf_0
+    276                  break;
+    277                }
+    278                Byte = _pfGetNextChar();
+   \                     ??_FillTxBuf_2: (+1)
+   \   0000001E   0x....             LDR.N    R0,??DataTable13_8
+   \   00000020   0x6800             LDR      R0,[R0, #+0]
+   \   00000022   0x4780             BLX      R0
+   \   00000024   0x0005             MOVS     R5,R0
+    279                if (Byte < 0) {
+   \   00000026   0x2D00             CMP      R5,#+0
+   \   00000028   0xD403             BMI.N    ??_FillTxBuf_0
+    280                  break;
+    281                }
+    282                *pBuf = (U8)Byte;
+   \                     ??_FillTxBuf_3: (+1)
+   \   0000002A   0x7035             STRB     R5,[R6, #+0]
+    283                ++pBuf;
+   \   0000002C   0x1C76             ADDS     R6,R6,#+1
+    284                ++Cnt;
+   \   0000002E   0x1C7F             ADDS     R7,R7,#+1
+   \   00000030   0xE7F3             B.N      ??_FillTxBuf_1
+    285              }
+    286            }
+    287            OS_DI();
+   \                     ??_FillTxBuf_0: (+1)
+   \   00000032   0x2080             MOVS     R0,#+128
+   \   00000034   0xF380 0x8811      MSR      BASEPRI,R0
+   \   00000038   0xBF00             Nop      
+   \   0000003A   0xBF00             Nop      
+    288            _RetriggerTimer();
+   \   0000003C   0x.... 0x....      BL       _RetriggerTimer
+    289            TX_CNT = (U8)Cnt;
+   \   00000040   0x....             LDR.N    R0,??DataTable13_2
+   \   00000042   0x6800             LDR      R0,[R0, #+0]
+   \   00000044   0xF800 0x7C16      STRB     R7,[R0, #-22]
+    290            OS_RestoreI();
+   \   00000048   0x.... 0x....      BL       OS_RestoreI
+    291          }
+   \   0000004C   0xBDF1             POP      {R0,R4-R7,PC}    ;; return
+    292          
+    293          /*********************************************************************
+    294          *
+    295          *       _DropTxData
+    296          *
+    297          *  Function description
+    298          *    Empties the sending buffer of embOS.
+    299          */
+
+   \                                 In section .text, align 2, keep-with-next
+    300          static void _DropTxData(void) {
+   \                     _DropTxData: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    301            if (_pfGetNextChar != NULL) {
+   \   00000002   0x....             LDR.N    R0,??DataTable13_8
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0x2800             CMP      R0,#+0
+   \   00000008   0xD004             BEQ.N    ??_DropTxData_0
+    302              while (_pfGetNextChar() >= 0) {
+   \                     ??_DropTxData_1: (+1)
+   \   0000000A   0x....             LDR.N    R0,??DataTable13_8
+   \   0000000C   0x6800             LDR      R0,[R0, #+0]
+   \   0000000E   0x4780             BLX      R0
+   \   00000010   0x2800             CMP      R0,#+0
+   \   00000012   0xD5FA             BPL.N    ??_DropTxData_1
+    303                ;
+    304              }
+    305            }
+    306          }
+   \                     ??_DropTxData_0: (+1)
+   \   00000014   0xBD01             POP      {R0,PC}          ;; return
+    307          
+    308          /*********************************************************************
+    309          *
+    310          *       _Send
+    311          *
+    312          *  Function description
+    313          *    Sends data back to host if embOSView is ready to receive data.
+    314          */
+
+   \                                 In section .text, align 2, keep-with-next
+    315          static void _Send(void) {
+   \                     _Send: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    316            if (TX_CNT == 0) {        /* Can we send data? */
+   \   00000002   0x....             LDR.N    R0,??DataTable13_2
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0xF810 0x0C16      LDRB     R0,[R0, #-22]
+   \   0000000A   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   0000000C   0x2800             CMP      R0,#+0
+   \   0000000E   0xD11A             BNE.N    ??_Send_0
+    317              _StopTimer();
+   \   00000010   0x.... 0x....      BL       _StopTimer
+    318              if (_TxIsPending) {
+   \   00000014   0x....             LDR.N    R0,??DataTable13_5
+   \   00000016   0x6800             LDR      R0,[R0, #+0]
+   \   00000018   0x2800             CMP      R0,#+0
+   \   0000001A   0xD007             BEQ.N    ??_Send_1
+    319                _FillTxBuf(_TxPendingData);
+   \   0000001C   0x....             LDR.N    R0,??DataTable13_9
+   \   0000001E   0x7800             LDRB     R0,[R0, #+0]
+   \   00000020   0x.... 0x....      BL       _FillTxBuf
+    320                _TxIsPending = 0;
+   \   00000024   0x2000             MOVS     R0,#+0
+   \   00000026   0x....             LDR.N    R1,??DataTable13_5
+   \   00000028   0x6008             STR      R0,[R1, #+0]
+   \   0000002A   0xE00C             B.N      ??_Send_0
+    321              } else {
+    322                if (_pfOnTx != NULL) {
+   \                     ??_Send_1: (+1)
+   \   0000002C   0x....             LDR.N    R0,??DataTable13_10
+   \   0000002E   0x6800             LDR      R0,[R0, #+0]
+   \   00000030   0x2800             CMP      R0,#+0
+   \   00000032   0xD008             BEQ.N    ??_Send_0
+    323                  if (_LockTxBuf()) {
+   \   00000034   0x.... 0x....      BL       _LockTxBuf
+   \   00000038   0x2800             CMP      R0,#+0
+   \   0000003A   0xD004             BEQ.N    ??_Send_0
+    324                    _pfOnTx();
+   \   0000003C   0x....             LDR.N    R0,??DataTable13_10
+   \   0000003E   0x6800             LDR      R0,[R0, #+0]
+   \   00000040   0x4780             BLX      R0
+    325                    _UnlockTxBuf();
+   \   00000042   0x.... 0x....      BL       _UnlockTxBuf
+    326                  }
+    327                }
+    328              }
+    329            }
+    330          }
+   \                     ??_Send_0: (+1)
+   \   00000046   0xBD01             POP      {R0,PC}          ;; return
+    331          
+    332          /*********************************************************************
+    333          *
+    334          *       Public code
+    335          *
+    336          **********************************************************************
+    337          */
+    338          
+    339          /*********************************************************************
+    340          *
+    341          *       JLINKMEM_Process
+    342          *
+    343          *  Function description
+    344          *    This function should be called more or less regularily to allow
+    345          *    memory reads while the application progam is running.
+    346          *    The more often it is called, the higher the transfer speed.
+    347          */
+
+   \                                 In section .text, align 2, keep-with-next
+    348          void JLINKMEM_Process(void) {
+   \                     JLINKMEM_Process: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    349            if (OS_IsRunning()) {         /* No communication until the embOS starts */
+   \   00000002   0x....             LDR.N    R0,??DataTable13_11
+   \   00000004   0x7800             LDRB     R0,[R0, #+0]
+   \   00000006   0x2800             CMP      R0,#+0
+   \   00000008   0xD03A             BEQ.N    ??JLINKMEM_Process_0
+    350              if (!_IsInited) {
+   \   0000000A   0x....             LDR.N    R0,??DataTable13_12
+   \   0000000C   0x6800             LDR      R0,[R0, #+0]
+   \   0000000E   0x2800             CMP      R0,#+0
+   \   00000010   0xD104             BNE.N    ??JLINKMEM_Process_1
+    351                _Init();
+   \   00000012   0x.... 0x....      BL       _Init
+    352                _IsInited = 1;
+   \   00000016   0x2001             MOVS     R0,#+1
+   \   00000018   0x....             LDR.N    R1,??DataTable13_12
+   \   0000001A   0x6008             STR      R0,[R1, #+0]
+    353              }
+    354              if (HOST_CON) {             /* Do nothing until the host connects to us */
+   \                     ??JLINKMEM_Process_1: (+1)
+   \   0000001C   0x....             LDR.N    R0,??DataTable13_2
+   \   0000001E   0x6800             LDR      R0,[R0, #+0]
+   \   00000020   0xF810 0x0C17      LDRB     R0,[R0, #-23]
+   \   00000024   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000026   0x2800             CMP      R0,#+0
+   \   00000028   0xD02A             BEQ.N    ??JLINKMEM_Process_0
+    355                //
+    356                // Handle Timeout timer
+    357                //
+    358                if (_TxTimeoutTimer != 0) {
+   \   0000002A   0x....             LDR.N    R0,??DataTable13
+   \   0000002C   0x6800             LDR      R0,[R0, #+0]
+   \   0000002E   0x2800             CMP      R0,#+0
+   \   00000030   0xD00B             BEQ.N    ??JLINKMEM_Process_2
+    359                  _TxTimeoutTimer--;
+   \   00000032   0x....             LDR.N    R0,??DataTable13
+   \   00000034   0x6800             LDR      R0,[R0, #+0]
+   \   00000036   0x1E40             SUBS     R0,R0,#+1
+   \   00000038   0x....             LDR.N    R1,??DataTable13
+   \   0000003A   0x6008             STR      R0,[R1, #+0]
+    360                  if (_TxTimeoutTimer == 0) {
+   \   0000003C   0x....             LDR.N    R0,??DataTable13
+   \   0000003E   0x6800             LDR      R0,[R0, #+0]
+   \   00000040   0x2800             CMP      R0,#+0
+   \   00000042   0xD102             BNE.N    ??JLINKMEM_Process_2
+    361                    _TxTimeout = 1;
+   \   00000044   0x2001             MOVS     R0,#+1
+   \   00000046   0x....             LDR.N    R1,??DataTable13_13
+   \   00000048   0x6008             STR      R0,[R1, #+0]
+    362                  }
+    363                }
+    364          
+    365                if (_TxTimeout) {
+   \                     ??JLINKMEM_Process_2: (+1)
+   \   0000004A   0x....             LDR.N    R0,??DataTable13_13
+   \   0000004C   0x6800             LDR      R0,[R0, #+0]
+   \   0000004E   0x2800             CMP      R0,#+0
+   \   00000050   0xD012             BEQ.N    ??JLINKMEM_Process_3
+    366                  HOST_CON = 0;
+   \   00000052   0x2000             MOVS     R0,#+0
+   \   00000054   0x....             LDR.N    R1,??DataTable13_2
+   \   00000056   0x6809             LDR      R1,[R1, #+0]
+   \   00000058   0xF801 0x0C17      STRB     R0,[R1, #-23]
+    367                  _TxTimeout = 0;
+   \   0000005C   0x2000             MOVS     R0,#+0
+   \   0000005E   0x....             LDR.N    R1,??DataTable13_13
+   \   00000060   0x6008             STR      R0,[R1, #+0]
+    368                  _TxIsPending = 0;
+   \   00000062   0x2000             MOVS     R0,#+0
+   \   00000064   0x....             LDR.N    R1,??DataTable13_5
+   \   00000066   0x6008             STR      R0,[R1, #+0]
+    369                  _DropTxData();
+   \   00000068   0x.... 0x....      BL       _DropTxData
+    370                  RX_CNT = 0;               /* Drop all bytes form receiving buffer. */
+   \   0000006C   0x2000             MOVS     R0,#+0
+   \   0000006E   0x....             LDR.N    R1,??DataTable13_2
+   \   00000070   0x6809             LDR      R1,[R1, #+0]
+   \   00000072   0xF801 0x0C18      STRB     R0,[R1, #-24]
+   \   00000076   0xE003             B.N      ??JLINKMEM_Process_0
+    371                } else {
+    372                  _Receive();
+   \                     ??JLINKMEM_Process_3: (+1)
+   \   00000078   0x.... 0x....      BL       _Receive
+    373                  _Send();
+   \   0000007C   0x.... 0x....      BL       _Send
+    374                }
+    375              }
+    376            }
+    377          }
+   \                     ??JLINKMEM_Process_0: (+1)
+   \   00000080   0xBD01             POP      {R0,PC}          ;; return
+    378          
+    379          /*********************************************************************
+    380          *
+    381          *       JLINKMEM_SendChar
+    382          *
+    383          *  Function description
+    384          *    Send data to the host. This function is non-blocking.
+    385          *    If data can not be send it is stored in a buffer
+    386          *    and sent later, when the handler is called.
+    387          */
+
+   \                                 In section .text, align 2, keep-with-next
+    388          void JLINKMEM_SendChar(U8 Data) {
+   \                     JLINKMEM_SendChar: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    389            if (OS_IsRunning()) {         /* No communication until the embOS starts */
+   \   00000004   0x....             LDR.N    R0,??DataTable13_11
+   \   00000006   0x7800             LDRB     R0,[R0, #+0]
+   \   00000008   0x2800             CMP      R0,#+0
+   \   0000000A   0xD030             BEQ.N    ??JLINKMEM_SendChar_0
+    390              if (!_IsInited) {
+   \   0000000C   0x....             LDR.N    R0,??DataTable13_12
+   \   0000000E   0x6800             LDR      R0,[R0, #+0]
+   \   00000010   0x2800             CMP      R0,#+0
+   \   00000012   0xD104             BNE.N    ??JLINKMEM_SendChar_1
+    391                _Init();
+   \   00000014   0x.... 0x....      BL       _Init
+    392                _IsInited = 1;
+   \   00000018   0x2001             MOVS     R0,#+1
+   \   0000001A   0x....             LDR.N    R1,??DataTable13_12
+   \   0000001C   0x6008             STR      R0,[R1, #+0]
+    393              }
+    394              if (HOST_CON) {             /* Do nothing until embOSView connects to us */
+   \                     ??JLINKMEM_SendChar_1: (+1)
+   \   0000001E   0x....             LDR.N    R0,??DataTable13_2
+   \   00000020   0x6800             LDR      R0,[R0, #+0]
+   \   00000022   0xF810 0x0C17      LDRB     R0,[R0, #-23]
+   \   00000026   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000028   0x2800             CMP      R0,#+0
+   \   0000002A   0xD01D             BEQ.N    ??JLINKMEM_SendChar_2
+    395                if (TX_CNT == 0) {
+   \   0000002C   0x....             LDR.N    R0,??DataTable13_2
+   \   0000002E   0x6800             LDR      R0,[R0, #+0]
+   \   00000030   0xF810 0x0C16      LDRB     R0,[R0, #-22]
+   \   00000034   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000036   0x2800             CMP      R0,#+0
+   \   00000038   0xD110             BNE.N    ??JLINKMEM_SendChar_3
+    396                  if (_LockTxBuf()) {
+   \   0000003A   0x.... 0x....      BL       _LockTxBuf
+   \   0000003E   0x2800             CMP      R0,#+0
+   \   00000040   0xD006             BEQ.N    ??JLINKMEM_SendChar_4
+    397                    _FillTxBuf(Data);
+   \   00000042   0x0020             MOVS     R0,R4
+   \   00000044   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000046   0x.... 0x....      BL       _FillTxBuf
+    398                    _UnlockTxBuf();
+   \   0000004A   0x.... 0x....      BL       _UnlockTxBuf
+   \   0000004E   0xE010             B.N      ??JLINKMEM_SendChar_5
+    399                  } else {
+    400                    _TxIsPending = 1;
+   \                     ??JLINKMEM_SendChar_4: (+1)
+   \   00000050   0x2001             MOVS     R0,#+1
+   \   00000052   0x....             LDR.N    R1,??DataTable13_5
+   \   00000054   0x6008             STR      R0,[R1, #+0]
+    401                    _TxPendingData = Data;
+   \   00000056   0x....             LDR.N    R0,??DataTable13_9
+   \   00000058   0x7004             STRB     R4,[R0, #+0]
+   \   0000005A   0xE00A             B.N      ??JLINKMEM_SendChar_5
+    402                  }
+    403                } else {
+    404                  _TxIsPending = 1;
+   \                     ??JLINKMEM_SendChar_3: (+1)
+   \   0000005C   0x2001             MOVS     R0,#+1
+   \   0000005E   0x....             LDR.N    R1,??DataTable13_5
+   \   00000060   0x6008             STR      R0,[R1, #+0]
+    405                  _TxPendingData = Data;
+   \   00000062   0x....             LDR.N    R0,??DataTable13_9
+   \   00000064   0x7004             STRB     R4,[R0, #+0]
+   \   00000066   0xE004             B.N      ??JLINKMEM_SendChar_5
+    406                }
+    407              } else {
+    408                //
+    409                // Host not connected, drop characters
+    410                //
+    411                _DropTxData();
+   \                     ??JLINKMEM_SendChar_2: (+1)
+   \   00000068   0x.... 0x....      BL       _DropTxData
+   \   0000006C   0xE001             B.N      ??JLINKMEM_SendChar_5
+    412              }
+    413            } else {
+    414              //
+    415              // embOS not started, drop characters
+    416              //
+    417              _DropTxData();
+   \                     ??JLINKMEM_SendChar_0: (+1)
+   \   0000006E   0x.... 0x....      BL       _DropTxData
+    418            }
+    419          }
+   \                     ??JLINKMEM_SendChar_5: (+1)
+   \   00000072   0xBD10             POP      {R4,PC}          ;; return
+    420          
+    421          /*********************************************************************
+    422          *
+    423          *       JLINKMEM_SetpfOnRx
+    424          */
+
+   \                                 In section .text, align 2, keep-with-next
+    425          void JLINKMEM_SetpfOnRx(void (* pf)(U8 Data)) {
+    426            _pfOnRx = pf;
+   \                     JLINKMEM_SetpfOnRx: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable13_7
+   \   00000002   0x6008             STR      R0,[R1, #+0]
+    427          }
+   \   00000004   0x4770             BX       LR               ;; return
+    428          
+    429          /*********************************************************************
+    430          *
+    431          *       JLINKMEM_SetpfOnTx
+    432          */
+
+   \                                 In section .text, align 2, keep-with-next
+    433          void JLINKMEM_SetpfOnTx(void (* pf)(void)) {
+    434            _pfOnTx = pf;
+   \                     JLINKMEM_SetpfOnTx: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable13_10
+   \   00000002   0x6008             STR      R0,[R1, #+0]
+    435          }
+   \   00000004   0x4770             BX       LR               ;; return
+    436          
+    437          /*********************************************************************
+    438          *
+    439          *       JLINKMEM_SetpfGetNextChar
+    440          */
+
+   \                                 In section .text, align 2, keep-with-next
+    441          void JLINKMEM_SetpfGetNextChar(OS_INT (* pf)(void)) {
+    442            _pfGetNextChar = pf;
+   \                     JLINKMEM_SetpfGetNextChar: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable13_8
+   \   00000002   0x6008             STR      R0,[R1, #+0]
+    443          }
+   \   00000004   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13:
+   \   00000000   0x........         DC32     _TxTimeoutTimer
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_1:
+   \   00000000   0xE000ED08         DC32     0xe000ed08
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_2:
+   \   00000000   0x........         DC32     _BaseAddr
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_3:
+   \   00000000   0x........         DC32     _pTxBuf
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_4:
+   \   00000000   0x........         DC32     _pRxBuf
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_5:
+   \   00000000   0x........         DC32     _TxIsPending
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_6:
+   \   00000000   0x........         DC32     _TxBufLocked
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_7:
+   \   00000000   0x........         DC32     _pfOnRx
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_8:
+   \   00000000   0x........         DC32     _pfGetNextChar
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_9:
+   \   00000000   0x........         DC32     _TxPendingData
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_10:
+   \   00000000   0x........         DC32     _pfOnTx
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_11:
+   \   00000000   0x........         DC32     OS_Running
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_12:
+   \   00000000   0x........         DC32     _IsInited
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable13_13:
+   \   00000000   0x........         DC32     _TxTimeout
+    444          
+    445          /*************************** end of file ****************************/
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   JLINKMEM_Process
+         8   -> _DropTxData
+         8   -> _Init
+         8   -> _Receive
+         8   -> _Send
+       8   JLINKMEM_SendChar
+         8   -> _DropTxData
+         8   -> _FillTxBuf
+         8   -> _Init
+         8   -> _LockTxBuf
+         8   -> _UnlockTxBuf
+       0   JLINKMEM_SetpfGetNextChar
+       0   JLINKMEM_SetpfOnRx
+       0   JLINKMEM_SetpfOnTx
+       8   _DropTxData
+         8   -- Indirect call
+      24   _FillTxBuf
+        24   -- Indirect call
+        24   -> OS_RestoreI
+        24   -> _RetriggerTimer
+       0   _Init
+       8   _LockTxBuf
+         8   -> OS_RestoreI
+      16   _Receive
+        16   -- Indirect call
+       0   _RetriggerTimer
+       8   _Send
+         8   -- Indirect call
+         8   -> _FillTxBuf
+         8   -> _LockTxBuf
+         8   -> _StopTimer
+         8   -> _UnlockTxBuf
+       0   _StopTimer
+       0   _UnlockTxBuf
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable13
+       4  ??DataTable13_1
+       4  ??DataTable13_10
+       4  ??DataTable13_11
+       4  ??DataTable13_12
+       4  ??DataTable13_13
+       4  ??DataTable13_2
+       4  ??DataTable13_3
+       4  ??DataTable13_4
+       4  ??DataTable13_5
+       4  ??DataTable13_6
+       4  ??DataTable13_7
+       4  ??DataTable13_8
+       4  ??DataTable13_9
+     130  JLINKMEM_Process
+     116  JLINKMEM_SendChar
+       6  JLINKMEM_SetpfGetNextChar
+       6  JLINKMEM_SetpfOnRx
+       6  JLINKMEM_SetpfOnTx
+       4  _BaseAddr
+      22  _DropTxData
+      78  _FillTxBuf
+     104  _Init
+       4  _IsInited
+      40  _LockTxBuf
+      88  _Receive
+      10  _RetriggerTimer
+      72  _Send
+       8  _StopTimer
+       4  _TxBufLocked
+       4  _TxIsPending
+       1  _TxPendingData
+       4  _TxTimeout
+       4  _TxTimeoutTimer
+       8  _UnlockTxBuf
+       4  _pRxBuf
+       4  _pTxBuf
+       4  _pfGetNextChar
+       4  _pfOnRx
+       4  _pfOnTx
+
+ 
+  45 bytes in section .bss
+ 750 bytes in section .text
+ 
+ 750 bytes of CODE memory
+  45 bytes of DATA memory
+
+Errors: none
+Warnings: none

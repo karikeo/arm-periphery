@@ -1,0 +1,706 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       15/Nov/2016  14:53:01
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\dex.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\dex.c -D
+#        STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\dex.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\dex.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\p-types\vending\dex.c
+      1          #include "stm32f10x.h"
+      2          #include "RTOS.h"
+      3          #include "BSP.h"
+      4          #include "pt-vending.h"
+      5          #include "stdio.h"
+      6          #include "log.h"
+      7          #if defined LCD
+      8            #include "lcd_2x16.h"
+      9          #endif
+     10          #include "dex_sample.c"
+     11          #include "spi_comm.h"
+     12          
+     13          #include "dex.h"
+     14          
+     15          #if defined DEX
+     16          
+     17          #define TX USART_ITConfig( DEX, USART_IT_TXE , ENABLE )
+     18          
+     19          tDex dex;
+     20          char* const dexStateName[] = 
+     21          {
+     22            "Initial",
+     23            "Idle",
+     24            "SendENQ",
+     25            "CheckENQ",
+     26            "SlaveHandshake1",
+     27            "SlaveHandshake2",
+     28            "SlaveHandshake3",
+     29            "MasterHandshake1",
+     30            "MasterHandshake2",
+     31            "ThirdHandshake",
+     32            "SendAuditData",
+     33            "RecvAuditData1",
+     34            "RecvAuditData2",
+     35            "RecvAuditData3"
+     36          };
+     37          
+     38          void dex_init()
+     39          {
+     40             dex.state = dexState_Idle;
+     41             memset( dex.rx_buf, 0, sizeof( dex.rx_buf ) );
+     42             dex.rx_size = 0;
+     43          }
+     44          
+     45          int read_dex( void ) {
+     46          
+     47             if ( dex.sema ) {
+     48                log ( "dex sema\r\n" );
+     49                return 0;
+     50             }
+     51          
+     52             dex.sema = 1;
+     53          
+     54             log( ">read_dex(), st:%d-%s\r\n", dex.state, dexStateName[ dex.state ] );
+     55             
+     56             
+     57             if ( !dex.enable ) {
+     58                dex.state = dexState_Idle;
+     59             }
+     60          
+     61             switch ( dex.state ) {
+     62          
+     63                case dexState_Initial:
+     64                   OS_StopTimer( &dex.timer );
+     65                   dex.bMasterHSDone = 0;
+     66                   dex.bSlaveHSDone = 0;
+     67                   dex.audit_data_valid = 0;
+     68          
+     69                   dex.result = dexResult_InProgress;
+     70                   strcpy( dex.resultDescr, "" );
+     71          
+     72                   memset( dex.rx_buf, 0 , sizeof( dex.rx_buf ) );
+     73                   dex.rx_size = 0;
+     74          
+     75                   dex.bDleToggle = 0;
+     76          
+     77                   dex.triggers.bits.query_cmplt = 0;
+     78          
+     79                   //gotoDexState( dexState_SendENQ, 2000 );
+     80                   gotoDexState( dexState_CheckENQ, 2000 );
+     81                   break;
+     82          
+     83                case dexState_SendENQ:
+     84                   dex.tx_size = 0;
+     85                   dex.tx_buf[ dex.tx_size++ ] = ENQ;
+     86                   TX;
+     87          
+     88                   //dex.rx_size = 0;
+     89                   gotoDexState( dexState_CheckENQ, 2000 );
+     90                   break;
+     91          
+     92                case dexState_CheckENQ:
+     93                   if ( dex.rx_size == 0 ) {
+     94                      log(" no answer for ENQ\r\n");
+     95                      gotoDexState( dexState_SendENQ, 2000 );
+     96                      break;
+     97                   }
+     98          
+     99                   //log(" CheckENQ: received %d bytes:\r\n", dex.rx_size);
+    100                   printDexBytes( " rx", dex.rx_buf, dex.rx_size );
+    101          
+    102                   if ( dex.rx_buf[ 0 ] == ENQ )  {
+    103                      dex.rx_size = 0;
+    104                      gotoDexState( dexState_SlaveHandshake1, 2000 );
+    105                      break;
+    106                   }
+    107          
+    108                   if ( dex.rx_buf[ 0 ] == DLE )  {
+    109                      dex.rx_size = 0;
+    110                      gotoDexState( dexState_MasterHandshake1, 200 );
+    111                      break;
+    112                   }
+    113          
+    114                   log(" CheckENQ: unexpected bytes\r\n");
+    115                   dex.rx_size = 0;
+    116                   gotoDexState( dexState_CheckENQ, 1000 );
+    117                   break;
+    118          
+    119                case dexState_MasterHandshake1:
+    120                   dex.tx_size = 0;
+    121                   dex.tx_buf[ dex.tx_size++ ] = DLE;
+    122                   dex.tx_buf[ dex.tx_size++ ] = SOH;
+    123          
+    124                   if ( dex.bSlaveHSDone )
+    125                      dex.tx_size += sprintf( (char*) &dex.tx_buf[ dex.tx_size ], "001234567890RR01L01");
+    126                   else
+    127                      dex.tx_size += sprintf( (char*) &dex.tx_buf[ dex.tx_size ], "1234567890RR01L01");
+    128          
+    129                   dex.tx_buf[ dex.tx_size++ ] = DLE;
+    130                   dex.tx_buf[ dex.tx_size++ ] = ETX;
+    131          
+    132                   dex.crc = 0;
+    133                   calc_crc2( (char*) dex.tx_buf, dex.tx_size );
+    134          
+    135                   dex.tx_buf[ dex.tx_size++ ] = ( dex.crc & 0xFF);
+    136                   dex.tx_buf[ dex.tx_size++ ] = ( dex.crc >> 8 ) & 0xFF;
+    137                   TX;
+    138          
+    139          #if defined ( DEX_SAMPLE )
+    140                   strcpy( (char*)dex.audit_data, dex_sample );
+    141                   dex.audit_size = strlen( (const char*)dex.audit_data );
+    142                   dex.audit_data_valid = 1;
+    143                   dex.triggers.bits.query_cmplt = 1;
+    144                   gotoDexState( dexState_Idle, 1000 );
+    145          #else
+    146                   gotoDexState( dexState_MasterHandshake2, 1000 );
+    147          #endif
+    148                   break;
+    149          
+    150                case dexState_MasterHandshake2:
+    151                   if ( !dex.rx_size ) {
+    152                      dex.bMasterHSDone = 0;
+    153                      dex.bSlaveHSDone = 0;
+    154                      gotoDexState( dexState_SendENQ, 1000 );
+    155                      break;
+    156                   }
+    157          
+    158                   printDexBytes( " rx", dex.rx_buf, dex.rx_size );
+    159          
+    160                   if ( dex.rx_size == 2 ) {
+    161                      if ( dex.rx_buf[ 0 ] == DLE && ( dex.rx_buf[ 1 ] == '1' || dex.rx_buf[ 1 ] == '0') ) {
+    162                         dex.tx_size = 0;
+    163                         dex.tx_buf[ dex.tx_size++ ] = EOT;
+    164                         TX;
+    165          
+    166                         dex.bMasterHSDone = 1;
+    167                         if ( dex.bSlaveHSDone ) {
+    168                            dex.audit_size = 0;
+    169                            gotoDexState( dexState_RecvAuditData1, 1000 );
+    170                         } else {
+    171                            gotoDexState( dexState_SlaveHandshake1, 1000 );
+    172                         }
+    173                         dex.rx_size = 0;
+    174                         break;
+    175                      }
+    176                   }
+    177          
+    178                   dex.rx_size = 0;
+    179                   gotoDexState( dexState_MasterHandshake2, 1000 );
+    180                   break;
+    181          
+    182                case dexState_SlaveHandshake1:
+    183          #if 1
+    184                   if ( !dex.rx_size ) {
+    185                      dex.bMasterHSDone = 0;
+    186                      dex.bSlaveHSDone = 0;
+    187                      gotoDexState( dexState_SendENQ, 1000 );
+    188                      break;
+    189                   }
+    190          #endif         
+    191                   printDexBytes( " rx", dex.rx_buf, dex.rx_size );
+    192                   if ( dex.rx_size > 0 && dex.rx_buf[ 0 ] == ENQ ) {           
+    193                     //u8 packet[] = {DLE, dex.bDleToggle? '1' : '0'};
+    194                     //uart3_tx( packet );
+    195          
+    196                      dex.tx_size = 0;
+    197                      dex.tx_buf[ dex.tx_size++ ] = DLE;
+    198                      dex.tx_buf[ dex.tx_size++ ] = dex.bDleToggle? '1' : '0';
+    199          
+    200                      dex.bDleToggle = !dex.bDleToggle;
+    201                      TX;
+    202          
+    203                      dex.rx_size = 0;
+    204                      gotoDexState( dexState_SlaveHandshake2, 2000 );
+    205                      break;
+    206                   }
+    207          #if 0
+    208                   if ( dex.rx_size == 2 ) {
+    209                      if ( dex.rx_buf[ 0 ] == DLE && ( dex.rx_buf[ 1 ] == '1' || dex.rx_buf[ 1 ] == '0') ) {
+    210                         gotoDexState( dexState_MasterHandshake1, 100 );
+    211                         break;
+    212                      }
+    213                   }
+    214          #endif
+    215                   dex.rx_size = 0;
+    216                   gotoDexState( dexState_SlaveHandshake1, 1000 );
+    217                   break;
+    218          
+    219                case dexState_SlaveHandshake2:
+    220                   if ( !dex.rx_size ) {
+    221                      dex.bMasterHSDone = 0;
+    222                      dex.bSlaveHSDone = 0;
+    223                      gotoDexState( dexState_SendENQ, 1000 );
+    224                      break;
+    225                   }
+    226                   printDexBytes( " rx", dex.rx_buf, dex.rx_size );
+    227          
+    228                   if ( dex.rx_buf[ 0 ] == DLE  &&  dex.rx_size > 3 && dex.rx_buf[ dex.rx_size-3 ] == ETX ){
+    229                      dex.tx_size = 0;
+    230                      dex.tx_buf[ dex.tx_size++ ] = DLE;
+    231                      dex.tx_buf[ dex.tx_size++ ] = dex.bDleToggle? '1' : '0';
+    232                      dex.bDleToggle = !dex.bDleToggle;
+    233                      TX;
+    234                      
+    235          
+    236                      dex.rx_size = 0;
+    237                      gotoDexState( dexState_SlaveHandshake3, 1000 );
+    238                      break;
+    239                   }
+    240                   dex.rx_size = 0;
+    241                   gotoDexState( dexState_Idle, 1000 );
+    242                   break;
+    243          
+    244                case dexState_SlaveHandshake3:
+    245                   if ( !dex.rx_size ) {
+    246                      dex.bMasterHSDone = 0;
+    247                      dex.bSlaveHSDone = 0;
+    248                      gotoDexState( dexState_SendENQ, 1000 );
+    249                      break;
+    250                   }
+    251                   printDexBytes( " rx", dex.rx_buf, dex.rx_size );
+    252          
+    253                   if ( dex.rx_buf[ 0 ] == EOT ){
+    254                         dex.bSlaveHSDone = 1;
+    255                         if ( dex.bMasterHSDone ) {
+    256                            dex.audit_size = 0;
+    257                            if ( dex.rx_size > 1 ) {
+    258                               dex.numBlocksReceived = 0;
+    259                               dex.blockDataSize = 0;
+    260          
+    261                               dex.tx_size = 0;
+    262                               dex.tx_buf[ dex.tx_size++ ] = DLE;
+    263                               dex.tx_buf[ dex.tx_size++ ] = dex.bDleToggle? '1' : '0';
+    264                               dex.bDleToggle = !dex.bDleToggle;
+    265                               TX;
+    266          
+    267                               gotoDexState( dexState_RecvAuditData1, 1000 );
+    268          
+    269                            } else {
+    270                               gotoDexState( dexState_RecvAuditData1, 1000 );
+    271                            }
+    272                         } else {
+    273                            gotoDexState( dexState_MasterHandshake1, 1000 );
+    274                         }
+    275                         dex.rx_size = 0;
+    276                         break;
+    277                   }
+    278                   dex.rx_size = 0;
+    279                   gotoDexState( dexState_SlaveHandshake3, 1000 );
+    280                   break;
+    281          
+    282                case dexState_RecvAuditData1:
+    283                   if ( !dex.rx_size ) {
+    284                      log ( " rx_size = 0\r\n" );
+    285                      dex.bMasterHSDone = 0;
+    286                      dex.bSlaveHSDone = 0;
+    287                      gotoDexState( dexState_SendENQ, 1000 );
+    288                      log( " rx_size=0, to SendENQ\r\n" );
+    289                      break;
+    290                   }
+    291                   //printDexBytes( " rx: ", dex.rx_buf, dex.rx_size );
+    292          
+    293                   if ( dex.rx_buf[ 0 ] == ENQ ) {
+    294          
+    295                      dex.numBlocksReceived = 0;
+    296                      dex.blockDataSize = 0;
+    297          
+    298                      dex.rx_size = 0;
+    299          
+    300                      dex.tx_size = 0;
+    301                      dex.tx_buf[ dex.tx_size++ ] = DLE;
+    302                      dex.tx_buf[ dex.tx_size++ ] = dex.bDleToggle? '1' : '0';
+    303                      dex.bDleToggle = !dex.bDleToggle;
+    304                      TX;
+    305          
+    306                      log( " ENQ received, to RecvAuditData1\r\n" );
+    307                      gotoDexState( dexState_RecvAuditData1, 1000 );
+    308                      break;
+    309                   }
+    310          
+    311          
+    312                   if ( ( dex.rx_size >= 6 ) && (dex.rx_buf[ 0 ] == DLE ) ) {
+    313                      if ( dex.rx_buf[ 1 ] == STX ) {
+    314                         if ( dex.rx_buf[ dex.rx_size - 4 ] == DLE ) {
+    315                            //u16 chs = *((u16*)&dex.rx_buf[ dex.rx_size - 2 ]);
+    316                            //printDexBytes( dex.rx_buf, dex.rx_size - 2 );
+    317                            //log("<CHS:%x>\r\n", chs );
+    318          
+    319                            dex.blockDataSize = dex.rx_size - 6;
+    320          
+    321                            memcpy( &dex.audit_data[ dex.audit_size ], &dex.rx_buf[ 2 ], dex.blockDataSize );
+    322                            dex.audit_size += dex.blockDataSize;
+    323          
+    324                            log( " block#%d of %d bytes, total:%d\r\n", dex.numBlocksReceived, dex.blockDataSize, dex.audit_size );
+    325          
+    326                            memset( dex.rx_buf, 0, sizeof(dex.rx_buf) );
+    327                            dex.rx_size = 0;
+    328          
+    329          
+    330                            dex.numBlocksReceived++;
+    331          
+    332                            //dex.bDleToggle = !dex.bDleToggle;
+    333          
+    334                            dex.tx_size = 0;
+    335                            dex.tx_buf[ dex.tx_size++ ] = DLE;
+    336                            dex.tx_buf[ dex.tx_size++ ] = dex.bDleToggle? '1' : '0';
+    337                            dex.bDleToggle = !dex.bDleToggle;
+    338                            TX;
+    339          
+    340                            gotoDexState( dexState_RecvAuditData1, 10 * 1000 );
+    341                            break;
+    342                         } else {
+    343                            log( " unexpected data\r\n" );
+    344                            //log( " dex.rx_buf[ 1 ] = %x, dex.rx_buf[ dex.rx_size - 4 ]=%x\r\n", dex.rx_buf[ 1 ], dex.rx_buf[ dex.rx_size - 4 ] );
+    345                            log( " [ 1 ] = %x, [ %d - 4 ] = %x\r\n", dex.rx_buf[ 1 ], dex.rx_size, dex.rx_buf[ dex.rx_size - 4 ] );
+    346                            printDexBytes( "rx", dex.rx_buf, dex.rx_size );
+    347                         }
+    348                      }
+    349          
+    350                   }
+    351          
+    352                   if ( dex.rx_buf[ 0 ] == EOT ) {
+    353                      log( " %d bytes of audit data received in %d blocks\r\n", dex.audit_size, dex.numBlocksReceived );
+    354                      dex.rx_size = 0;
+    355                      dex.audit_data_valid = 1;
+    356          
+    357                      dex.result = dexResult_Ok;
+    358                      //dex.dexResultTime = currTime;
+    359                      strcpy(dex.resultDescr, "ok" );
+    360          
+    361                      dex.triggers.bits.query_cmplt = 1;
+    362          
+    363                      gotoDexState( dex.state = dexState_Idle, 1000 );
+    364                      break;
+    365                   }
+    366          
+    367                   dex.rx_size = 0;
+    368                   log(" unhandled data\r\n");
+    369                   dex.bSlaveHSDone = 0;
+    370                   dex.bMasterHSDone = 0;
+    371                   gotoDexState( dexState_SendENQ, 1000 );
+    372                   break;
+    373          
+    374                case dexState_Idle:
+    375                   break;
+    376          
+    377                default:
+    378                   log( " unexpected state\r\n" );
+    379                   dex.state = dexState_Initial;
+    380                   break;
+    381          	}
+    382             log( "<read_dex(), st:%d-%s\r\n\r\n", dex.state, dexStateName[ dex.state ] );
+    383          
+    384             dex.sema = 0;
+    385          	return 0;
+    386          }
+    387          
+    388          void calc_crc(u16 *pCrc, u8 uData) {
+    389             u16 j;
+    390             u16 BCC, BCC_0, BCC_1, BCC_14, DATA_0, X2, X15, X16;
+    391             BCC = *pCrc;
+    392             for ( j=0; j<8; j++) {
+    393                DATA_0 = (uData >> j) & 0x0001;
+    394                BCC_0 = (BCC & 0x0001);
+    395                BCC_1 = (BCC >> 1) & 0x0001;
+    396                BCC_14 = (BCC >> 14) & 0x0001;
+    397                X16 = (BCC_0 ^ DATA_0) & 0x0001; 	// bit15 of BCC after shift
+    398                X15  = (BCC_1 ^ X16) & 0x0001;		// bit0 of BCC after shift
+    399                X2  = (BCC_14 ^ X16) & 0x0001;		// bit13 of BCC after shift
+    400                BCC = BCC >> 1;
+    401                BCC = BCC & 0x5FFE;
+    402                BCC = BCC | (X15);
+    403                BCC = BCC | (X2 << 13);
+    404                BCC = BCC | (X16 << 15);
+    405             }
+    406             *pCrc = BCC;
+    407          }
+    408          
+    409          void calc_crc2( char* uData, u16 size) {
+    410             u16 i;
+    411             for ( i = 0; i < size; i++) {
+    412                if (uData[i] == DLE)
+    413                   continue;
+    414                if (uData[i] == SOH)
+    415                   continue;
+    416                if (uData[i] == STX)
+    417                   continue;
+    418          
+    419                calc_crc(&dex.crc, uData[i]);
+    420          
+    421                if (uData[i] == ETX)
+    422                   break;
+    423             }
+    424          }
+    425          #if 0
+    426          u16 calc_crc3( char* uData, int size) {
+    427             int i;
+    428             u16 crc = 0;
+    429             for ( i = 0; i < size; i++) {
+    430                calc_crc( &crc, uData[i]);
+    431             }
+    432             return crc;
+    433          }
+    434          #endif
+    435          
+    436          
+    437          
+    438          
+    439          
+    440          void printDexBytes( char* prefix, u8* buf, int size ) {
+    441             int i;
+    442          
+    443             if ( prefix ) {
+    444                log( "%s[%d]:", prefix, size );
+    445             }
+    446          
+    447             for ( i = 0; i < size; i++ ) {
+    448          
+    449          #if 1
+    450                if ( size >= 6 ) {
+    451                   if ( ( i == size - 2 ) && ( buf[ i - 2 ] == DLE ) && (( buf[ i - 1 ] == ETB ) || ( buf[ i - 1 ] == ETX )) ){
+    452                      char chs_buf[ 16 ];
+    453                      u16 chs = 0;
+    454                      chs = buf[ i ] | buf[ i + 1 ]<<8;
+    455                      sprintf( chs_buf, "<CHS:%.4X>", chs );
+    456                      log( chs_buf );
+    457                      break;
+    458                   }
+    459                }
+    460          #endif
+    461          
+    462                switch( buf[ i ]) {
+    463                   case NUL:
+    464                      log("<NUL>");
+    465                      break;
+    466                   case SOH:
+    467                      log("<SOH>");
+    468                      break;
+    469                   case STX:
+    470                      log("<STX>");
+    471                      break;
+    472                   case ETX:
+    473                      log("<ETX>");
+    474                      break;
+    475                   case EOT:
+    476                      log("<EOT>");
+    477                      break;
+    478                   case ENQ:
+    479                      log("<ENQ>");
+    480                      break;
+    481                   case ACK:
+    482                      log("<ACK>");
+    483                      break;
+    484                   case DLE:
+    485                      log("<DLE>");
+    486                      break;
+    487                   case NAK:
+    488                      log("<NAK>");
+    489                      break;
+    490                   case SYN:
+    491                      log("<SYN>");
+    492                      break;
+    493                   case ETB:
+    494                      log("<ETB>");
+    495                      break;
+    496                   case '\r':
+    497                      log("<CR>");
+    498                      break;
+    499                   case '\n':
+    500                      log("<LF>");
+    501                      break;
+    502                   default:
+    503                      //sprintf(mess, "%.2X ", buf[ i ]);
+    504                      //log( mess );
+    505                      log( "%c", buf[ i ] );
+    506                      break;
+    507                }
+    508             }
+    509             log("\r\n");
+    510          }
+    511          
+    512          
+    513          
+    514          void dexStartTimer( u32 timeout ) 
+    515          {
+    516            OS_SetTimerPeriod( &dex.timer, timeout );
+    517            OS_RetriggerTimer( &dex.timer );
+    518          }
+    519          
+    520          void gotoDexState( int state, unsigned long timeout_ms )
+    521          {
+    522             dex.state = state;
+    523             dexStartTimer( timeout_ms );
+    524             log(" to %s t:%d\r\n", dexStateName[ dex.state ], timeout_ms );
+    525          }
+    526          
+    527          #if !defined ( DEX_SAMPLE )
+    528          extern char dex_sample;
+    529          #endif
+    530          
+    531          void start_dex_query( void ) {
+    532          #if 0
+    533             goto_cursor( 0x00 );
+    534             lcd_print("starting dex   ");
+    535          #endif
+    536          
+    537             memset( dex.audit_data, 0, sizeof(dex.audit_data) );
+    538             dex.audit_size = 0;
+    539             dex.audit_data_valid = 0;
+    540             dex.triggers.bits.query_cmplt = 0;
+    541          
+    542             dex.rx_size = 0;
+    543             dex.tx_size = 0;
+    544          
+    545             dex.state = dexState_Initial;
+    546             read_dex();
+    547          }
+    548          
+    549          int abort_dex_query( void ) {
+    550             int st = dex.state;
+    551             dex.state = dexState_Idle;
+    552             OS_StopTimer( &dex.timer );
+    553          
+    554             dex.rx_size = 0;
+    555             dex.tx_size = 0;
+    556          
+    557          #if 0
+    558             goto_cursor( 0x00 );
+    559             lcd_print("aborting dex   ");
+    560          #endif
+    561             return st;
+    562          }
+    563          
+    564          extern OS_TASK TCB3;
+    565          
+    566          void dex_rx_isr(u8 b)
+    567          {
+    568            if ( dex.rx_size < sizeof(dex.rx_buf) ) 
+    569            {
+    570               dex.rx_buf[ dex.rx_size++ ] = b;
+    571            }
+    572            if ( b == ENQ && dex.state != dexState_RecvAuditData1 )
+    573            {
+    574               OS_SignalEvent( EVT_DEX_DRD, &TCB3 );
+    575            } 
+    576            else if ( b == EOT && dex.rx_size == 1 )
+    577            {
+    578               OS_SignalEvent( EVT_DEX_DRD, &TCB3 );
+    579            } 
+    580            else  if ( dex.state != dexState_RecvAuditData1 && dex.rx_size >= 2 && dex.rx_buf[ dex.rx_size - 2 ] == DLE )
+    581            {
+    582               if ( b == '0' || b == '1' )
+    583               {
+    584                  OS_SignalEvent( EVT_DEX_DRD, &TCB3 );           
+    585               }
+    586            } 
+    587            else if ( dex.rx_size >= 4 && dex.rx_buf[ dex.rx_size - 4 ] == DLE ) 
+    588            {
+    589               if ( dex.rx_buf[ dex.rx_size - 3 ] == ETX || dex.rx_buf[ dex.rx_size - 3 ] == ETB )
+    590               {
+    591                  OS_SignalEvent( EVT_DEX_DRD, &TCB3 );           
+    592               }
+    593            }  
+    594          }
+    595          
+    596          u16 dex_tx_isr(u8* b)
+    597          {
+    598            u16 rc = dex.tx_size;
+    599            if( dex.tx_size > 0 ) 
+    600            {
+    601               *b = dex.tx_buf[ dex.tx_cnt++ ];
+    602               dex.tx_size--;
+    603            }
+    604            else if( dex.tx_size == 0 ) 
+    605            {
+    606               dex.tx_cnt = 0;
+    607            }  
+    608            return rc;
+    609          }
+    610          
+    611          void dex_isr( void* uart )
+    612          {
+    613            if ( USART_GetFlagStatus( uart, USART_FLAG_RXNE ) ) 
+    614            {
+    615              // Push a new data into the receiver buffer
+    616              volatile u8 b = USART_ReceiveData(uart);
+    617              if ( dex.rx_size < sizeof(dex.rx_buf) ) 
+    618              {
+    619                 dex.rx_buf[ dex.rx_size++ ] = b;
+    620              }
+    621              if ( b == ENQ && dex.state != dexState_RecvAuditData1 )
+    622              {
+    623                 OS_SignalEvent( EVT_DEX_DRD, &TCB3 );
+    624              } 
+    625              else if ( b == EOT && dex.rx_size == 1 )
+    626              {
+    627                 OS_SignalEvent( EVT_DEX_DRD, &TCB3 );
+    628              } 
+    629              else  if ( dex.state != dexState_RecvAuditData1 && dex.rx_size >= 2 && dex.rx_buf[ dex.rx_size - 2 ] == DLE )
+    630              {
+    631                 if ( b == '0' || b == '1' )
+    632                 {
+    633                    OS_SignalEvent( EVT_DEX_DRD, &TCB3 );           
+    634                 }
+    635              } 
+    636              else if ( dex.rx_size >= 4 && dex.rx_buf[ dex.rx_size - 4 ] == DLE ) 
+    637              {
+    638                 if ( dex.rx_buf[ dex.rx_size - 3 ] == ETX || dex.rx_buf[ dex.rx_size - 3 ] == ETB )
+    639                 {
+    640                    OS_SignalEvent( EVT_DEX_DRD, &TCB3 );           
+    641                 }
+    642              }  
+    643            }
+    644          
+    645            if ( USART_GetFlagStatus( uart, USART_FLAG_TXE ) && ( USART_GetITStatus( uart, USART_IT_TXE ) == SET ) ) 
+    646            {
+    647              if( dex.tx_size > 0 ) 
+    648              {
+    649                volatile u8 b =  dex.tx_buf[ dex.tx_cnt++ ];
+    650                USART_SendData( uart, b );
+    651                dex.tx_size--;
+    652              }
+    653              else if( dex.tx_size == 0 ) 
+    654              {
+    655                dex.tx_cnt = 0;
+    656                USART_ITConfig( uart, USART_IT_TXE , DISABLE );         
+    657              }  
+    658            }  
+    659          }
+    660          
+    661          
+    662          #endif
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

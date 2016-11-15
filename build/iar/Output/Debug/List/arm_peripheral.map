@@ -1,0 +1,994 @@
+###############################################################################
+#
+# IAR ELF Linker V7.50.2.10312/W32 for ARM                15/Nov/2016  14:56:10
+# Copyright 2007-2015 IAR Systems AB.
+#
+#    Output file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Exe\arm_peripheral.out
+#    Map file     =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\arm_peripheral.map
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\18B20.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\BSP.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\bt.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\cashless.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\dex.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\dex_sample.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\JLINKMEM_Process.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\lcd_2x16.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\log.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\mdb.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\mdb_sniffer.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\misc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\one_wire.o
+#        C:\ilya\vendicont\arm-periphery\rtos\embos\iar\lib\os7m_tl__dp.a
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\OS_Error.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\pt-vending.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\RTOSInit.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\RTOSVect.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\spi_slave.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\Start.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_adc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_bkp.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_can.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_cec.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_crc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_dac.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_dbgmcu.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_dma.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_exti.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_flash.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_fsmc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_gpio.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_i2c.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_iwdg.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_pwr.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_rcc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_rtc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_sdio.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_spi.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_tim.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_usart.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\stm32f10x_wwdg.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\sw_uart.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\utils.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\xmtx.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\xmtx2.o
+#        --redirect _Printf=_PrintfFullNoMb --redirect _Scanf=_ScanfSmallNoMb
+#        -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Exe\arm_peripheral.out
+#        --map
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\arm_peripheral.map
+#        --config
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\setup\iar\flash.icf
+#        --remarks --semihosting
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\lib\os7m_tl__d.a
+#        --entry __iar_program_start --redirect
+#        __iar_sh_stdout=__iar_sh_stdout_swo --no_exceptions --vfe
+#
+###############################################################################
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__Heap_Handler  = Basic
+__SystemLibrary = DLib
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A2":  place at 0x08004000 { ro section .intvec };
+"P2":  place in [from 0x08004040 to 0x0801ffff] { ro };
+"P3":  place in [from 0x20000000 to 0x20004fff] { rw, block CSTACK, block HEAP };
+
+  Section               Kind        Address    Size  Object
+  -------               ----        -------    ----  ------
+"A2":                                         0x130
+  .intvec                        0x08004000   0x130  <Block>
+    .intvec             const    0x08004000   0x130  RTOSVect.o [1]
+                               - 0x08004130   0x130
+
+"P2":                                        0x8329
+  .text                 ro code  0x08004130   0xda6  xprintffull_nomb.o [3]
+  .text                 ro code  0x08004ed6    0x1e  xsscin.o [3]
+  .text                 ro code  0x08004ef4    0x16  strchr.o [6]
+  .text                 ro code  0x08004f0a    0x1a  xsnprout.o [3]
+  .text                 ro code  0x08004f24    0x36  strlen.o [6]
+  .text                 ro code  0x08004f5a     0xa  xsprout.o [3]
+  .text                 ro code  0x08004f64    0x58  memchr.o [6]
+  .text                 ro code  0x08004fbc    0xee  I64DivMod.o [6]
+  .rodata               const    0x080050aa     0x1  pt-vending.o [1]
+  .rodata               const    0x080050ab     0x1  pt-vending.o [1]
+  .text                 ro code  0x080050ac    0x76  ABImemcpy_unaligned.o [6]
+  .text                 ro code  0x08005122    0x42  xdnorm.o [4]
+  .text                 ro code  0x08005164    0x2e  DblCmpLe.o [4]
+  .text                 ro code  0x08005194    0x2e  DblCmpGe.o [4]
+  .text                 ro code  0x080051c4   0x10c  xdscale.o [4]
+  .text                 ro code  0x080052d0    0x58  DblToI32.o [4]
+  .text                 ro code  0x08005328    0x30  I32ToDbl.o [4]
+  .text                 ro code  0x08005358   0x180  DblSub.o [4]
+  .text                 ro code  0x080054d8   0x1a2  DblMul.o [4]
+  .text                 ro code  0x0800567c   0x256  DblDiv.o [4]
+  .text                 ro code  0x080058d2     0xe  div.o [3]
+  .text                 ro code  0x080058e0     0x2  I64DivZer.o [6]
+  .text                 ro code  0x080058e4    0xd4  DblAdd.o [4]
+  .text                 ro code  0x080059b8   0xc04  pt-vending.o [1]
+  .text                 ro code  0x080065bc   0x162  stm32f10x_gpio.o [1]
+  .text                 ro code  0x08006720   0x1c4  OSTIME.o [5]
+  .text                 ro code  0x080068e4    0xd4  OS_SysTimer.o [5]
+  .text                 ro code  0x080069b8    0x78  ABImemmove_unaligned.o [6]
+  .text                 ro code  0x08006a30    0x60  OSEVENS.o [5]
+  .text                 ro code  0x08006a90    0x66  ABImemset.o [6]
+  .text                 ro code  0x08006af8   0x50c  RTOSInit.o [1]
+  .text                 ro code  0x08007004    0xf8  OSQ.o [5]
+  .text                 ro code  0x080070fc   0x220  log.o [1]
+  .text                 ro code  0x0800731c   0x760  OSKERN.o [5]
+  .text                 ro code  0x08007a7c   0x45c  sw_uart.o [1]
+  .text                 ro code  0x08007ed8    0x70  OSEVENW.o [5]
+  .text                 ro code  0x08007f48   0x128  OSQPut.o [5]
+  .text                 ro code  0x08008070   0x3b4  mdb_sniffer.o [1]
+  .text                 ro code  0x08008424    0x34  sprintf.o [3]
+  .text                 ro code  0x08008458   0x2a0  stm32f10x_usart.o [1]
+  .text                 ro code  0x080086f8    0x2c  OS_Error.o [1]
+  .text                 ro code  0x08008724    0xf4  rtos.o [5]
+  .text                 ro code  0x08008818   0x80e  mdb.o [1]
+  .text                 ro code  0x08009028    0x68  OS_TICK_Handle.o [5]
+  .text                 ro code  0x08009090   0x2f0  JLINKMEM_Process.o [1]
+  .text                 ro code  0x08009380   0x24c  OSCOMRxTx1.o [5]
+  .text                 ro code  0x080095cc     0x6  ABImemclr4.o [6]
+  .text                 ro code  0x080095d4    0x3c  OS_Wait.o [5]
+  .text                 ro code  0x08009610   0x180  OSRSEM.o [5]
+  .text                 ro code  0x08009790    0x3c  vsnprint.o [3]
+  .text                 ro code  0x080097cc    0x38  OS_GetNumTasks.o [5]
+  .text                 ro code  0x08009804    0x18  OS_StackInfo.o [5]
+  .text                 ro code  0x0800981c     0xc  OS_GetCPUState.o [5]
+  .text                 ro code  0x08009828    0x1c  OS_InitMode.o [5]
+  .text                 ro code  0x08009844   0x19c  stm32f10x_rcc.o [1]
+  .text                 ro code  0x080099e0   0x45c  stm32f10x_tim.o [1]
+  .text                 ro code  0x08009e3c    0x1e  I32ToFlt.o [4]
+  .text                 ro code  0x08009e5c    0x4e  FltToDbl.o [4]
+  .text                 ro code  0x08009eac    0x90  DblToFlt.o [4]
+  .text                 ro code  0x08009f3c   0x4d4  OSCOM.o [5]
+  .text                 ro code  0x0800a410    0x32  ABImemset48.o [6]
+  .text                 ro code  0x0800a444    0x3c  OS_DeactivateP.o [5]
+  .text                 ro code  0x0800a480    0x30  OS_ARM_ISRCheckPrio.o [5]
+  .text                 ro code  0x0800a4b0    0x88  OSINFO.o [5]
+  .text                 ro code  0x0800a538    0x34  OS_TaskStackInfo.o [5]
+  .text                 ro code  0x0800a56c    0x4c  OSSTAT.o [5]
+  .text                 ro code  0x0800a5b8   0xa14  spi_slave.o [1]
+  .text                 ro code  0x0800afcc    0x38  stm32f10x_iwdg.o [1]
+  .text                 ro code  0x0800b004    0x14  misc.o [1]
+  .text                 ro code  0x0800b018    0x94  utils.o [1]
+  .text                 ro code  0x0800b0ac    0x6c  OSQGPC.o [5]
+  .text                 ro code  0x0800b118    0x4c  OSQGMC.o [5]
+  .text                 ro code  0x0800b164   0x19c  stm32f10x_dma.o [1]
+  .text                 ro code  0x0800b300    0xee  stm32f10x_spi.o [1]
+  .text                 ro code  0x0800b3f0    0x24  stm32f10x_dbgmcu.o [1]
+  .text                 ro code  0x0800b414    0x24  sscanf.o [3]
+  .text                 ro code  0x0800b438    0x10  utils.o [1]
+  .text                 ro code  0x0800b448   0x504  xscanfsmall_nomb.o [3]
+  .text                 ro code  0x0800b94c    0x2c  strstr.o [3]
+  .text                 ro code  0x0800b978    0x86  xstol.o [3]
+  .text                 ro code  0x0800ba00   0x19c  xstoul.o [3]
+  .text                 ro code  0x0800bb9c     0xc  errno.o [3]
+  .text                 ro code  0x0800bba8    0x18  xtls.o [5]
+  .text                 ro code  0x0800bbc0   0x1da  RTOSVect.o [1]
+  .text                 ro code  0x0800bd9c   0x128  OS_CreateTask.o [5]
+  .text                 ro code  0x0800bec4    0xc8  Start.o [1]
+  .text                 ro code  0x0800bf8c    0xa8  BSP.o [1]
+  .text                 ro code  0x0800c034    0x58  OS_TICK_Hook.o [5]
+  .text                 ro code  0x0800c08c    0x60  bt.o [1]
+  .text                 ro code  0x0800c0ec    0x42  strcmp_unaligned.o [6]
+  .text                 ro code  0x0800c12e    0x40  zero_init3.o [6]
+  .text                 ro code  0x0800c16e    0x38  packbits_init_single.o [6]
+  .rodata               const    0x0800c1a8    0x28  utils.o [1]
+  .text                 ro code  0x0800c1d0    0x28  data_init.o [6]
+  .iar.init_table       const    0x0800c1f8    0x30  - Linker created -
+  .rodata               const    0x0800c228    0x20  mdb_sniffer.o [1]
+  .text                 ro code  0x0800c248    0x1a  cmain.o [6]
+  .text                 ro code  0x0800c262     0x4  low_level_init.o [3]
+  .text                 ro code  0x0800c266     0x4  exit.o [3]
+  .text                 ro code  0x0800c26c     0xa  cexit.o [6]
+  .text                 ro code  0x0800c278    0x14  exit.o [7]
+  .rodata               const    0x0800c28c    0x18  pt-vending.o [1]
+  .rodata               const    0x0800c2a4    0x14  pt-vending.o [1]
+  .rodata               const    0x0800c2b8    0x14  pt-vending.o [1]
+  .rodata               const    0x0800c2cc    0x14  pt-vending.o [1]
+  .rodata               const    0x0800c2e0    0x14  RTOSInit.o [1]
+  .rodata               const    0x0800c2f4    0x14  spi_slave.o [1]
+  .rodata               const    0x0800c308    0x10  mdb_sniffer.o [1]
+  .rodata               const    0x0800c318    0x10  pt-vending.o [1]
+  .rodata               const    0x0800c328    0x10  pt-vending.o [1]
+  .rodata               const    0x0800c338    0x10  pt-vending.o [1]
+  .rodata               const    0x0800c348    0x10  spi_slave.o [1]
+  .rodata               const    0x0800c358    0x10  Start.o [1]
+  .rodata               const    0x0800c368    0x10  utils.o [1]
+  .rodata               const    0x0800c378     0xc  bt.o [1]
+  .rodata               const    0x0800c384     0xc  mdb_sniffer.o [1]
+  .rodata               const    0x0800c390     0xc  pt-vending.o [1]
+  .rodata               const    0x0800c39c     0xc  pt-vending.o [1]
+  .rodata               const    0x0800c3a8     0xc  pt-vending.o [1]
+  .rodata               const    0x0800c3b4     0xc  pt-vending.o [1]
+  .rodata               const    0x0800c3c0     0xc  Start.o [1]
+  .rodata               const    0x0800c3cc     0xc  utils.o [1]
+  .rodata               const    0x0800c3d8     0xc  utils.o [1]
+  .rodata               const    0x0800c3e4     0xc  utils.o [1]
+  .rodata               const    0x0800c3f0     0xc  utils.o [1]
+  .rodata               const    0x0800c3fc     0xc  utils.o [1]
+  .text                 ro code  0x0800c408     0xc  cstartup_M.o [6]
+  .rodata               const    0x0800c414     0x8  bt.o [1]
+  .rodata               const    0x0800c41c     0x8  mdb_sniffer.o [1]
+  .rodata               const    0x0800c424     0x8  pt-vending.o [1]
+  .rodata               const    0x0800c42c     0x8  Start.o [1]
+  .rodata               const    0x0800c434     0x4  RTOSInit.o [1]
+  .rodata               const    0x0800c438     0x4  OSGLOBAL.o [5]
+  .rodata               const    0x0800c43c     0x0  zero_init3.o [6]
+  .rodata               const    0x0800c43c     0x0  packbits_init_single.o [6]
+  Initializer bytes     const    0x0800c43c    0x1b  <for P3-1>
+  Initializer bytes     const    0x0800c457     0x2  <for __DLIB_PERTHREAD-1>
+                               - 0x0800c459  0x8329
+
+"P3", part 1 of 3:                             0x5c
+  P3-1                           0x20000000    0x56  <Init block>
+    .data               inited   0x20000000    0x10  stm32f10x_rcc.o [1]
+    .data               inited   0x20000010     0x4  stm32f10x_rcc.o [1]
+    .data               inited   0x20000014    0x40  OSGLOBAL.o [5]
+    .data               inited   0x20000054     0x1  mdb.o [1]
+    .data               inited   0x20000055     0x1  mdb.o [1]
+  __DLIB_PERTHREAD               0x20000058     0x4  <Block>
+    __DLIB_PERTHREAD-1           0x20000058     0x4  <Init block>
+      __DLIB_PERTHREAD  inited   0x20000058     0x4  errno.o [3]
+                               - 0x2000005c    0x5c
+
+"P3", part 2 of 3:                            0x200
+  CSTACK                         0x20000060   0x200  <Block>
+    CSTACK              uninit   0x20000060   0x200  <Block tail>
+                               - 0x20000260   0x200
+
+"P3", part 3 of 3:                           0x23a0
+  .bss                  zero     0x20000260   0xa0c  log.o [1]
+  .bss                  zero     0x20000c6c   0x400  log.o [1]
+  .bss                  zero     0x2000106c   0x400  Start.o [1]
+  .bss                  zero     0x2000146c   0x400  Start.o [1]
+  .bss                  zero     0x2000186c   0x400  Start.o [1]
+  .bss                  zero     0x20001c6c   0x2d0  pt-vending.o [1]
+  .bss                  zero     0x20001f3c   0x1e0  mdb_sniffer.o [1]
+  .bss                  zero     0x2000211c    0xd4  OSCOM.o [5]
+  .bss                  zero     0x200021f0    0x50  Start.o [1]
+  .bss                  zero     0x20002240    0x50  Start.o [1]
+  .bss                  zero     0x20002290    0x50  Start.o [1]
+  .bss                  zero     0x200022e0    0x4c  sw_uart.o [1]
+  .bss                  zero     0x2000232c    0x40  pt-vending.o [1]
+  .bss                  zero     0x2000236c    0x40  spi_slave.o [1]
+  .bss                  zero     0x200023ac    0x40  spi_slave.o [1]
+  .bss                  zero     0x200023ec    0x2c  spi_slave.o [1]
+  .bss                  zero     0x20002418    0x28  pt-vending.o [1]
+  .bss                  zero     0x20002440    0x20  spi_slave.o [1]
+  .bss                  zero     0x20002460    0x20  OS_SysTimer.o [5]
+  .bss                  zero     0x20002480    0x14  lcd_2x16.o [1]
+  .bss                  zero     0x20002494    0x14  log.o [1]
+  .bss                  zero     0x200024a8    0x14  pt-vending.o [1]
+  .bss                  zero     0x200024bc    0x14  pt-vending.o [1]
+  .bss                  zero     0x200024d0    0x14  pt-vending.o [1]
+  .bss                  zero     0x200024e4    0x14  spi_slave.o [1]
+  .bss                  zero     0x200024f8    0x14  spi_slave.o [1]
+  .bss                  zero     0x2000250c    0x14  spi_slave.o [1]
+  .bss                  zero     0x20002520    0x14  spi_slave.o [1]
+  .bss                  zero     0x20002534    0x10  pt-vending.o [1]
+  .bss                  zero     0x20002544    0x10  sw_uart.o [1]
+  .bss                  zero     0x20002554     0xc  sw_uart.o [1]
+  .bss                  zero     0x20002560     0xc  sw_uart.o [1]
+  .bss                  zero     0x2000256c     0x8  BSP.o [1]
+  .bss                  zero     0x20002574     0x8  OSTERM.o [5]
+  .bss                  zero     0x2000257c     0x4  18B20.o [1]
+  .bss                  zero     0x20002580     0x4  BSP.o [1]
+  .bss                  zero     0x20002584     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x20002588     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x2000258c     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x20002590     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x20002594     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x20002598     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x2000259c     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x200025a0     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x200025a4     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x200025a8     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x200025ac     0x4  JLINKMEM_Process.o [1]
+  .bss                  zero     0x200025b0     0x4  pt-vending.o [1]
+  .bss                  zero     0x200025b4     0x4  spi_slave.o [1]
+  .bss                  zero     0x200025b8     0x4  spi_slave.o [1]
+  .bss                  zero     0x200025bc     0x4  OSKERN.o [5]
+  .bss                  zero     0x200025c0     0x4  OSGLOBAL.o [5]
+  .bss                  zero     0x200025c4     0x4  OSGLOBAL.o [5]
+  .bss                  zero     0x200025c8     0x4  OSGLOBAL.o [5]
+  .bss                  zero     0x200025cc     0x4  OSGLOBAL.o [5]
+  .bss                  zero     0x200025d0     0x4  OSGLOBAL.o [5]
+  .bss                  zero     0x200025d4     0x4  OSGLOBAL.o [5]
+  .bss                  zero     0x200025d8     0x4  OSCOMRxTx1.o [5]
+  .bss                  zero     0x200025dc     0x4  OSCOM1.o [5]
+  .bss                  zero     0x200025e0     0x4  OSCOM1.o [5]
+  .bss                  zero     0x200025e4     0x4  OS_SetRxCallback.o [5]
+  .bss                  zero     0x200025e8     0x3  OSCOMRxTx1.o [5]
+  .bss                  zero     0x200025eb     0x1  JLINKMEM_Process.o [1]
+  .bss                  zero     0x200025ec     0x2  spi_slave.o [1]
+  .bss                  zero     0x200025ee     0x1  sw_uart.o [1]
+  .bss                  zero     0x200025ef     0x1  sw_uart.o [1]
+  .bss                  zero     0x200025f0     0x1  sw_uart.o [1]
+  .bss                  zero     0x200025f1     0x1  sw_uart.o [1]
+  .bss                  zero     0x200025f2     0x1  sw_uart.o [1]
+  .bss                  zero     0x200025f3     0x1  sw_uart.o [1]
+  .bss                  zero     0x200025f4     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025f5     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025f6     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025f7     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025f8     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025f9     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025fa     0x1  OSGLOBAL.o [5]
+  .bss                  zero     0x200025fb     0x1  OS_CreateTask.o [5]
+  .bss                  zero     0x200025fc     0x1  OSCOM1.o [5]
+  .bss                  zero     0x200025fd     0x1  OSCOM1.o [5]
+                               - 0x200025fe  0x239e
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address     Size
+          -------     ----
+Zero (__iar_zero_init3)
+    1 destination range, total size 0x239e:
+          0x20000260  0x239e
+
+Copy/packbits (__iar_packbits_init_single3)
+    1 source range, total size 0x1b (31% of destination):
+          0x0800c43c    0x1b
+    1 destination range, total size 0x56:
+          0x20000000    0x56
+
+Copy/packbits (__iar_packbits_init_single3)
+    1 source range, total size 0x2 (50% of destination):
+          0x0800c457     0x2
+    1 destination range, total size 0x4:
+          0x20000058     0x4
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module                  ro code  ro data  rw data
+    ------                  -------  -------  -------
+C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj: [1]
+    18B20.o                                         4
+    BSP.o                       168                12
+    JLINKMEM_Process.o          752                45
+    OS_Error.o                   44
+    RTOSInit.o                1 292       24
+    RTOSVect.o                  474      304
+    Start.o                     200       36    3 312
+    bt.o                         96       20
+    lcd_2x16.o                                     20
+    log.o                       544             3 616
+    mdb.o                     2 062        1        2
+    mdb_sniffer.o               948       68      480
+    misc.o                       20
+    pt-vending.o              3 076      190      904
+    spi_slave.o               2 580       36      294
+    stm32f10x_dbgmcu.o           36
+    stm32f10x_dma.o             412
+    stm32f10x_gpio.o            354
+    stm32f10x_iwdg.o             56
+    stm32f10x_rcc.o             412        6       20
+    stm32f10x_spi.o             238
+    stm32f10x_tim.o           1 116
+    stm32f10x_usart.o           672
+    sw_uart.o                 1 116               122
+    utils.o                     164      116
+    -------------------------------------------------
+    Total:                   16 832      801    8 831
+
+command line: [2]
+    -------------------------------------------------
+    Total:
+
+dl7M_tln.a: [3]
+    div.o                        14
+    errno.o                      12        2        4
+    exit.o                        4
+    low_level_init.o              4
+    sprintf.o                    52
+    sscanf.o                     36
+    strstr.o                     44
+    vsnprint.o                   60
+    xprintffull_nomb.o        3 494
+    xscanfsmall_nomb.o        1 284
+    xsnprout.o                   26
+    xsprout.o                    10
+    xsscin.o                     30
+    xstol.o                     134
+    xstoul.o                    412
+    -------------------------------------------------
+    Total:                    5 616        2        4
+
+m7M_tl.a: [4]
+    DblAdd.o                    212
+    DblCmpGe.o                   46
+    DblCmpLe.o                   46
+    DblDiv.o                    598
+    DblMul.o                    418
+    DblSub.o                    384
+    DblToFlt.o                  144
+    DblToI32.o                   88
+    FltToDbl.o                   78
+    I32ToDbl.o                   48
+    I32ToFlt.o                   30
+    xdnorm.o                     66
+    xdscale.o                   268
+    -------------------------------------------------
+    Total:                    2 426
+
+os7m_tl__dp.a: [5]
+    OSCOM.o                   1 236               212
+    OSCOM1.o                                       10
+    OSCOMRxTx1.o                588                 7
+    OSEVENS.o                    96
+    OSEVENW.o                   112
+    OSGLOBAL.o                            24       95
+    OSINFO.o                    136
+    OSKERN.o                  1 888                 4
+    OSQ.o                       248
+    OSQGMC.o                     76
+    OSQGPC.o                    108
+    OSQPut.o                    296
+    OSRSEM.o                    384
+    OSSTAT.o                     76
+    OSTERM.o                                        8
+    OSTIME.o                    452
+    OS_ARM_ISRCheckPrio.o        48
+    OS_CreateTask.o             296                 1
+    OS_DeactivateP.o             60
+    OS_GetCPUState.o             12
+    OS_GetNumTasks.o             56
+    OS_InitMode.o                28
+    OS_SetRxCallback.o                              4
+    OS_StackInfo.o               24
+    OS_SysTimer.o               212                32
+    OS_TICK_Handle.o            104
+    OS_TICK_Hook.o               88
+    OS_TaskStackInfo.o           52
+    OS_Wait.o                    60
+    rtos.o                      244
+    xtls.o                       24
+    -------------------------------------------------
+    Total:                    7 004       24      373
+
+rt7M_tl.a: [6]
+    ABImemclr4.o                  6
+    ABImemcpy_unaligned.o       118
+    ABImemmove_unaligned.o      120
+    ABImemset.o                 102
+    ABImemset48.o                50
+    I64DivMod.o                 238
+    I64DivZer.o                   2
+    cexit.o                      10
+    cmain.o                      26
+    cstartup_M.o                 12
+    data_init.o                  40
+    memchr.o                     88
+    packbits_init_single.o       56
+    strchr.o                     22
+    strcmp_unaligned.o           66
+    strlen.o                     54
+    zero_init3.o                 64
+    -------------------------------------------------
+    Total:                    1 074
+
+shb_l.a: [7]
+    exit.o                       20
+    -------------------------------------------------
+    Total:                       20
+
+    Gaps                         32        2
+    Linker created                        48      512
+-----------------------------------------------------
+    Grand Total:             33 004      877    9 720
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                      Address   Size  Type      Object
+-----                      -------   ----  ----      ------
+.iar.init_table$$Base   0x0800c1f8          --   Gb  - Linker created -
+.iar.init_table$$Limit  0x0800c228          --   Gb  - Linker created -
+.intvec$$Base           0x08004000          --   Gb  - Linker created -
+.intvec$$Limit          0x08004130          --   Gb  - Linker created -
+?main                   0x0800c249         Code  Gb  cmain.o [6]
+ADC1_2_IRQHandler       0x0800bc73    0x8  Code  Wk  RTOSVect.o [1]
+ADC3_IRQHandler         0x0800bd33    0x8  Code  Wk  RTOSVect.o [1]
+ADCPrescTable           0x20000010    0x4  Data  Lc  stm32f10x_rcc.o [1]
+APBAHBPrescTable        0x20000000   0x10  Data  Lc  stm32f10x_rcc.o [1]
+BSP_Init                0x0800bf95   0x86  Code  Gb  BSP.o [1]
+BusFault_Handler        0x0800bbd3    0x8  Code  Wk  RTOSVect.o [1]
+CAN1_RX1_IRQHandler     0x0800bc8b    0x8  Code  Wk  RTOSVect.o [1]
+CAN1_SCE_IRQHandler     0x0800bc93    0x8  Code  Wk  RTOSVect.o [1]
+CSTACK$$Base            0x20000060          --   Gb  - Linker created -
+CSTACK$$Limit           0x20000260          --   Gb  - Linker created -
+DBGMCU_Config           0x0800b3f1   0x1e  Code  Gb  stm32f10x_dbgmcu.o [1]
+DMA1_Channel1_IRQHandler
+                        0x0800bc4b    0x8  Code  Wk  RTOSVect.o [1]
+DMA1_Channel2_IRQHandler
+                        0x0800bc53    0x8  Code  Wk  RTOSVect.o [1]
+DMA1_Channel3_IRQHandler
+                        0x0800bc5b    0x8  Code  Wk  RTOSVect.o [1]
+DMA1_Channel4_IRQHandler
+                        0x0800a9e7  0x1aa  Code  Gb  spi_slave.o [1]
+DMA1_Channel5_IRQHandler
+                        0x0800ab91  0x142  Code  Gb  spi_slave.o [1]
+DMA1_Channel6_IRQHandler
+                        0x0800bc63    0x8  Code  Wk  RTOSVect.o [1]
+DMA1_Channel7_IRQHandler
+                        0x0800bc6b    0x8  Code  Wk  RTOSVect.o [1]
+DMA2_Channel1_IRQHandler
+                        0x0800bd7b    0x8  Code  Wk  RTOSVect.o [1]
+DMA2_Channel2_IRQHandler
+                        0x0800bd83    0x8  Code  Wk  RTOSVect.o [1]
+DMA2_Channel3_IRQHandler
+                        0x0800bd8b    0x8  Code  Wk  RTOSVect.o [1]
+DMA2_Channel4_5_IRQHandler
+                        0x0800bd93    0x8  Code  Wk  RTOSVect.o [1]
+DMA_Cmd                 0x0800b2ad   0x1c  Code  Gb  stm32f10x_dma.o [1]
+DMA_DeInit              0x0800b165  0x10a  Code  Gb  stm32f10x_dma.o [1]
+DMA_Init                0x0800b26f   0x3e  Code  Gb  stm32f10x_dma.o [1]
+DMA_InitStructure       0x200023ec   0x2c  Data  Gb  spi_slave.o [1]
+DebugMon_Handler        0x0800bbeb    0x8  Code  Wk  RTOSVect.o [1]
+EXTI0_IRQHandler        0x0800bc23    0x8  Code  Wk  RTOSVect.o [1]
+EXTI15_10_IRQHandler    0x0800bcfb    0x8  Code  Wk  RTOSVect.o [1]
+EXTI1_IRQHandler        0x0800bc2b    0x8  Code  Wk  RTOSVect.o [1]
+EXTI2_IRQHandler        0x0800bc33    0x8  Code  Wk  RTOSVect.o [1]
+EXTI3_IRQHandler        0x0800bc3b    0x8  Code  Wk  RTOSVect.o [1]
+EXTI4_IRQHandler        0x0800bc43    0x8  Code  Wk  RTOSVect.o [1]
+EXTI9_5_IRQHandler      0x0800bc9b    0x8  Code  Wk  RTOSVect.o [1]
+FLASH_IRQHandler        0x0800bc13    0x8  Code  Wk  RTOSVect.o [1]
+FSMC_IRQHandler         0x0800bd3b    0x8  Code  Wk  RTOSVect.o [1]
+GPIO_Init               0x080065bd  0x136  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_InitStructure      0x20002580    0x4  Data  Gb  BSP.o [1]
+GPIO_InitStructure      0x200025b0    0x4  Data  Lc  pt-vending.o [1]
+GPIO_ReadInputDataBit   0x080066f3   0x1a  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_ReadOutputData     0x0800670d    0x6  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_ResetBits          0x08006719    0x6  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_SetBits            0x08006713    0x6  Code  Gb  stm32f10x_gpio.o [1]
+HardFault_Handler       0x0800af03   0x20  Code  Gb  spi_slave.o [1]
+I2C1_ER_IRQHandler      0x0800bcdb    0x8  Code  Wk  RTOSVect.o [1]
+I2C1_EV_IRQHandler      0x0800bcd3    0x8  Code  Wk  RTOSVect.o [1]
+I2C2_ER_IRQHandler      0x0800bceb    0x8  Code  Wk  RTOSVect.o [1]
+I2C2_EV_IRQHandler      0x0800bce3    0x8  Code  Wk  RTOSVect.o [1]
+IWDG_Enable             0x0800afef    0xa  Code  Gb  stm32f10x_iwdg.o [1]
+IWDG_ReloadCounter      0x0800afe5    0xa  Code  Gb  stm32f10x_iwdg.o [1]
+IWDG_SetPrescaler       0x0800afd5    0x8  Code  Gb  stm32f10x_iwdg.o [1]
+IWDG_SetReload          0x0800afdd    0x8  Code  Gb  stm32f10x_iwdg.o [1]
+IWDG_WriteAccessCmd     0x0800afcd    0x8  Code  Gb  stm32f10x_iwdg.o [1]
+InBufferCnt             0x2000211c    0x1  Data  Lc  OSCOM.o [5]
+InRdOff                 0x2000211d    0x1  Data  Lc  OSCOM.o [5]
+InStage                 0x200025d8    0x1  Data  Lc  OSCOMRxTx1.o [5]
+JLINKMEM_Process        0x0800923f   0x82  Code  Gb  JLINKMEM_Process.o [1]
+JLINKMEM_SendChar       0x080092c1   0x74  Code  Gb  JLINKMEM_Process.o [1]
+JLINKMEM_SetpfGetNextChar
+                        0x08009341    0x6  Code  Gb  JLINKMEM_Process.o [1]
+JLINKMEM_SetpfOnRx      0x08009335    0x6  Code  Gb  JLINKMEM_Process.o [1]
+JLINKMEM_SetpfOnTx      0x0800933b    0x6  Code  Gb  JLINKMEM_Process.o [1]
+LoadInt                 0x080046b5   0x6e  Code  Lc  xprintffull_nomb.o [3]
+MemManage_Handler       0x0800bbcb    0x8  Code  Wk  RTOSVect.o [1]
+NMI_Handler             0x0800bbc3    0x8  Code  Wk  RTOSVect.o [1]
+NVIC_SetVectorTable     0x0800b005    0xc  Code  Gb  misc.o [1]
+OS_ARM_DisableISR       0x08006e95   0x76  Code  Gb  RTOSInit.o [1]
+OS_ARM_EnableISR        0x08006e1f   0x76  Code  Gb  RTOSInit.o [1]
+OS_ARM_ISRCheckPrio     0x0800a481   0x30  Code  Gb  OS_ARM_ISRCheckPrio.o [5]
+OS_ARM_ISRSetPrio       0x08006f0b   0x82  Code  Gb  RTOSInit.o [1]
+OS_ARM_InstallISRHandler
+                        0x08006e19    0x6  Code  Gb  RTOSInit.o [1]
+OS_AssertCPUInISRMode   0x08007721   0x48  Code  Gb  OSKERN.o [5]
+OS_AssertISROrTask      0x08007675   0x60  Code  Gb  OSKERN.o [5]
+OS_AssertTaskMode       0x080076d5   0x4c  Code  Gb  OSKERN.o [5]
+OS_COM_ClearIn          0x0800a17f    0xa  Code  Gb  OSCOM.o [5]
+OS_COM_EvaPacket        0x0800a195  0x262  Code  Gb  OSCOM.o [5]
+OS_COM_GetNextChar      0x0800956f    0x2  Code  Gb  OSCOMRxTx1.o [5]
+OS_COM_GetOutU8         0x0800a189    0x8  Code  Gb  OSCOM.o [5]
+OS_COM_Init             0x08006df5   0x16  Code  Gb  RTOSInit.o [1]
+OS_COM_OutBufferCnt     0x2000211e    0x1  Data  Gb  OSCOM.o [5]
+OS_COM_Send1            0x08006e0b    0xe  Code  Gb  RTOSInit.o [1]
+OS_COM_StartSend        0x08009571   0x3a  Code  Gb  OSCOMRxTx1.o [5]
+OS_COM_StoreInU8        0x0800a16b   0x14  Code  Gb  OSCOM.o [5]
+OS_COM_StoreOutString   0x08009f51   0x42  Code  Lc  OSCOM.o [5]
+OS_COM_StoreOutU8       0x08009f3d   0x14  Code  Gb  OSCOM.o [5]
+OS_COM_StringLen        0x200025fc    0x1  Data  Gb  OSCOM1.o [5]
+OS_COM_abOutBuffer      0x20002120   0xc8  Data  Gb  OSCOM.o [5]
+OS_COM_cbRx             0x200025e4    0x4  Data  Gb  OS_SetRxCallback.o [5]
+OS_COM_pTask            0x200025e0    0x4  Data  Gb  OSCOM1.o [5]
+OS_COM_pac              0x200025dc    0x4  Data  Gb  OSCOM1.o [5]
+OS_ChangeTask_STD       0x08007459  0x21c  Code  Gb  OSKERN.o [5]
+OS_CheckTimer           0x0800676d   0x4c  Code  Gb  OSTIME.o [5]
+OS_ClearWaitObj         0x080095d5   0x3c  Code  Gb  OS_Wait.o [5]
+OS_Config_SysTimer      0x080068e5   0x6a  Code  Gb  OS_SysTimer.o [5]
+OS_CreateRSema          0x0800964d   0x6a  Code  Gb  OSRSEM.o [5]
+OS_CreateTask_DP        0x0800bd9d  0x128  Code  Gb  OS_CreateTask.o [5]
+OS_CreateTimer          0x080067b9   0x60  Code  Gb  OSTIME.o [5]
+OS_DeactivateP          0x0800a445   0x3c  Code  Gb  OS_DeactivateP.o [5]
+OS_Deactivated          0x080078ef   0x2e  Code  Gb  OSKERN.o [5]
+OS_Delay                0x08007a4f    0x8  Code  Gb  OSKERN.o [5]
+OS_DelayUntil           0x080079b1   0x9e  Code  Gb  OSKERN.o [5]
+OS_DisableInt           0x080087ed         Code  Gb  rtos.o [5]
+OS_EnableInt            0x080087e1         Code  Gb  rtos.o [5]
+OS_EnableProfiling      0x0800794d   0x62  Code  Gb  OSKERN.o [5]
+OS_Error                0x080086f9   0x2c  Code  Gb  OS_Error.o [1]
+OS_Exception            0x08008725         Code  Gb  rtos.o [5]
+OS_GetCPU               0x0800a4b1    0x6  Code  Gb  OSINFO.o [5]
+OS_GetCPUState          0x0800981d         Code  Gb  OS_GetCPUState.o [5]
+OS_GetLibName           0x0800a4b7    0x6  Code  Gb  OSINFO.o [5]
+OS_GetNumTasks          0x080097cd   0x38  Code  Gb  OS_GetNumTasks.o [5]
+OS_GetSP                0x08009819    0x4  Code  Gb  OS_StackInfo.o [5]
+OS_GetStackBase         0x0800a539   0x16  Code  Gb  OS_TaskStackInfo.o [5]
+OS_GetStackSize         0x0800a551   0x16  Code  Gb  OS_TaskStackInfo.o [5]
+OS_GetSysStackBase      0x08009805    0x4  Code  Gb  OS_StackInfo.o [5]
+OS_GetSysStackSize      0x08009809    0x8  Code  Gb  OS_StackInfo.o [5]
+OS_GetTaskName          0x0800a4e9   0x24  Code  Gb  OSINFO.o [5]
+OS_GetTimeSliceRem      0x0800a4bd   0x2c  Code  Gb  OSINFO.o [5]
+OS_GetTime_Cycles       0x08006dab   0x2c  Code  Gb  RTOSInit.o [1]
+OS_GetTime_us           0x0800694f   0x62  Code  Gb  OS_SysTimer.o [5]
+OS_Global               0x20000014   0x40  Data  Gb  OSGLOBAL.o [5]
+OS_Idle                 0x08006da9    0x2  Code  Gb  RTOSInit.o [1]
+OS_InInt                0x200025f7    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_InTimer              0x200025f9    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_InitCalled           0x200025fa    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_InitHW               0x08006b89  0x220  Code  Gb  RTOSInit.o [1]
+OS_InitKern_STD         0x0800791d   0x30  Code  Gb  OSKERN.o [5]
+OS_InitMode             0x08009829   0x1c  Code  Gb  OS_InitMode.o [5]
+OS_InitialSuspendCnt    0x200025f6    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_InsertTask           0x08007861   0x8e  Code  Gb  OSKERN.o [5]
+OS_JLINKMEM_BufferSize  0x0800c434    0x4  Data  Gb  RTOSInit.o [1]
+OS_LeaveRegion          0x08007787   0x52  Code  Gb  OSKERN.o [5]
+OS_MakeTaskReady        0x080077d9   0x88  Code  Gb  OSKERN.o [5]
+OS_OnRx                 0x080094bd   0x96  Code  Gb  OSCOMRxTx1.o [5]
+OS_OnTx                 0x08009553   0x1c  Code  Gb  OSCOMRxTx1.o [5]
+OS_ProfilingExTime      0x200025bc    0x4  Data  Lc  OSKERN.o [5]
+OS_Q_Create             0x08007005   0x5c  Code  Gb  OSQ.o [5]
+OS_Q_GetMessageCnt      0x0800b119   0x4c  Code  Gb  OSQGMC.o [5]
+OS_Q_GetPtrCond         0x0800b0ad   0x6c  Code  Gb  OSQGPC.o [5]
+OS_Q_Purge              0x08007061   0x92  Code  Gb  OSQ.o [5]
+OS_Q_Put                0x08007f49  0x128  Code  Gb  OSQPut.o [5]
+OS_RestoreI             0x08007769   0x1e  Code  Gb  OSKERN.o [5]
+OS_RetriggerTimer       0x08006819   0x7c  Code  Gb  OSTIME.o [5]
+OS_Running              0x200025f5    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_STAT_GetExecTime_Cycles
+                        0x0800a56d   0x40  Code  Gb  OSSTAT.o [5]
+OS_STAT_GetNumActivations
+                        0x0800a5b5    0x4  Code  Gb  OSSTAT.o [5]
+OS_SignalEvent          0x08006a31   0x60  Code  Gb  OSEVENS.o [5]
+OS_StartASM             0x0800878b         Code  Gb  rtos.o [5]
+OS_StartTask            0x0800877f         Code  Gb  rtos.o [5]
+OS_StartTimer           0x08006895   0x48  Code  Gb  OSTIME.o [5]
+OS_Status               0x200025f4    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_Switch               0x080087b3         Code  Gb  rtos.o [5]
+OS_SwitchAfterISR_CortexM3
+                        0x080087cb         Code  Gb  rtos.o [5]
+OS_SwitchFromInt        0x080087d9         Code  Gb  rtos.o [5]
+OS_TICK_AddHook         0x0800c035   0x4e  Code  Gb  OS_TICK_Hook.o [5]
+OS_TICK_Handle          0x08009029   0x68  Code  Gb  OS_TICK_Handle.o [5]
+OS_TS_ExecStart         0x200025c4    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_TaskEndsUnexpectedly
+                        0x08008789         Code  Gb  rtos.o [5]
+OS_TickStep             0x200025f8    0x1  Data  Gb  OSGLOBAL.o [5]
+OS_TickStepTime         0x200025c0    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_TxActive             0x200025fd    0x1  Data  Gb  OSCOM1.o [5]
+OS_Unuse                0x0800971f   0x5c  Code  Gb  OSRSEM.o [5]
+OS_Use                  0x080096b7   0x68  Code  Gb  OSRSEM.o [5]
+OS_Version              0x0800c438    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_WaitEvent            0x08007ed9   0x70  Code  Gb  OSEVENW.o [5]
+OS_pQHead               0x200025cc    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_pRSema               0x200025c8    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_pTLS                 0x200025d4    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_pTickHook            0x200025d0    0x4  Data  Gb  OSGLOBAL.o [5]
+OS_pfOnTerminate        0x20002574    0x4  Data  Gb  OSTERM.o [5]
+OutStage                0x200025e8    0x1  Data  Lc  OSCOMRxTx1.o [5]
+PVD_IRQHandler          0x0800bbfb    0x8  Code  Wk  RTOSVect.o [1]
+PendSV_Handler          0x08008725         Code  Gb  rtos.o [5]
+RCC_AHBPeriphClockCmd   0x08009921   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB1PeriphClockCmd  0x0800995d   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB1PeriphResetCmd  0x08009999   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB2PeriphClockCmd  0x0800993f   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB2PeriphResetCmd  0x0800997b   0x1e  Code  Gb  stm32f10x_rcc.o [1]
+RCC_GetClocksFreq       0x08009845   0xdc  Code  Gb  stm32f10x_rcc.o [1]
+RCC_IRQHandler          0x0800bc1b    0x8  Code  Wk  RTOSVect.o [1]
+RTCAlarm_IRQHandler     0x0800bd03    0x8  Code  Wk  RTOSVect.o [1]
+RTC_IRQHandler          0x0800bc0b    0x8  Code  Wk  RTOSVect.o [1]
+Region$$Table$$Base     0x0800c1f8          --   Gb  - Linker created -
+Region$$Table$$Limit    0x0800c228          --   Gb  - Linker created -
+SDIO_IRQHandler         0x0800bd43    0x8  Code  Wk  RTOSVect.o [1]
+SPI1_IRQHandler         0x0800bcf3    0x8  Code  Wk  RTOSVect.o [1]
+SPI2_IRQHandler         0x0800acd3    0x2  Code  Gb  spi_slave.o [1]
+SPI3_IRQHandler         0x0800bd53    0x8  Code  Wk  RTOSVect.o [1]
+SPI_Cmd                 0x0800b3a5   0x1c  Code  Gb  stm32f10x_spi.o [1]
+SPI_I2S_DeInit          0x0800b301   0x58  Code  Gb  stm32f10x_spi.o [1]
+SPI_I2S_ITConfig        0x0800b3c1   0x2e  Code  Gb  stm32f10x_spi.o [1]
+SPI_Init                0x0800b359   0x40  Code  Gb  stm32f10x_spi.o [1]
+SPI_InitStructure       0x200024e4   0x14  Data  Gb  spi_slave.o [1]
+SVC_Handler             0x0800bbe3    0x8  Code  Wk  RTOSVect.o [1]
+SemaLCD                 0x20002480   0x14  Data  Gb  lcd_2x16.o [1]
+SemaLog                 0x20002494   0x14  Data  Gb  log.o [1]
+Stack1                  0x2000106c  0x400  Data  Gb  Start.o [1]
+Stack2                  0x2000146c  0x400  Data  Gb  Start.o [1]
+Stack3                  0x2000186c  0x400  Data  Gb  Start.o [1]
+SysTick_Handler         0x08006b0d   0x7c  Code  Gb  RTOSInit.o [1]
+TAMPER_IRQHandler       0x0800bc03    0x8  Code  Wk  RTOSVect.o [1]
+TCB1                    0x200021f0   0x50  Data  Gb  Start.o [1]
+TCB2                    0x20002240   0x50  Data  Gb  Start.o [1]
+TCB3                    0x20002290   0x50  Data  Gb  Start.o [1]
+TI1_Config              0x08009c3b   0x6a  Code  Lc  stm32f10x_tim.o [1]
+TI2_Config              0x08009cb5   0x74  Code  Lc  stm32f10x_tim.o [1]
+TI3_Config              0x08009d35   0x72  Code  Lc  stm32f10x_tim.o [1]
+TI4_Config              0x08009da9   0x74  Code  Lc  stm32f10x_tim.o [1]
+TIM1_BRK_IRQHandler     0x0800bca3    0x8  Code  Wk  RTOSVect.o [1]
+TIM1_CC_IRQHandler      0x0800bcbb    0x8  Code  Wk  RTOSVect.o [1]
+TIM1_TRG_COM_IRQHandler
+                        0x0800bcb3    0x8  Code  Wk  RTOSVect.o [1]
+TIM1_UP_IRQHandler      0x0800bcab    0x8  Code  Wk  RTOSVect.o [1]
+TIM2_IRQHandler         0x0800bcc3    0x8  Code  Wk  RTOSVect.o [1]
+TIM3_IRQHandler         0x0800bccb    0x8  Code  Wk  RTOSVect.o [1]
+TIM4_IRQHandler         0x08007e2d   0x34  Code  Gb  sw_uart.o [1]
+TIM5_IRQHandler         0x0800bd4b    0x8  Code  Wk  RTOSVect.o [1]
+TIM6_IRQHandler         0x0800bd6b    0x8  Code  Wk  RTOSVect.o [1]
+TIM7_IRQHandler         0x0800bd73    0x8  Code  Wk  RTOSVect.o [1]
+TIM8_BRK_IRQHandler     0x0800bd13    0x8  Code  Wk  RTOSVect.o [1]
+TIM8_CC_IRQHandler      0x0800bd2b    0x8  Code  Wk  RTOSVect.o [1]
+TIM8_TRG_COM_IRQHandler
+                        0x0800bd23    0x8  Code  Wk  RTOSVect.o [1]
+TIM8_UP_IRQHandler      0x0800bd1b    0x8  Code  Wk  RTOSVect.o [1]
+TIM_ClearITPendingBit   0x08009c33    0x8  Code  Gb  stm32f10x_tim.o [1]
+TIM_Cmd                 0x08009b83   0x1c  Code  Gb  stm32f10x_tim.o [1]
+TIM_GetITStatus         0x08009c01   0x32  Code  Gb  stm32f10x_tim.o [1]
+TIM_ICInit              0x08009ae3   0xa0  Code  Gb  stm32f10x_tim.o [1]
+TIM_ICInitStruct        0x20002560    0xc  Data  Gb  sw_uart.o [1]
+TIM_ITConfig            0x08009b9f   0x16  Code  Gb  stm32f10x_tim.o [1]
+TIM_OC4Init             0x08009a75   0x6e  Code  Gb  stm32f10x_tim.o [1]
+TIM_OCInitStruct        0x20002544   0x10  Data  Gb  sw_uart.o [1]
+TIM_SetIC1Prescaler     0x08009bb5   0x12  Code  Gb  stm32f10x_tim.o [1]
+TIM_SetIC2Prescaler     0x08009bc7   0x14  Code  Gb  stm32f10x_tim.o [1]
+TIM_SetIC3Prescaler     0x08009bdb   0x12  Code  Gb  stm32f10x_tim.o [1]
+TIM_SetIC4Prescaler     0x08009bed   0x14  Code  Gb  stm32f10x_tim.o [1]
+TIM_TimeBaseInit        0x080099e1   0x94  Code  Gb  stm32f10x_tim.o [1]
+TIM_TimeBaseInitStruct  0x20002554    0xc  Data  Gb  sw_uart.o [1]
+Task_USART3             0x08006469   0xa0  Code  Gb  pt-vending.o [1]
+Task_spi                0x0800a923   0xc4  Code  Gb  spi_slave.o [1]
+Task_vending            0x08005aa9  0x308  Code  Gb  pt-vending.o [1]
+UART4_IRQHandler        0x0800bd5b    0x8  Code  Wk  RTOSVect.o [1]
+UART5_IRQHandler        0x0800bd63    0x8  Code  Wk  RTOSVect.o [1]
+USART1_IRQHandler       0x08005f59  0x208  Code  Gb  pt-vending.o [1]
+USART2_IRQHandler       0x08006161  0x244  Code  Gb  pt-vending.o [1]
+USART3_IRQHandler       0x080063a5   0xb6  Code  Gb  pt-vending.o [1]
+USART3_Timeout          0x0800645b    0xe  Code  Gb  pt-vending.o [1]
+USART_ClearFlag         0x0800867d    0xc  Code  Gb  stm32f10x_usart.o [1]
+USART_Cmd               0x080085dd   0x1c  Code  Gb  stm32f10x_usart.o [1]
+USART_DeInit            0x08008459   0x90  Code  Gb  stm32f10x_usart.o [1]
+USART_GetFlagStatus     0x0800865f   0x1e  Code  Gb  stm32f10x_usart.o [1]
+USART_GetITStatus       0x08008689   0x70  Code  Gb  stm32f10x_usart.o [1]
+USART_ITConfig          0x080085f9   0x56  Code  Gb  stm32f10x_usart.o [1]
+USART_Init              0x080084e9   0xde  Code  Gb  stm32f10x_usart.o [1]
+USART_InitStructure     0x20002534   0x10  Data  Gb  pt-vending.o [1]
+USART_ReceiveData       0x08008657    0x8  Code  Gb  stm32f10x_usart.o [1]
+USART_SendData          0x0800864f    0x8  Code  Gb  stm32f10x_usart.o [1]
+USBWakeUp_IRQHandler    0x0800bd0b    0x8  Code  Wk  RTOSVect.o [1]
+USB_HP_CAN1_TX_IRQHandler
+                        0x0800bc7b    0x8  Code  Wk  RTOSVect.o [1]
+USB_LP_CAN1_RX0_IRQHandler
+                        0x0800bc83    0x8  Code  Wk  RTOSVect.o [1]
+UsageFault_Handler      0x0800bbdb    0x8  Code  Wk  RTOSVect.o [1]
+WWDG_IRQHandler         0x0800bbf3    0x8  Code  Wk  RTOSVect.o [1]
+_BaseAddr               0x20002590    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_CheckDelays            0x080073b3   0xa4  Code  Lc  OSKERN.o [5]
+_DropTxData             0x080091e1   0x16  Code  Lc  JLINKMEM_Process.o [1]
+_ExecGetTaskInfo        0x08009f93  0x1d8  Code  Lc  OSCOM.o [5]
+_FillTxBuf              0x08009193   0x4e  Code  Lc  JLINKMEM_Process.o [1]
+_GenldFullNoMb          0x08004c2b  0x262  Code  Lc  xprintffull_nomb.o [3]
+_GetN                   0x0800b449   0x22  Code  Lc  xscanfsmall_nomb.o [3]
+_GetintSmallNoMb        0x0800b727  0x210  Code  Lc  xscanfsmall_nomb.o [3]
+_GetstrSmallNoMb        0x0800b673   0xb4  Code  Lc  xscanfsmall_nomb.o [3]
+_IllegalException       0x0800bbc1    0x2  Code  Lc  RTOSVect.o [1]
+_Init                   0x080090a3   0x68  Code  Lc  JLINKMEM_Process.o [1]
+_InsertTimerInList      0x08006721   0x4a  Code  Lc  OSTIME.o [5]
+_IsInited               0x20002598    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_JLINKMEM_GetNextChar   0x08006ded    0x8  Code  Lc  RTOSInit.o [1]
+_JLINKMEM_OnRx          0x08006dd7    0xe  Code  Lc  RTOSInit.o [1]
+_JLINKMEM_OnTx          0x08006de5    0x8  Code  Lc  RTOSInit.o [1]
+_LdtobFullNoMb          0x08004829  0x3fc  Code  Lc  xprintffull_nomb.o [3]
+_LitobFullNoMb          0x08004723  0x106  Code  Lc  xprintffull_nomb.o [3]
+_LockTxBuf              0x0800910b   0x28  Code  Lc  JLINKMEM_Process.o [1]
+_OS_DoRR                0x0800731d   0x96  Code  Lc  OSKERN.o [5]
+_OS_GetHWTimerCycles    0x08006af9    0x8  Code  Lc  RTOSInit.o [1]
+_OS_GetHWTimer_IntPending
+                        0x08006b01    0xc  Code  Lc  RTOSInit.o [1]
+_OS_RSema_OnTerminate   0x08009611   0x3c  Code  Lc  OSRSEM.o [5]
+_OnTx                   0x08009381  0x13c  Code  Lc  OSCOMRxTx1.o [5]
+_PrintfFullNoMb         0x08004131  0x57e  Code  Gb  xprintffull_nomb.o [3]
+_PutcharsFullNoMb       0x08004e8d   0x2e  Code  Lc  xprintffull_nomb.o [3]
+_Receive                0x0800913b   0x58  Code  Lc  JLINKMEM_Process.o [1]
+_RetriggerTimer         0x08009091    0xa  Code  Lc  JLINKMEM_Process.o [1]
+_SNProut                0x08004f0b   0x1a  Code  Gb  xsnprout.o [3]
+_SProut                 0x08004f5b    0xa  Code  Gb  xsprout.o [3]
+_SScin                  0x08004ed7   0x1e  Code  Gb  xsscin.o [3]
+_ScanfSmallNoMb         0x0800b485  0x1e8  Code  Gb  xscanfsmall_nomb.o [3]
+_Send                   0x080091f7   0x48  Code  Lc  JLINKMEM_Process.o [1]
+_StopTimer              0x0800909b    0x8  Code  Lc  JLINKMEM_Process.o [1]
+_SysTimer_Settings      0x20002460   0x20  Data  Lc  OS_SysTimer.o [5]
+_TxBufLocked            0x200025ac    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_TxIsPending            0x20002594    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_TxPendingData          0x200025eb    0x1  Data  Lc  JLINKMEM_Process.o [1]
+_TxTimeout              0x200025a4    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_TxTimeoutTimer         0x200025a8    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_UngetN                 0x0800b46b   0x1a  Code  Lc  xscanfsmall_nomb.o [3]
+_UnlockTxBuf            0x08009133    0x8  Code  Lc  JLINKMEM_Process.o [1]
+__DLIB_PERTHREAD$$Base  0x20000058          --   Gb  - Linker created -
+__DLIB_PERTHREAD$$Limit
+                        0x2000005c          --   Gb  - Linker created -
+__aeabi_cdcmple         0x08005165         Code  Gb  DblCmpLe.o [4]
+__aeabi_cdrcmple        0x08005195         Code  Gb  DblCmpGe.o [4]
+__aeabi_d2f             0x08009ead         Code  Gb  DblToFlt.o [4]
+__aeabi_d2iz            0x080052d1         Code  Gb  DblToI32.o [4]
+__aeabi_d2uiz           0x080052fd         Code  Gb  DblToI32.o [4]
+__aeabi_ddiv            0x0800567d         Code  Gb  DblDiv.o [4]
+__aeabi_dmul            0x080054d9         Code  Gb  DblMul.o [4]
+__aeabi_dsub            0x08005359         Code  Gb  DblSub.o [4]
+__aeabi_errno_addr      0x0800bb9d    0x6  Code  Gb  errno.o [3]
+__aeabi_f2d             0x08009e5d         Code  Gb  FltToDbl.o [4]
+__aeabi_i2d             0x08005329         Code  Gb  I32ToDbl.o [4]
+__aeabi_ldiv0           0x080058e1         Code  Gb  I64DivZer.o [6]
+__aeabi_memclr4         0x080095cd         Code  Gb  ABImemclr4.o [6]
+__aeabi_memset          0x08006a91         Code  Gb  ABImemset.o [6]
+__aeabi_ui2d            0x0800533d         Code  Gb  I32ToDbl.o [4]
+__aeabi_ui2f            0x08009e3d         Code  Gb  I32ToFlt.o [4]
+__aeabi_uldivmod        0x08004fbd         Code  Gb  I64DivMod.o [6]
+__cmain                 0x0800c249         Code  Gb  cmain.o [6]
+__exit                  0x0800c279   0x14  Code  Gb  exit.o [7]
+__iar_Dnorm             0x08005123   0x42  Code  Gb  xdnorm.o [4]
+__iar_Dscale            0x080051c5  0x10c  Code  Gb  xdscale.o [4]
+__iar_Errno             0x20000058    0x4  Data  Gb  errno.o [3]
+__iar_Memchr            0x08004f65         Code  Gb  memchr.o [6]
+__iar_Memset            0x08006a91         Code  Gb  ABImemset.o [6]
+__iar_Memset4_word      0x0800a411         Code  Gb  ABImemset48.o [6]
+__iar_Memset8_word      0x0800a411         Code  Gb  ABImemset48.o [6]
+__iar_Memset_word       0x08006a99         Code  Gb  ABImemset.o [6]
+__iar_Stolx             0x0800b979   0x86  Code  Gb  xstol.o [3]
+__iar_Stoul             0x0800bb49    0x4  Code  Gb  xstoul.o [3]
+__iar_Stoulx            0x0800ba01  0x142  Code  Gb  xstoul.o [3]
+__iar_Strchr            0x08004ef5         Code  Gb  strchr.o [6]
+__iar_Strstr            0x0800b94d   0x2c  Code  Gb  strstr.o [3]
+__iar_d2uiz             0x08005309         Code  Gb  DblToI32.o [4]
+__iar_dadd              0x080058e5         Code  Gb  DblAdd.o [4]
+__iar_data_init3        0x0800c1d1   0x28  Code  Gb  data_init.o [6]
+__iar_dlib_perthread_access
+                        0x0800bba9   0x18  Code  Gb  xtls.o [5]
+__iar_dsub              0x0800536d         Code  Gb  DblSub.o [4]
+__iar_dsubStart         0x0800537f         Code  Gb  DblSub.o [4]
+__iar_packbits_init_single3
+                        0x0800c16f   0x38  Code  Gb  packbits_init_single.o [6]
+__iar_program_start     0x0800c409         Code  Gb  cstartup_M.o [6]
+__iar_ui2d              0x08005341         Code  Gb  I32ToDbl.o [4]
+__iar_ui2f              0x08009e41         Code  Gb  I32ToFlt.o [4]
+__iar_unaligned___aeabi_memcpy
+                        0x080050ad         Code  Gb  ABImemcpy_unaligned.o [6]
+__iar_unaligned___aeabi_memcpy4
+                        0x080050cd         Code  Gb  ABImemcpy_unaligned.o [6]
+__iar_unaligned___aeabi_memcpy8
+                        0x080050cd         Code  Gb  ABImemcpy_unaligned.o [6]
+__iar_unaligned___aeabi_memmove
+                        0x080069b9         Code  Gb  ABImemmove_unaligned.o [6]
+__iar_unaligned___aeabi_memmove4
+                        0x080069b9         Code  Gb  ABImemmove_unaligned.o [6]
+__iar_unaligned___aeabi_memmove8
+                        0x080069b9         Code  Gb  ABImemmove_unaligned.o [6]
+__iar_unaligned_strcmp  0x0800c0ed         Code  Gb  strcmp_unaligned.o [6]
+__iar_zero_init3        0x0800c12f   0x40  Code  Gb  zero_init3.o [6]
+__low_level_init        0x0800c263    0x4  Code  Gb  low_level_init.o [3]
+__vector_table          0x08004000  0x130  Data  Gb  RTOSVect.o [1]
+_abInBuffer             0x200021e8    0x8  Data  Lc  OSCOM.o [5]
+_call_main              0x0800c255         Code  Gb  cmain.o [6]
+_exit                   0x0800c26d         Code  Gb  cexit.o [6]
+_main                   0x0800c25f         Code  Gb  cmain.o [6]
+_pFirstHook             0x20002578    0x4  Data  Lc  OSTERM.o [5]
+_pRxBuf                 0x2000259c    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_pTxBuf                 0x200025a0    0x4  Data  Lc  JLINKMEM_Process.o [1]
+_pfGetNextChar          0x2000258c    0x4  Data  Gb  JLINKMEM_Process.o [1]
+_pfOnRx                 0x20002584    0x4  Data  Gb  JLINKMEM_Process.o [1]
+_pfOnTx                 0x20002588    0x4  Data  Gb  JLINKMEM_Process.o [1]
+acCPU                   0x0800a51c    0xc  Data  Lc  OSINFO.o [5]
+acLibName               0x0800a528   0x10  Data  Lc  OSINFO.o [5]
+bt_rx_msg_handler       0x0800c08d   0x60  Code  Gb  bt.o [1]
+build_dt                0x0800b05b   0x36  Code  Gb  utils.o [1]
+calc_crc                0x08009005   0x22  Code  Lc  mdb.o [1]
+configure_spi           0x0800acd5  0x13c  Code  Gb  spi_slave.o [1]
+digits                  0x0800bb4c   0x28  Data  Lc  xstoul.o [3]
+div                     0x080058d3    0xe  Code  Gb  div.o [3]
+enableLogging           0x080070fd   0x28  Code  Gb  log.o [1]
+exit                    0x0800c267    0x4  Code  Gb  exit.o [3]
+fb                      0x20001c6c  0x2d0  Data  Gb  pt-vending.o [1]
+fb_evt_q                0x20002418   0x28  Data  Gb  pt-vending.o [1]
+fb_evt_q_buf            0x2000232c   0x40  Data  Gb  pt-vending.o [1]
+fb_m_tx                 0x08005f0f   0x4a  Code  Gb  pt-vending.o [1]
+fb_s_tx                 0x08005ec5   0x4a  Code  Gb  pt-vending.o [1]
+fbm_msg_end             0x080059e7   0x52  Code  Gb  pt-vending.o [1]
+fbs_msg_end             0x08005a39   0x70  Code  Gb  pt-vending.o [1]
+gpiob_idr               0x200025ec    0x2  Data  Gb  spi_slave.o [1]
+hookFunc                0x0800bf8d    0x8  Code  Gb  BSP.o [1]
+init_fb                 0x08005db1  0x114  Code  Gb  pt-vending.o [1]
+isLogEmpty              0x08007125   0x20  Code  Gb  log.o [1]
+jump                    0x0800a5e1   0x26  Code  Gb  spi_slave.o [1]
+log1                    0x080072c9   0x46  Code  Gb  log.o [1]
+logDesc                 0x20000260  0xa0c  Data  Gb  log.o [1]
+logRead                 0x0800721d   0xac  Code  Gb  log.o [1]
+logWrite                0x08007145   0xd8  Code  Gb  log.o [1]
+main                    0x0800bec5   0xc8  Code  Gb  Start.o [1]
+mdb_evt_m_rx            0x08008819  0x7da  Code  Gb  mdb.o [1]
+memchr                  0x08004f65         Code  Gb  memchr.o [6]
+ndigs                   0x0800bb74   0x28  Data  Lc  xstoul.o [3]
+prev_spi_out            0x20002440   0x20  Data  Gb  spi_slave.o [1]
+short_date              0x0800b019   0x42  Code  Gb  utils.o [1]
+sniffer                 0x20001f3c  0x1e0  Data  Gb  mdb_sniffer.o [1]
+sniffer_isr             0x08008331   0xba  Code  Gb  mdb_sniffer.o [1]
+sniffer_m_rx            0x08008179   0xb4  Code  Gb  mdb_sniffer.o [1]
+sniffer_rx_msg          0x0800822d  0x104  Code  Gb  mdb_sniffer.o [1]
+sniffer_s_rx            0x080080c5   0xb4  Code  Gb  mdb_sniffer.o [1]
+sniffer_tx              0x08008071   0x54  Code  Gb  mdb_sniffer.o [1]
+spi_cs_wait             0x200025b4    0x4  Data  Gb  spi_slave.o [1]
+spi_in                  0x2000236c   0x40  Data  Gb  spi_slave.o [1]
+spi_mgr                 0x0800a607  0x31c  Code  Gb  spi_slave.o [1]
+spi_mgr_desc            0x200025b8    0x4  Data  Gb  spi_slave.o [1]
+spi_ok_timer            0x2000250c   0x14  Data  Gb  spi_slave.o [1]
+spi_ok_timer_cb         0x0800a5d3    0xc  Code  Gb  spi_slave.o [1]
+spi_out                 0x200023ac   0x40  Data  Gb  spi_slave.o [1]
+spi_slave_init          0x0800ae11   0xf2  Code  Gb  spi_slave.o [1]
+spi_sync_timer          0x20002520   0x14  Data  Gb  spi_slave.o [1]
+spi_sync_timer_cb       0x0800a5df    0x2  Code  Gb  spi_slave.o [1]
+sprintf                 0x08008425   0x34  Code  Gb  sprintf.o [3]
+sprintf_buf             0x20000c6c  0x400  Data  Gb  log.o [1]
+sscanf                  0x0800b415   0x24  Code  Gb  sscanf.o [3]
+strchr                  0x08004ef5         Code  Gb  strchr.o [6]
+strlen                  0x08004f25         Code  Gb  strlen.o [6]
+strstr                  0x0800b439   0x10  Code  Gb  utils.o [1]
+sw_uart                 0x200022e0   0x4c  Data  Gb  sw_uart.o [1]
+sw_uart_init            0x08007a7d   0xf4  Code  Gb  sw_uart.o [1]
+sw_uart_reset_buffers   0x08007e61   0x38  Code  Gb  sw_uart.o [1]
+sw_uart_tx              0x08007b71   0x24  Code  Gb  sw_uart.o [1]
+swuart_isr_rx           0x08007c81  0x1ac  Code  Gb  sw_uart.o [1]
+swuart_isr_tx           0x08007b95   0xec  Code  Gb  sw_uart.o [1]
+t_18b20                 0x2000257c    0x4  Data  Gb  18B20.o [1]
+t_fbm_msg_end           0x200024a8   0x14  Data  Gb  pt-vending.o [1]
+t_fbs_msg_end           0x200024bc   0x14  Data  Gb  pt-vending.o [1]
+tickHook                0x2000256c    0x8  Data  Gb  BSP.o [1]
+timer100                0x200024f8   0x14  Data  Gb  spi_slave.o [1]
+timer1000               0x200024d0   0x14  Data  Gb  pt-vending.o [1]
+timer1000_cb            0x080059b9   0x2e  Code  Gb  pt-vending.o [1]
+timer100_cb             0x0800a5b9   0x1a  Code  Gb  spi_slave.o [1]
+verMajor                0x080050aa    0x1  Data  Gb  pt-vending.o [1]
+verMinor                0x080050ab    0x1  Data  Gb  pt-vending.o [1]
+vsnprintf               0x08009791   0x3c  Code  Gb  vsnprint.o [3]
+
+
+[1] = C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj
+[2] = command line
+[3] = dl7M_tln.a
+[4] = m7M_tl.a
+[5] = os7m_tl__dp.a
+[6] = rt7M_tl.a
+[7] = shb_l.a
+
+  33 004 bytes of readonly  code memory
+     877 bytes of readonly  data memory
+   9 720 bytes of readwrite data memory
+
+Errors: none
+Warnings: none

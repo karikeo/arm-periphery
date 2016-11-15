@@ -1,0 +1,364 @@
+###############################################################################
+#
+# IAR ELF Linker V7.50.2.10312/W32 for ARM                19/Oct/2016  13:29:54
+# Copyright 2007-2015 IAR Systems AB.
+#
+#    Output file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Exe\bootloader.out
+#    Map file     =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\bootloader.map
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\bootloader.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\lcd_2x16.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\misc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_adc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_bkp.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_can.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_cec.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_crc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_dac.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_dbgmcu.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_dma.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_exti.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_flash.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_fsmc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_gpio.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_i2c.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_it.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_iwdg.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_pwr.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_rcc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_rtc.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_sdio.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_spi.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_tim.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_usart.o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\stm32f10x_wwdg.o
+#        -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Exe\bootloader.out
+#        --redirect _Printf=_PrintfFull --redirect _Scanf=_ScanfFull --strip
+#        --map
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\bootloader.map
+#        --config
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\setup\iar\bootloader.icf
+#        --entry __iar_program_start --inline --no_exceptions --vfe
+#
+###############################################################################
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__SystemLibrary = DLib
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A1":  place at 0x08000000 { ro section .intvec };
+"P2":  place in [from 0x08000200 to 0x08003fff] { ro };
+"P3":  place in [from 0x20000000 to 0x20004fff] { rw, block CSTACK, block HEAP };
+
+  Section          Kind        Address    Size  Object
+  -------          ----        -------    ----  ------
+"A1":                                     0x40
+  .intvec          ro code  0x08000000    0x40  vector_table_M.o [5]
+                          - 0x08000040    0x40
+
+"P2":                                   0x2472
+  .text            ro code  0x08000200   0xda6  xprintffull.o [3]
+  .text            ro code  0x08000fa6     0xa  xsprout.o [3]
+  .text            ro code  0x08000fb0    0x16  strchr.o [5]
+  .text            ro code  0x08000fc8    0x36  strlen.o [5]
+  .text            ro code  0x08001000    0x58  memchr.o [5]
+  .text            ro code  0x08001058    0xee  I64DivMod.o [5]
+  .text            ro code  0x08001148    0x76  ABImemcpy_unaligned.o [5]
+  .text            ro code  0x080011be    0x42  xdnorm.o [4]
+  .text            ro code  0x08001200    0x2e  DblCmpLe.o [4]
+  .text            ro code  0x08001230    0x2e  DblCmpGe.o [4]
+  .text            ro code  0x08001260   0x10c  xdscale.o [4]
+  .text            ro code  0x0800136c    0x58  DblToI32.o [4]
+  .text            ro code  0x080013c4    0x30  I32ToDbl.o [4]
+  .text            ro code  0x080013f4   0x180  DblSub.o [4]
+  .text            ro code  0x08001574   0x1a2  DblMul.o [4]
+  .text            ro code  0x08001718   0x256  DblDiv.o [4]
+  .text            ro code  0x0800196e     0xe  div.o [3]
+  .text            ro code  0x0800197c     0x2  I64DivZer.o [5]
+  .text            ro code  0x08001980    0xd4  DblAdd.o [4]
+  .text            ro code  0x08001a54   0x480  bootloader.o [1]
+  .text            ro code  0x08001ed4   0x194  stm32f10x_rcc.o [1]
+  .text            ro code  0x08002068   0x170  stm32f10x_gpio.o [1]
+  .text            ro code  0x080021d8    0xca  stm32f10x_spi.o [1]
+  .text            ro code  0x080022a4   0x154  stm32f10x_dma.o [1]
+  .text            ro code  0x080023f8    0x10  stm32f10x_iwdg.o [1]
+  .text            ro code  0x08002408    0x10  lcd_2x16.o [1]
+  .text            ro code  0x08002418    0x34  sprintf.o [3]
+  .text            ro code  0x0800244c     0x6  ABImemclr4.o [5]
+  .text            ro code  0x08002454     0x6  ABImemclr.o [5]
+  .text            ro code  0x0800245c    0x24  stm32f10x_flash.o [1]
+  .text            ro code  0x08002480    0x90  misc.o [1]
+  .text            ro code  0x08002510    0x32  ABImemset48.o [5]
+  .text            ro code  0x08002544    0x5e  ABImemset.o [5]
+  .text            ro code  0x080025a2    0x40  zero_init3.o [5]
+  .text            ro code  0x080025e4    0x28  data_init.o [5]
+  .iar.init_table  const    0x0800260c    0x10  - Linker created -
+  .text            ro code  0x0800261c    0x1a  cmain.o [5]
+  .text            ro code  0x08002636     0x4  exit.o [3]
+  .text            ro code  0x0800263c     0xa  cexit.o [5]
+  .text            ro code  0x08002648     0xc  XXexit.o [5]
+  .text            ro code  0x08002654    0x12  stm32f10x_it.o [1]
+  .text            ro code  0x08002666     0xc  cstartup_M.o [5]
+  .rodata          const    0x08002672     0x0  zero_init3.o [5]
+                          - 0x08002672  0x2472
+
+"P3", part 1 of 2:                       0x150
+  .bss             zero     0x20000000    0x8c  bootloader.o [1]
+  .bss             zero     0x2000008c    0x40  bootloader.o [1]
+  .bss             zero     0x200000cc    0x40  bootloader.o [1]
+  .bss             zero     0x2000010c    0x40  bootloader.o [1]
+  .bss             zero     0x2000014c     0x1  bootloader.o [1]
+                          - 0x2000014d   0x14d
+
+"P3", part 2 of 2:                       0x200
+  CSTACK                    0x20000150   0x200  <Block>
+    CSTACK         uninit   0x20000150   0x200  <Block tail>
+                          - 0x20000350   0x200
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address     Size
+          -------     ----
+Zero (__iar_zero_init3)
+    1 destination range, total size 0x14d:
+          0x20000000  0x14d
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module                 ro code  ro data  rw data
+    ------                 -------  -------  -------
+C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj: [1]
+    bootloader.o             1 152               333
+    lcd_2x16.o                  16
+    misc.o                     144
+    stm32f10x_dma.o            340
+    stm32f10x_flash.o           36
+    stm32f10x_gpio.o           368
+    stm32f10x_it.o              18
+    stm32f10x_iwdg.o            16
+    stm32f10x_rcc.o            404
+    stm32f10x_spi.o            202
+    ------------------------------------------------
+    Total:                   2 696               333
+
+command line: [2]
+    ------------------------------------------------
+    Total:
+
+dl7M_tln.a: [3]
+    div.o                       14
+    exit.o                       4
+    sprintf.o                   52
+    xprintffull.o            3 494
+    xsprout.o                   10
+    ------------------------------------------------
+    Total:                   3 574
+
+m7M_tl.a: [4]
+    DblAdd.o                   212
+    DblCmpGe.o                  46
+    DblCmpLe.o                  46
+    DblDiv.o                   598
+    DblMul.o                   418
+    DblSub.o                   384
+    DblToI32.o                  88
+    I32ToDbl.o                  48
+    xdnorm.o                    66
+    xdscale.o                  268
+    ------------------------------------------------
+    Total:                   2 174
+
+rt7M_tl.a: [5]
+    ABImemclr.o                  6
+    ABImemclr4.o                 6
+    ABImemcpy_unaligned.o      118
+    ABImemset.o                 94
+    ABImemset48.o               50
+    I64DivMod.o                238
+    I64DivZer.o                  2
+    XXexit.o                    12
+    cexit.o                     10
+    cmain.o                     26
+    cstartup_M.o                12
+    data_init.o                 40
+    memchr.o                    88
+    strchr.o                    22
+    strlen.o                    54
+    vector_table_M.o            64
+    zero_init3.o                64
+    ------------------------------------------------
+    Total:                     906
+
+    Gaps                        28
+    Linker created                       16      512
+----------------------------------------------------
+    Grand Total:             9 378       16      845
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                      Address   Size  Type      Object
+-----                      -------   ----  ----      ------
+.iar.init_table$$Base   0x0800260c          --   Gb  - Linker created -
+.iar.init_table$$Limit  0x0800261c          --   Gb  - Linker created -
+?main                   0x0800261d         Code  Gb  cmain.o [5]
+BusFault_Handler        0x0800265b    0x2  Code  Gb  stm32f10x_it.o [1]
+CSTACK$$Base            0x20000150          --   Gb  - Linker created -
+CSTACK$$Limit           0x20000350          --   Gb  - Linker created -
+DMA_Cmd                 0x080023ab   0x14  Code  Gb  stm32f10x_dma.o [1]
+DMA_DeInit              0x080022a5   0xd0  Code  Gb  stm32f10x_dma.o [1]
+DMA_Init                0x08002375   0x36  Code  Gb  stm32f10x_dma.o [1]
+DMA_InitStructure       0x200000a0   0x2c  Data  Gb  bootloader.o [1]
+DebugMon_Handler        0x08002661    0x2  Code  Gb  stm32f10x_it.o [1]
+DelayuS                 0x08002409    0x2  Code  Gb  lcd_2x16.o [1]
+FLASH_PrefetchBufferCmd
+                        0x08002469    0xa  Code  Gb  stm32f10x_flash.o [1]
+FLASH_SetLatency        0x0800245d    0xc  Code  Gb  stm32f10x_flash.o [1]
+GPIO_Configuration      0x08001dc1   0x3a  Code  Gb  bootloader.o [1]
+GPIO_DeInit             0x08002069   0x9a  Code  Gb  stm32f10x_gpio.o [1]
+GPIO_Init               0x08002103   0xba  Code  Gb  stm32f10x_gpio.o [1]
+HSEStartUpStatus        0x2000014c    0x1  Data  Gb  bootloader.o [1]
+HardFault_Handler       0x08002657    0x2  Code  Gb  stm32f10x_it.o [1]
+IWDG_ReloadCounter      0x080023f9    0xa  Code  Gb  stm32f10x_iwdg.o [1]
+LoadInt                 0x08000785   0x6e  Code  Lc  xprintffull.o [3]
+MemManage_Handler       0x08002659    0x2  Code  Gb  stm32f10x_it.o [1]
+NMI_Handler             0x08002655    0x2  Code  Gb  stm32f10x_it.o [1]
+NVIC_Configuration      0x08001e49   0x7c  Code  Gb  bootloader.o [1]
+NVIC_Init               0x0800248b   0x5c  Code  Gb  misc.o [1]
+NVIC_PriorityGroupConfig
+                        0x08002481    0xa  Code  Gb  misc.o [1]
+NVIC_SetVectorTable     0x080024e7    0xc  Code  Gb  misc.o [1]
+PendSV_Handler          0x08002663    0x2  Code  Gb  stm32f10x_it.o [1]
+RCC_AHBPeriphClockCmd   0x08001fb7   0x12  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB1PeriphClockCmd  0x08001fdb   0x12  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB1PeriphResetCmd  0x08001fff   0x12  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB2PeriphClockCmd  0x08001fc9   0x12  Code  Gb  stm32f10x_rcc.o [1]
+RCC_APB2PeriphResetCmd  0x08001fed   0x12  Code  Gb  stm32f10x_rcc.o [1]
+RCC_ClearFlag           0x08002031    0xc  Code  Gb  stm32f10x_rcc.o [1]
+RCC_Configuration       0x08001d3d   0x84  Code  Gb  bootloader.o [1]
+RCC_DeInit              0x08001ed5   0x32  Code  Gb  stm32f10x_rcc.o [1]
+RCC_GetFlagStatus       0x08002011   0x20  Code  Gb  stm32f10x_rcc.o [1]
+RCC_GetSYSCLKSource     0x08001f85    0xa  Code  Gb  stm32f10x_rcc.o [1]
+RCC_HCLKConfig          0x08001f8f    0xa  Code  Gb  stm32f10x_rcc.o [1]
+RCC_HSEConfig           0x08001f07   0x32  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PCLK1Config         0x08001f99    0x8  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PCLK2Config         0x08001fa7    0x8  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PLLCmd              0x08001f71    0x6  Code  Gb  stm32f10x_rcc.o [1]
+RCC_PLLConfig           0x08001f61   0x10  Code  Gb  stm32f10x_rcc.o [1]
+RCC_SYSCLKConfig        0x08001f77    0xe  Code  Gb  stm32f10x_rcc.o [1]
+RCC_WaitForHSEStartUp   0x08001f39   0x28  Code  Gb  stm32f10x_rcc.o [1]
+Region$$Table$$Base     0x0800260c          --   Gb  - Linker created -
+Region$$Table$$Limit    0x0800261c          --   Gb  - Linker created -
+SPI_Cmd                 0x08002275   0x14  Code  Gb  stm32f10x_spi.o [1]
+SPI_I2S_DeInit          0x080021d9   0x58  Code  Gb  stm32f10x_spi.o [1]
+SPI_I2S_ITConfig        0x08002289   0x1a  Code  Gb  stm32f10x_spi.o [1]
+SPI_Init                0x0800223d   0x38  Code  Gb  stm32f10x_spi.o [1]
+SPI_InitStructure       0x2000008c   0x14  Data  Gb  bootloader.o [1]
+SVC_Handler             0x0800265f    0x2  Code  Gb  stm32f10x_it.o [1]
+SysTick_Handler         0x08002665    0x2  Code  Gb  stm32f10x_it.o [1]
+UsageFault_Handler      0x0800265d    0x2  Code  Gb  stm32f10x_it.o [1]
+_GenldFull              0x08000cfb  0x262  Code  Lc  xprintffull.o [3]
+_LdtobFull              0x080008f9  0x3fc  Code  Lc  xprintffull.o [3]
+_LitobFull              0x080007f3  0x106  Code  Lc  xprintffull.o [3]
+_PrintfFull             0x08000201  0x57e  Code  Gb  xprintffull.o [3]
+_PutcharsFull           0x08000f5d   0x2e  Code  Lc  xprintffull.o [3]
+_SProut                 0x08000fa7    0xa  Code  Gb  xsprout.o [3]
+__aeabi_cdcmple         0x08001201         Code  Gb  DblCmpLe.o [4]
+__aeabi_cdrcmple        0x08001231         Code  Gb  DblCmpGe.o [4]
+__aeabi_d2iz            0x0800136d         Code  Gb  DblToI32.o [4]
+__aeabi_d2uiz           0x08001399         Code  Gb  DblToI32.o [4]
+__aeabi_ddiv            0x08001719         Code  Gb  DblDiv.o [4]
+__aeabi_dmul            0x08001575         Code  Gb  DblMul.o [4]
+__aeabi_dsub            0x080013f5         Code  Gb  DblSub.o [4]
+__aeabi_i2d             0x080013c5         Code  Gb  I32ToDbl.o [4]
+__aeabi_ldiv0           0x0800197d         Code  Gb  I64DivZer.o [5]
+__aeabi_memclr          0x08002455         Code  Gb  ABImemclr.o [5]
+__aeabi_memclr4         0x0800244d         Code  Gb  ABImemclr4.o [5]
+__aeabi_ui2d            0x080013d9         Code  Gb  I32ToDbl.o [4]
+__aeabi_uldivmod        0x08001059         Code  Gb  I64DivMod.o [5]
+__cmain                 0x0800261d         Code  Gb  cmain.o [5]
+__exit                  0x08002649         Code  Gb  XXexit.o [5]
+__iar_Dnorm             0x080011bf   0x42  Code  Gb  xdnorm.o [4]
+__iar_Dscale            0x08001261  0x10c  Code  Gb  xdscale.o [4]
+__iar_Memchr            0x08001001         Code  Gb  memchr.o [5]
+__iar_Memset4_word      0x08002511         Code  Gb  ABImemset48.o [5]
+__iar_Memset8_word      0x08002511         Code  Gb  ABImemset48.o [5]
+__iar_Memset_word       0x08002545         Code  Gb  ABImemset.o [5]
+__iar_Strchr            0x08000fb1         Code  Gb  strchr.o [5]
+__iar_d2uiz             0x080013a5         Code  Gb  DblToI32.o [4]
+__iar_dadd              0x08001981         Code  Gb  DblAdd.o [4]
+__iar_data_init3        0x080025e5   0x28  Code  Gb  data_init.o [5]
+__iar_dsub              0x08001409         Code  Gb  DblSub.o [4]
+__iar_dsubStart         0x0800141b         Code  Gb  DblSub.o [4]
+__iar_program_start     0x08002667         Code  Gb  cstartup_M.o [5]
+__iar_ui2d              0x080013dd         Code  Gb  I32ToDbl.o [4]
+__iar_unaligned___aeabi_memcpy
+                        0x08001149         Code  Gb  ABImemcpy_unaligned.o [5]
+__iar_unaligned___aeabi_memcpy4
+                        0x08001169         Code  Gb  ABImemcpy_unaligned.o [5]
+__iar_unaligned___aeabi_memcpy8
+                        0x08001169         Code  Gb  ABImemcpy_unaligned.o [5]
+__iar_zero_init3        0x080025a3   0x40  Code  Gb  zero_init3.o [5]
+__vector_table          0x08000000         Data  Gb  vector_table_M.o [5]
+_call_main              0x08002629         Code  Gb  cmain.o [5]
+_exit                   0x0800263d         Code  Gb  cexit.o [5]
+_main                   0x08002633         Code  Gb  cmain.o [5]
+buf                     0x2000004c   0x40  Data  Gb  bootloader.o [1]
+configure_spi           0x08001c4b   0xf2  Code  Gb  bootloader.o [1]
+div                     0x0800196f    0xe  Code  Gb  div.o [3]
+exit                    0x08002637    0x4  Code  Gb  exit.o [3]
+fw_programmed           0x20000044    0x4  Data  Gb  bootloader.o [1]
+fw_total_size           0x20000040    0x4  Data  Gb  bootloader.o [1]
+gpiob_idr               0x20000024    0x2  Data  Gb  bootloader.o [1]
+led1_cnt                0x20000048    0x4  Data  Gb  bootloader.o [1]
+load                    0x08001a55  0x198  Code  Gb  bootloader.o [1]
+main                    0x08001bed   0x2e  Code  Gb  bootloader.o [1]
+memchr                  0x08001001         Code  Gb  memchr.o [5]
+pages_erased            0x20000030   0x10  Data  Gb  bootloader.o [1]
+prev_spi_out            0x20000004   0x20  Data  Gb  bootloader.o [1]
+spi_cs_wait             0x2000002c    0x4  Data  Gb  bootloader.o [1]
+spi_in                  0x2000010c   0x40  Data  Gb  bootloader.o [1]
+spi_mgr_desc            0x20000028    0x4  Data  Gb  bootloader.o [1]
+spi_out                 0x200000cc   0x40  Data  Gb  bootloader.o [1]
+spi_resync              0x20000000    0x1  Data  Gb  bootloader.o [1]
+spi_slave_init          0x08001c1b   0x30  Code  Gb  bootloader.o [1]
+sprintf                 0x08002419   0x34  Code  Gb  sprintf.o [3]
+strchr                  0x08000fb1         Code  Gb  strchr.o [5]
+strlen                  0x08000fc9         Code  Gb  strlen.o [5]
+trigger1                0x20000001    0x1  Data  Gb  bootloader.o [1]
+trigger2                0x20000002    0x1  Data  Gb  bootloader.o [1]
+trigger3                0x20000003    0x1  Data  Gb  bootloader.o [1]
+
+
+[1] = C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+[2] = command line
+[3] = dl7M_tln.a
+[4] = m7M_tl.a
+[5] = rt7M_tl.a
+
+  9 378 bytes of readonly  code memory
+     16 bytes of readonly  data memory
+    845 bytes of readwrite data memory
+
+Errors: none
+Warnings: none

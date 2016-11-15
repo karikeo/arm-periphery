@@ -1,0 +1,372 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       09/Nov/2016  14:40:00
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  C:\ilya\vendicont\arm-periphery\Application\one_wire.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\one_wire.c -D STM32F10X_HD
+#        -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\one_wire.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\one_wire.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\one_wire.c
+      1          #include "stm32f10x.h"
+      2          #include "one_wire.h"
+      3          #include "RTOS.h"
+      4          
+      5          #define DELAY_SCALE 2
+      6          
+
+   \                                 In section .text, align 2, keep-with-next
+      7          void Onewire_Enable_GPIO_Port( void ) {
+      8          //RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOB, ENABLE );
+      9          }
+   \                     Onewire_Enable_GPIO_Port: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+     10          
+
+   \                                 In section .text, align 2, keep-with-next
+     11          void Onewire_OUT_PULL_UP( void ) {
+   \                     Onewire_OUT_PULL_UP: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     12          	GPIO_InitTypeDef GPIO_InitStruct;
+     13          	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+   \   00000002   0xF44F 0x7000      MOV      R0,#+512
+   \   00000006   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     14          	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+   \   0000000A   0x2010             MOVS     R0,#+16
+   \   0000000C   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     15          	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_10MHz;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     16          	GPIO_Init(GPIOB, &GPIO_InitStruct);
+   \   00000016   0x4669             MOV      R1,SP
+   \   00000018   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000001A   0x.... 0x....      BL       GPIO_Init
+     17          }
+   \   0000001E   0xBD01             POP      {R0,PC}          ;; return
+     18          
+
+   \                                 In section .text, align 2, keep-with-next
+     19          void Onewire_OUT_FLOATING( void ) {
+   \                     Onewire_OUT_FLOATING: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     20          	GPIO_InitTypeDef GPIO_InitStruct;
+     21          	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+   \   00000002   0xF44F 0x7000      MOV      R0,#+512
+   \   00000006   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     22          	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_Out_OD;
+   \   0000000A   0x2014             MOVS     R0,#+20
+   \   0000000C   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     23          	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_10MHz;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     24          	GPIO_Init(GPIOB, &GPIO_InitStruct);
+   \   00000016   0x4669             MOV      R1,SP
+   \   00000018   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000001A   0x.... 0x....      BL       GPIO_Init
+     25          }
+   \   0000001E   0xBD01             POP      {R0,PC}          ;; return
+     26          
+
+   \                                 In section .text, align 2, keep-with-next
+     27          void Onewire_IN_FLOATING( void ) {
+   \                     Onewire_IN_FLOATING: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     28          	GPIO_InitTypeDef GPIO_InitStruct;
+     29          	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+   \   00000002   0xF44F 0x7000      MOV      R0,#+512
+   \   00000006   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     30          	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+   \   0000000A   0x2004             MOVS     R0,#+4
+   \   0000000C   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     31          	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_10MHz;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     32          	GPIO_Init(GPIOB, &GPIO_InitStruct);
+   \   00000016   0x4669             MOV      R1,SP
+   \   00000018   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000001A   0x.... 0x....      BL       GPIO_Init
+     33          }
+   \   0000001E   0xBD01             POP      {R0,PC}          ;; return
+     34          
+
+   \                                 In section .text, align 2, keep-with-next
+     35          void Onewire_IN_PULL_UP(void) {
+   \                     Onewire_IN_PULL_UP: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     36          	GPIO_InitTypeDef GPIO_InitStruct;
+     37          	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+   \   00000002   0xF44F 0x7000      MOV      R0,#+512
+   \   00000006   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     38          	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IPU;
+   \   0000000A   0x2048             MOVS     R0,#+72
+   \   0000000C   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     39          	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_10MHz;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     40          	GPIO_Init(GPIOB, &GPIO_InitStruct);
+   \   00000016   0x4669             MOV      R1,SP
+   \   00000018   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000001A   0x.... 0x....      BL       GPIO_Init
+     41          }
+   \   0000001E   0xBD01             POP      {R0,PC}          ;; return
+     42          
+     43          #if 0
+     44          void delay_us(u16 us)
+     45          {
+     46          	us=15*us;
+     47          	while(--us);
+     48          }
+     49          #else
+     50          #define delay_us(x) OS_Delayus(x * DELAY_SCALE)
+     51          #endif
+     52          
+     53          /* Reset */
+
+   \                                 In section .text, align 2, keep-with-next
+     54          void resetOnewire( void ) {
+   \                     resetOnewire: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     55          	Onewire_OUT_PULL_UP();
+   \   00000002   0x.... 0x....      BL       Onewire_OUT_PULL_UP
+     56          	CLR_DQ();
+   \   00000006   0xF44F 0x7100      MOV      R1,#+512
+   \   0000000A   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000000C   0x.... 0x....      BL       GPIO_ResetBits
+     57          	delay_us(450);
+   \   00000010   0xF44F 0x7061      MOV      R0,#+900
+   \   00000014   0x.... 0x....      BL       OS_Delayus
+     58          	SET_DQ();
+   \   00000018   0xF44F 0x7100      MOV      R1,#+512
+   \   0000001C   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000001E   0x.... 0x....      BL       GPIO_SetBits
+     59          	delay_us(60);
+   \   00000022   0x2078             MOVS     R0,#+120
+   \   00000024   0x.... 0x....      BL       OS_Delayus
+     60          	Onewire_IN_PULL_UP(); 
+   \   00000028   0x.... 0x....      BL       Onewire_IN_PULL_UP
+     61          	delay_us(10);
+   \   0000002C   0x2014             MOVS     R0,#+20
+   \   0000002E   0x.... 0x....      BL       OS_Delayus
+     62          	while(!(GET_DQ()));
+   \                     ??resetOnewire_0: (+1)
+   \   00000032   0xF44F 0x7100      MOV      R1,#+512
+   \   00000036   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000038   0x.... 0x....      BL       GPIO_ReadInputDataBit
+   \   0000003C   0x2800             CMP      R0,#+0
+   \   0000003E   0xD0F8             BEQ.N    ??resetOnewire_0
+     63          	Onewire_OUT_PULL_UP();
+   \   00000040   0x.... 0x....      BL       Onewire_OUT_PULL_UP
+     64          	SET_DQ();
+   \   00000044   0xF44F 0x7100      MOV      R1,#+512
+   \   00000048   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000004A   0x.... 0x....      BL       GPIO_SetBits
+     65          }
+   \   0000004E   0xBD01             POP      {R0,PC}          ;; return
+     66          
+     67          /* Read */
+
+   \                                 In section .text, align 2, keep-with-next
+     68          u8 rOnewire( void ) {
+   \                     rOnewire: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+     69             u8 data = 0, i = 0;
+   \   00000002   0x2400             MOVS     R4,#+0
+   \   00000004   0x2500             MOVS     R5,#+0
+     70             for( i = 0 ; i < 8 ; i++ ) {
+   \   00000006   0x2000             MOVS     R0,#+0
+   \   00000008   0x0005             MOVS     R5,R0
+   \                     ??rOnewire_0: (+1)
+   \   0000000A   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   0000000C   0x2D08             CMP      R5,#+8
+   \   0000000E   0xDA27             BGE.N    ??rOnewire_1
+     71                Onewire_OUT_PULL_UP();
+   \   00000010   0x.... 0x....      BL       Onewire_OUT_PULL_UP
+     72                CLR_DQ();
+   \   00000014   0xF44F 0x7100      MOV      R1,#+512
+   \   00000018   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000001A   0x.... 0x....      BL       GPIO_ResetBits
+     73                data = data >> 1;
+   \   0000001E   0xB2E4             UXTB     R4,R4            ;; ZeroExt  R4,R4,#+24,#+24
+   \   00000020   0x0864             LSRS     R4,R4,#+1
+     74                SET_DQ();
+   \   00000022   0xF44F 0x7100      MOV      R1,#+512
+   \   00000026   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000028   0x.... 0x....      BL       GPIO_SetBits
+     75                Onewire_IN_PULL_UP();
+   \   0000002C   0x.... 0x....      BL       Onewire_IN_PULL_UP
+     76                delay_us(8);
+   \   00000030   0x2010             MOVS     R0,#+16
+   \   00000032   0x.... 0x....      BL       OS_Delayus
+     77                if ( GET_DQ() )
+   \   00000036   0xF44F 0x7100      MOV      R1,#+512
+   \   0000003A   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000003C   0x.... 0x....      BL       GPIO_ReadInputDataBit
+   \   00000040   0x2800             CMP      R0,#+0
+   \   00000042   0xD001             BEQ.N    ??rOnewire_2
+     78                   data |= 0x80;
+   \   00000044   0xF054 0x0480      ORRS     R4,R4,#0x80
+     79                Onewire_OUT_PULL_UP();
+   \                     ??rOnewire_2: (+1)
+   \   00000048   0x.... 0x....      BL       Onewire_OUT_PULL_UP
+     80                SET_DQ();
+   \   0000004C   0xF44F 0x7100      MOV      R1,#+512
+   \   00000050   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000052   0x.... 0x....      BL       GPIO_SetBits
+     81                delay_us(60);
+   \   00000056   0x2078             MOVS     R0,#+120
+   \   00000058   0x.... 0x....      BL       OS_Delayus
+     82             }
+   \   0000005C   0x1C6D             ADDS     R5,R5,#+1
+   \   0000005E   0xE7D4             B.N      ??rOnewire_0
+     83             return(data);
+   \                     ??rOnewire_1: (+1)
+   \   00000060   0x0020             MOVS     R0,R4
+   \   00000062   0xB2C0             UXTB     R0,R0            ;; ZeroExt  R0,R0,#+24,#+24
+   \   00000064   0xBD32             POP      {R1,R4,R5,PC}    ;; return
+     84          }
+     85          
+     86          /* Write */
+
+   \                                 In section .text, align 2, keep-with-next
+     87          void wOnewire(u8 data) {
+   \                     wOnewire: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+     88             u8 i = 0;
+   \   00000004   0x2500             MOVS     R5,#+0
+     89             Onewire_OUT_PULL_UP();
+   \   00000006   0x.... 0x....      BL       Onewire_OUT_PULL_UP
+     90             SET_DQ();
+   \   0000000A   0xF44F 0x7100      MOV      R1,#+512
+   \   0000000E   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000010   0x.... 0x....      BL       GPIO_SetBits
+     91             delay_us(16);
+   \   00000014   0x2020             MOVS     R0,#+32
+   \   00000016   0x.... 0x....      BL       OS_Delayus
+     92             for ( i = 0; i < 8; i++ ) {
+   \   0000001A   0x2000             MOVS     R0,#+0
+   \   0000001C   0x0005             MOVS     R5,R0
+   \                     ??wOnewire_0: (+1)
+   \   0000001E   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000020   0x2D08             CMP      R5,#+8
+   \   00000022   0xDA1D             BGE.N    ??wOnewire_1
+     93                CLR_DQ();
+   \   00000024   0xF44F 0x7100      MOV      R1,#+512
+   \   00000028   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   0000002A   0x.... 0x....      BL       GPIO_ResetBits
+     94                if ( data & 0x01 ) {
+   \   0000002E   0x07E0             LSLS     R0,R4,#+31
+   \   00000030   0xD505             BPL.N    ??wOnewire_2
+     95                   SET_DQ();
+   \   00000032   0xF44F 0x7100      MOV      R1,#+512
+   \   00000036   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000038   0x.... 0x....      BL       GPIO_SetBits
+   \   0000003C   0xE004             B.N      ??wOnewire_3
+     96                } else {
+     97                   CLR_DQ();
+   \                     ??wOnewire_2: (+1)
+   \   0000003E   0xF44F 0x7100      MOV      R1,#+512
+   \   00000042   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000044   0x.... 0x....      BL       GPIO_ResetBits
+     98                }
+     99                data = data >> 1;
+   \                     ??wOnewire_3: (+1)
+   \   00000048   0xB2E4             UXTB     R4,R4            ;; ZeroExt  R4,R4,#+24,#+24
+   \   0000004A   0x0864             LSRS     R4,R4,#+1
+    100                delay_us(40);  //65
+   \   0000004C   0x2050             MOVS     R0,#+80
+   \   0000004E   0x.... 0x....      BL       OS_Delayus
+    101                SET_DQ();
+   \   00000052   0xF44F 0x7100      MOV      R1,#+512
+   \   00000056   0x....             LDR.N    R0,??DataTable6  ;; 0x40010c00
+   \   00000058   0x.... 0x....      BL       GPIO_SetBits
+    102             }
+   \   0000005C   0x1C6D             ADDS     R5,R5,#+1
+   \   0000005E   0xE7DE             B.N      ??wOnewire_0
+    103          }
+   \                     ??wOnewire_1: (+1)
+   \   00000060   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable6:
+   \   00000000   0x40010C00         DC32     0x40010c00
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   Onewire_Enable_GPIO_Port
+       8   Onewire_IN_FLOATING
+         8   -> GPIO_Init
+       8   Onewire_IN_PULL_UP
+         8   -> GPIO_Init
+       8   Onewire_OUT_FLOATING
+         8   -> GPIO_Init
+       8   Onewire_OUT_PULL_UP
+         8   -> GPIO_Init
+      16   rOnewire
+        16   -> GPIO_ReadInputDataBit
+        16   -> GPIO_ResetBits
+        16   -> GPIO_SetBits
+        16   -> OS_Delayus
+        16   -> Onewire_IN_PULL_UP
+        16   -> Onewire_OUT_PULL_UP
+       8   resetOnewire
+         8   -> GPIO_ReadInputDataBit
+         8   -> GPIO_ResetBits
+         8   -> GPIO_SetBits
+         8   -> OS_Delayus
+         8   -> Onewire_IN_PULL_UP
+         8   -> Onewire_OUT_PULL_UP
+      16   wOnewire
+        16   -> GPIO_ResetBits
+        16   -> GPIO_SetBits
+        16   -> OS_Delayus
+        16   -> Onewire_OUT_PULL_UP
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable6
+       2  Onewire_Enable_GPIO_Port
+      32  Onewire_IN_FLOATING
+      32  Onewire_IN_PULL_UP
+      32  Onewire_OUT_FLOATING
+      32  Onewire_OUT_PULL_UP
+     102  rOnewire
+      80  resetOnewire
+      98  wOnewire
+
+ 
+ 414 bytes in section .text
+ 
+ 414 bytes of CODE memory
+
+Errors: none
+Warnings: none

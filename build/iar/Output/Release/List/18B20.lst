@@ -1,0 +1,171 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       12/Sep/2016  16:26:12
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  C:\ilya\vendicont\arm-periphery\Application\18B20.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\18B20.c -D STM32F10X_HD -D
+#        USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\18B20.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\18B20.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\18B20.c
+      1          #include "stm32f10x.h"
+      2          #include "one_wire.h"
+      3          #include "18B20.h"
+      4          
+
+   \                                 In section .bss, align 4
+      5          float t_18b20;
+   \                     t_18b20:
+   \   00000000                      DS8 4
+      6          
+
+   \                                 In section .text, align 2, keep-with-next
+      7          void convertDs18b20( void ) { 
+   \                     convertDs18b20: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB081             SUB      SP,SP,#+4
+      8             resetOnewire(); 
+   \   00000004   0x.... 0x....      BL       resetOnewire
+      9             wOnewire(0xcc); 
+   \   00000008   0x20CC             MOVS     R0,#+204
+   \   0000000A   0x.... 0x....      BL       wOnewire
+     10             wOnewire(0x44); 
+   \   0000000E   0xB001             ADD      SP,SP,#+4
+   \   00000010   0xF85D 0xEB04      POP      {LR}
+   \   00000014   0x2044             MOVS     R0,#+68
+   \   00000016   0x.... 0x....      B.W      wOnewire
+     11          }
+     12          
+
+   \                                 In section .text, align 2, keep-with-next
+     13          u8* readID( void ) { 
+   \                     readID: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB083             SUB      SP,SP,#+12
+     14             u8 ID[8], i, *p;
+     15             resetOnewire(); 
+   \   00000004   0x.... 0x....      BL       resetOnewire
+     16             wOnewire(0x33);
+   \   00000008   0x2033             MOVS     R0,#+51
+   \   0000000A   0x.... 0x....      BL       wOnewire
+     17             for ( i = 0; i < 8; i++ ) {
+     18                ID[i] = rOnewire();
+   \   0000000E   0x.... 0x....      BL       rOnewire
+   \   00000012   0xF88D 0x0000      STRB     R0,[SP, #+0]
+   \   00000016   0x.... 0x....      BL       rOnewire
+   \   0000001A   0xF88D 0x0001      STRB     R0,[SP, #+1]
+   \   0000001E   0x.... 0x....      BL       rOnewire
+   \   00000022   0xF88D 0x0002      STRB     R0,[SP, #+2]
+   \   00000026   0x.... 0x....      BL       rOnewire
+   \   0000002A   0xF88D 0x0003      STRB     R0,[SP, #+3]
+   \   0000002E   0x.... 0x....      BL       rOnewire
+   \   00000032   0xF88D 0x0004      STRB     R0,[SP, #+4]
+   \   00000036   0x.... 0x....      BL       rOnewire
+   \   0000003A   0xF88D 0x0005      STRB     R0,[SP, #+5]
+   \   0000003E   0x.... 0x....      BL       rOnewire
+   \   00000042   0xF88D 0x0006      STRB     R0,[SP, #+6]
+   \   00000046   0x.... 0x....      BL       rOnewire
+     19             }
+     20             p=ID;
+     21             return p;
+   \   0000004A   0x4668             MOV      R0,SP
+   \   0000004C   0xB003             ADD      SP,SP,#+12
+   \   0000004E   0xBD00             POP      {PC}             ;; return
+     22          }
+     23          
+
+   \                                 In section .text, align 2, keep-with-next
+     24          u16 readTemp( void ) { 
+   \                     readTemp: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+     25          	u8 temp1, temp2;
+     26          	convertDs18b20();
+   \   00000002   0x.... 0x....      BL       resetOnewire
+   \   00000006   0x20CC             MOVS     R0,#+204
+   \   00000008   0x.... 0x....      BL       wOnewire
+   \   0000000C   0x2044             MOVS     R0,#+68
+   \   0000000E   0x.... 0x....      BL       wOnewire
+     27          	resetOnewire(); 
+   \   00000012   0x.... 0x....      BL       resetOnewire
+     28          	wOnewire(0xcc); 
+   \   00000016   0x20CC             MOVS     R0,#+204
+   \   00000018   0x.... 0x....      BL       wOnewire
+     29          	wOnewire(0xbe); 	
+   \   0000001C   0x20BE             MOVS     R0,#+190
+   \   0000001E   0x.... 0x....      BL       wOnewire
+     30          	temp1 = rOnewire(); 
+   \   00000022   0x.... 0x....      BL       rOnewire
+   \   00000026   0x4604             MOV      R4,R0
+     31          	temp2 = rOnewire(); 
+     32          #if 0   
+     33          	temp2 = temp2<<4;
+     34          	temp1 = temp1>>4;
+     35          	temp2 |= temp1;
+     36          	return ( temp2 & 0x7F );
+     37          #else
+     38          	return ( ( (u16)temp2 << 8 ) | temp1 );   
+   \   00000028   0x.... 0x....      BL       rOnewire
+   \   0000002C   0xEA44 0x2000      ORR      R0,R4,R0, LSL #+8
+   \   00000030   0xBD10             POP      {R4,PC}          ;; return
+     39          #endif   
+     40          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   convertDs18b20
+         8   -> resetOnewire
+         0   -> wOnewire
+         8   -> wOnewire
+      16   readID
+        16   -> rOnewire
+        16   -> resetOnewire
+        16   -> wOnewire
+       8   readTemp
+         8   -> rOnewire
+         8   -> resetOnewire
+         8   -> wOnewire
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      26  convertDs18b20
+      80  readID
+      50  readTemp
+       4  t_18b20
+
+ 
+   4 bytes in section .bss
+ 156 bytes in section .text
+ 
+ 156 bytes of CODE memory
+   4 bytes of DATA memory
+
+Errors: none
+Warnings: none

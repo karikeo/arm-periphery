@@ -1,0 +1,784 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       15/Nov/2016  14:53:02
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\mdb_sniffer.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\mdb_sniffer.c
+#        -D STM32F10X_HD -D USE_STDPERIPH_DRIVER -D DEBUG=1 -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List --remarks
+#        -o C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj --no_cse
+#        --no_unroll --no_inline --no_code_motion --no_tbaa --no_clustering
+#        --no_scheduling --debug --endian=little --cpu=Cortex-M3 -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -On --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\List\mdb_sniffer.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Debug\Obj\mdb_sniffer.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\p-types\vending\mdb_sniffer.c
+      1          #include "stm32f10x.h"
+      2          #include "RTOS.h"
+      3          #include "BSP.h"
+      4          #include "pt-vending.h"
+      5          #include "stdio.h"
+      6          #include "log.h"
+      7          #include "mdb.h"
+      8          #include "mdb_sniffer.h"
+      9          
+
+   \                                 In section .bss, align 4
+     10          tMdbSniffer sniffer;
+   \                     sniffer:
+   \   00000000                      DS8 480
+     11          extern t_fb_desc fb;
+     12          
+     13          #if defined MDB_SNIFFER
+     14          
+
+   \                                 In section .text, align 2, keep-with-next
+     15          void sniffer_tx( u8* p, u16 n )
+     16          {
+   \                     sniffer_tx: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+   \   00000004   0x000D             MOVS     R5,R1
+     17            u16 sz = sizeof(sniffer.tx_buf) - sniffer.tx_size;
+   \   00000006   0x.... 0x....      LDR.W    R0,??DataTable4_1
+   \   0000000A   0x8AC0             LDRH     R0,[R0, #+22]
+   \   0000000C   0xF5D0 0x7680      RSBS     R6,R0,#+256
+     18          
+     19            if ( n > sz )
+   \   00000010   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   00000012   0xB2AD             UXTH     R5,R5            ;; ZeroExt  R5,R5,#+16,#+16
+   \   00000014   0x42AE             CMP      R6,R5
+   \   00000016   0xD200             BCS.N    ??sniffer_tx_0
+     20            {
+     21              n = sz;
+   \   00000018   0x0035             MOVS     R5,R6
+     22            }
+     23            
+     24            if ( n > 0 )
+   \                     ??sniffer_tx_0: (+1)
+   \   0000001A   0xB2AD             UXTH     R5,R5            ;; ZeroExt  R5,R5,#+16,#+16
+   \   0000001C   0x2D00             CMP      R5,#+0
+   \   0000001E   0xD018             BEQ.N    ??sniffer_tx_1
+     25            {
+     26              memmove( &sniffer.tx_buf[ sniffer.tx_size ], p, n );
+   \   00000020   0xB2AD             UXTH     R5,R5            ;; ZeroExt  R5,R5,#+16,#+16
+   \   00000022   0x.... 0x....      LDR.W    R0,??DataTable4_1
+   \   00000026   0x.... 0x....      LDR.W    R1,??DataTable4_1
+   \   0000002A   0x8AC9             LDRH     R1,[R1, #+22]
+   \   0000002C   0x1808             ADDS     R0,R1,R0
+   \   0000002E   0xF110 0x0718      ADDS     R7,R0,#+24
+   \   00000032   0x002A             MOVS     R2,R5
+   \   00000034   0x0021             MOVS     R1,R4
+   \   00000036   0x0038             MOVS     R0,R7
+   \   00000038   0x.... 0x....      BL       __aeabi_memmove
+     27              sniffer.tx_size += n;  
+   \   0000003C   0x....             LDR.N    R0,??DataTable4_1
+   \   0000003E   0x8AC0             LDRH     R0,[R0, #+22]
+   \   00000040   0x1828             ADDS     R0,R5,R0
+   \   00000042   0x....             LDR.N    R1,??DataTable4_1
+   \   00000044   0x82C8             STRH     R0,[R1, #+22]
+     28              USART_ITConfig( USART3, USART_IT_TXE , ENABLE );      
+   \   00000046   0x2201             MOVS     R2,#+1
+   \   00000048   0xF240 0x7127      MOVW     R1,#+1831
+   \   0000004C   0x....             LDR.N    R0,??DataTable4_2  ;; 0x40004800
+   \   0000004E   0x.... 0x....      BL       USART_ITConfig
+     29            }
+     30          }
+   \                     ??sniffer_tx_1: (+1)
+   \   00000052   0xBDF1             POP      {R0,R4-R7,PC}    ;; return
+     31          
+
+   \                                 In section .text, align 2, keep-with-next
+     32          void sniffer_s_rx()
+     33          {  
+   \                     sniffer_s_rx: (+1)
+   \   00000000   0xE92D 0x41F0      PUSH     {R4-R8,LR}
+   \   00000004   0xB0A0             SUB      SP,SP,#+128
+     34            if ( (sniffer.m.raw.rx[ 0 ] & 0xF0) != 0x10 )
+     35            {
+     36                //return;
+     37            }
+     38            u8 n = 0;
+   \   00000006   0x2500             MOVS     R5,#+0
+     39            char buf[128];
+     40          #if 1
+     41            float f = sniffer.s.raw.time;
+   \   00000008   0x....             LDR.N    R0,??DataTable4_1
+   \   0000000A   0xF8D0 0x01D8      LDR      R0,[R0, #+472]
+   \   0000000E   0x.... 0x....      BL       __aeabi_ui2f
+   \   00000012   0x0004             MOVS     R4,R0
+     42            f /= 1000.0;
+   \   00000014   0x0020             MOVS     R0,R4
+   \   00000016   0x.... 0x....      BL       __aeabi_f2d
+   \   0000001A   0x2200             MOVS     R2,#+0
+   \   0000001C   0x....             LDR.N    R3,??DataTable4_3  ;; 0x408f4000
+   \   0000001E   0x.... 0x....      BL       __aeabi_ddiv
+   \   00000022   0x.... 0x....      BL       __aeabi_d2f
+   \   00000026   0x0004             MOVS     R4,R0
+     43            n += sprintf(&buf[n],"[%07.1f] ", f);
+   \   00000028   0x0020             MOVS     R0,R4
+   \   0000002A   0x.... 0x....      BL       __aeabi_f2d
+   \   0000002E   0x0002             MOVS     R2,R0
+   \   00000030   0x000B             MOVS     R3,R1
+   \   00000032   0x....             LDR.N    R1,??DataTable4_4
+   \   00000034   0x4668             MOV      R0,SP
+   \   00000036   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000038   0x1828             ADDS     R0,R5,R0
+   \   0000003A   0x.... 0x....      BL       sprintf
+   \   0000003E   0x1940             ADDS     R0,R0,R5
+   \   00000040   0x0005             MOVS     R5,R0
+     44          #endif  
+     45            buf[ n++ ] = SNIFFER_SLAVE_CH;
+   \   00000042   0x2053             MOVS     R0,#+83
+   \   00000044   0x4669             MOV      R1,SP
+   \   00000046   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000048   0x5468             STRB     R0,[R5, R1]
+   \   0000004A   0x1C6D             ADDS     R5,R5,#+1
+     46            buf[ n++ ] = ':';  
+   \   0000004C   0x203A             MOVS     R0,#+58
+   \   0000004E   0x4669             MOV      R1,SP
+   \   00000050   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000052   0x5468             STRB     R0,[R5, R1]
+   \   00000054   0x1C6D             ADDS     R5,R5,#+1
+     47            for (u8 i = 0; i < sniffer.s.raw.rx_size; i++ )
+   \   00000056   0x2600             MOVS     R6,#+0
+   \                     ??sniffer_s_rx_0: (+1)
+   \   00000058   0x....             LDR.N    R0,??DataTable4_1
+   \   0000005A   0xF890 0x01D4      LDRB     R0,[R0, #+468]
+   \   0000005E   0xB2F6             UXTB     R6,R6            ;; ZeroExt  R6,R6,#+24,#+24
+   \   00000060   0x4286             CMP      R6,R0
+   \   00000062   0xD20F             BCS.N    ??sniffer_s_rx_1
+     48            {
+     49              n += sprintf(&buf[n],"%.2X ", sniffer.s.raw.rx[i]);
+   \   00000064   0x....             LDR.N    R0,??DataTable4_1
+   \   00000066   0xB2F6             UXTB     R6,R6            ;; ZeroExt  R6,R6,#+24,#+24
+   \   00000068   0xEB10 0x0046      ADDS     R0,R0,R6, LSL #+1
+   \   0000006C   0xF8B0 0x218C      LDRH     R2,[R0, #+396]
+   \   00000070   0x....             LDR.N    R1,??DataTable4_5
+   \   00000072   0x4668             MOV      R0,SP
+   \   00000074   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000076   0x1828             ADDS     R0,R5,R0
+   \   00000078   0x.... 0x....      BL       sprintf
+   \   0000007C   0x1940             ADDS     R0,R0,R5
+   \   0000007E   0x0005             MOVS     R5,R0
+     50            }  
+   \   00000080   0x1C76             ADDS     R6,R6,#+1
+   \   00000082   0xE7E9             B.N      ??sniffer_s_rx_0
+     51            buf[ n-1 ] = 0x0D;
+   \                     ??sniffer_s_rx_1: (+1)
+   \   00000084   0x200D             MOVS     R0,#+13
+   \   00000086   0x4669             MOV      R1,SP
+   \   00000088   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   0000008A   0x1869             ADDS     R1,R5,R1
+   \   0000008C   0xF801 0x0C01      STRB     R0,[R1, #-1]
+     52            
+     53            sniffer_tx( buf, n );
+   \   00000090   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000092   0x0029             MOVS     R1,R5
+   \   00000094   0xB289             UXTH     R1,R1            ;; ZeroExt  R1,R1,#+16,#+16
+   \   00000096   0x4668             MOV      R0,SP
+   \   00000098   0x.... 0x....      BL       sniffer_tx
+     54            memset(sniffer.s.raw.rx, 0, sizeof(sniffer.s.raw.rx));
+   \   0000009C   0x2648             MOVS     R6,#+72
+   \   0000009E   0x2700             MOVS     R7,#+0
+   \   000000A0   0x.... 0x....      LDR.W    R8,??DataTable4_6
+   \   000000A4   0x003A             MOVS     R2,R7
+   \   000000A6   0x0031             MOVS     R1,R6
+   \   000000A8   0x4640             MOV      R0,R8
+   \   000000AA   0x.... 0x....      BL       __aeabi_memset
+     55          }
+   \   000000AE   0xB020             ADD      SP,SP,#+128
+   \   000000B0   0xE8BD 0x81F0      POP      {R4-R8,PC}       ;; return
+     56          
+
+   \                                 In section .text, align 2, keep-with-next
+     57          void sniffer_m_rx()
+     58          {
+   \                     sniffer_m_rx: (+1)
+   \   00000000   0xE92D 0x41F0      PUSH     {R4-R8,LR}
+   \   00000004   0xB0A0             SUB      SP,SP,#+128
+     59            if ( (sniffer.m.raw.rx[ 0 ] & 0xF0) != 0x10 )
+     60            {
+     61                //return;
+     62            }
+     63            
+     64            u8 n = 0;
+   \   00000006   0x2500             MOVS     R5,#+0
+     65            char buf[128];
+     66          #if 1 
+     67            float f = sniffer.m.raw.time;
+   \   00000008   0x....             LDR.N    R0,??DataTable4_1
+   \   0000000A   0xF8D0 0x0188      LDR      R0,[R0, #+392]
+   \   0000000E   0x.... 0x....      BL       __aeabi_ui2f
+   \   00000012   0x0004             MOVS     R4,R0
+     68            f /= 1000.0;
+   \   00000014   0x0020             MOVS     R0,R4
+   \   00000016   0x.... 0x....      BL       __aeabi_f2d
+   \   0000001A   0x2200             MOVS     R2,#+0
+   \   0000001C   0x....             LDR.N    R3,??DataTable4_3  ;; 0x408f4000
+   \   0000001E   0x.... 0x....      BL       __aeabi_ddiv
+   \   00000022   0x.... 0x....      BL       __aeabi_d2f
+   \   00000026   0x0004             MOVS     R4,R0
+     69            n += sprintf(&buf[n],"[%07.1f] ", f);
+   \   00000028   0x0020             MOVS     R0,R4
+   \   0000002A   0x.... 0x....      BL       __aeabi_f2d
+   \   0000002E   0x0002             MOVS     R2,R0
+   \   00000030   0x000B             MOVS     R3,R1
+   \   00000032   0x....             LDR.N    R1,??DataTable4_4
+   \   00000034   0x4668             MOV      R0,SP
+   \   00000036   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000038   0x1828             ADDS     R0,R5,R0
+   \   0000003A   0x.... 0x....      BL       sprintf
+   \   0000003E   0x1940             ADDS     R0,R0,R5
+   \   00000040   0x0005             MOVS     R5,R0
+     70          #endif  
+     71            buf[ n++ ] = SNIFFER_MASTER_CH;
+   \   00000042   0x204D             MOVS     R0,#+77
+   \   00000044   0x4669             MOV      R1,SP
+   \   00000046   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000048   0x5468             STRB     R0,[R5, R1]
+   \   0000004A   0x1C6D             ADDS     R5,R5,#+1
+     72            buf[ n++ ] = ':';  
+   \   0000004C   0x203A             MOVS     R0,#+58
+   \   0000004E   0x4669             MOV      R1,SP
+   \   00000050   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000052   0x5468             STRB     R0,[R5, R1]
+   \   00000054   0x1C6D             ADDS     R5,R5,#+1
+     73            for (u8 i = 0; i < sniffer.m.raw.rx_size; i++ )
+   \   00000056   0x2600             MOVS     R6,#+0
+   \                     ??sniffer_m_rx_0: (+1)
+   \   00000058   0x....             LDR.N    R0,??DataTable4_1
+   \   0000005A   0xF890 0x0184      LDRB     R0,[R0, #+388]
+   \   0000005E   0xB2F6             UXTB     R6,R6            ;; ZeroExt  R6,R6,#+24,#+24
+   \   00000060   0x4286             CMP      R6,R0
+   \   00000062   0xD20F             BCS.N    ??sniffer_m_rx_1
+     74            {
+     75              n += sprintf(&buf[n],"%.2X ", sniffer.m.raw.rx[i]);
+   \   00000064   0x....             LDR.N    R0,??DataTable4_1
+   \   00000066   0xB2F6             UXTB     R6,R6            ;; ZeroExt  R6,R6,#+24,#+24
+   \   00000068   0xEB10 0x0046      ADDS     R0,R0,R6, LSL #+1
+   \   0000006C   0xF8B0 0x213C      LDRH     R2,[R0, #+316]
+   \   00000070   0x....             LDR.N    R1,??DataTable4_5
+   \   00000072   0x4668             MOV      R0,SP
+   \   00000074   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000076   0x1828             ADDS     R0,R5,R0
+   \   00000078   0x.... 0x....      BL       sprintf
+   \   0000007C   0x1940             ADDS     R0,R0,R5
+   \   0000007E   0x0005             MOVS     R5,R0
+     76            }  
+   \   00000080   0x1C76             ADDS     R6,R6,#+1
+   \   00000082   0xE7E9             B.N      ??sniffer_m_rx_0
+     77            buf[ n-1 ] = '\r';
+   \                     ??sniffer_m_rx_1: (+1)
+   \   00000084   0x200D             MOVS     R0,#+13
+   \   00000086   0x4669             MOV      R1,SP
+   \   00000088   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   0000008A   0x1869             ADDS     R1,R5,R1
+   \   0000008C   0xF801 0x0C01      STRB     R0,[R1, #-1]
+     78          
+     79            sniffer_tx( buf, n );  
+   \   00000090   0xB2ED             UXTB     R5,R5            ;; ZeroExt  R5,R5,#+24,#+24
+   \   00000092   0x0029             MOVS     R1,R5
+   \   00000094   0xB289             UXTH     R1,R1            ;; ZeroExt  R1,R1,#+16,#+16
+   \   00000096   0x4668             MOV      R0,SP
+   \   00000098   0x.... 0x....      BL       sniffer_tx
+     80            memset(sniffer.m.raw.rx, 0, sizeof(sniffer.m.raw.rx));
+   \   0000009C   0x2648             MOVS     R6,#+72
+   \   0000009E   0x2700             MOVS     R7,#+0
+   \   000000A0   0x.... 0x....      LDR.W    R8,??DataTable4_7
+   \   000000A4   0x003A             MOVS     R2,R7
+   \   000000A6   0x0031             MOVS     R1,R6
+   \   000000A8   0x4640             MOV      R0,R8
+   \   000000AA   0x.... 0x....      BL       __aeabi_memset
+     81          }
+   \   000000AE   0xB020             ADD      SP,SP,#+128
+   \   000000B0   0xE8BD 0x81F0      POP      {R4-R8,PC}       ;; return
+     82          
+
+   \                                 In section .text, align 2, keep-with-next
+     83          void sniffer_rx_msg()
+     84          {  
+   \                     sniffer_rx_msg: (+1)
+   \   00000000   0xE92D 0x47F0      PUSH     {R4-R10,LR}
+     85            s16 sz = 0;  
+   \   00000004   0x2400             MOVS     R4,#+0
+     86            u8* rx = sniffer.rx_buf;
+   \   00000006   0x....             LDR.N    R5,??DataTable4_8
+     87            u16 rx_size = sniffer.rx_size;
+   \   00000008   0x....             LDR.N    R0,??DataTable4_1
+   \   0000000A   0xF8B0 0x6118      LDRH     R6,[R0, #+280]
+     88            void (*tx)(u16*,u16) = 0;
+   \   0000000E   0x2700             MOVS     R7,#+0
+     89            
+     90            log( "sniffer rx:%d ", rx_size );
+   \   00000010   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   00000012   0x0031             MOVS     R1,R6
+   \   00000014   0x....             LDR.N    R0,??DataTable4_9
+   \   00000016   0x.... 0x....      BL       log1
+     91            for ( int i = 0 ; i < rx_size; i++ )
+   \   0000001A   0xF05F 0x0800      MOVS     R8,#+0
+   \                     ??sniffer_rx_msg_0: (+1)
+   \   0000001E   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   00000020   0x45B0             CMP      R8,R6
+   \   00000022   0xDA07             BGE.N    ??sniffer_rx_msg_1
+     92            {
+     93              log( "%c",rx[i] );    
+   \   00000024   0xF818 0x1005      LDRB     R1,[R8, R5]
+   \   00000028   0x....             ADR.N    R0,??DataTable4  ;; 0x25, 0x63, 0x00, 0x00
+   \   0000002A   0x.... 0x....      BL       log1
+     94            }
+   \   0000002E   0xF118 0x0801      ADDS     R8,R8,#+1
+   \   00000032   0xE7F4             B.N      ??sniffer_rx_msg_0
+     95            
+     96            if ( rx_size > 2 && rx[ 1 ] == ':' )
+   \                     ??sniffer_rx_msg_1: (+1)
+   \   00000034   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   00000036   0x2E03             CMP      R6,#+3
+   \   00000038   0xDB1A             BLT.N    ??sniffer_rx_msg_2
+   \   0000003A   0x7868             LDRB     R0,[R5, #+1]
+   \   0000003C   0x283A             CMP      R0,#+58
+   \   0000003E   0xD117             BNE.N    ??sniffer_rx_msg_2
+     97            {    
+     98              sz = rx_size - 2;
+   \   00000040   0x1EB0             SUBS     R0,R6,#+2
+   \   00000042   0x0004             MOVS     R4,R0
+     99              if ( rx[ 0 ] == SNIFFER_MASTER_CH )
+   \   00000044   0x7828             LDRB     R0,[R5, #+0]
+   \   00000046   0x284D             CMP      R0,#+77
+   \   00000048   0xD102             BNE.N    ??sniffer_rx_msg_3
+    100              {   
+    101                tx = fb_m_tx;
+   \   0000004A   0x....             LDR.N    R0,??DataTable4_10
+   \   0000004C   0x0007             MOVS     R7,R0
+   \   0000004E   0xE004             B.N      ??sniffer_rx_msg_4
+    102              }
+    103              else if ( rx[ 0 ] == SNIFFER_SLAVE_CH )
+   \                     ??sniffer_rx_msg_3: (+1)
+   \   00000050   0x7828             LDRB     R0,[R5, #+0]
+   \   00000052   0x2853             CMP      R0,#+83
+   \   00000054   0xD101             BNE.N    ??sniffer_rx_msg_4
+    104              {      
+    105                tx = fb_s_tx;
+   \   00000056   0x....             LDR.N    R0,??DataTable4_11
+   \   00000058   0x0007             MOVS     R7,R0
+    106              }    
+    107              
+    108              if ( sz > 0 && tx )
+   \                     ??sniffer_rx_msg_4: (+1)
+   \   0000005A   0xB224             SXTH     R4,R4            ;; SignExt  R4,R4,#+16,#+16
+   \   0000005C   0x2C01             CMP      R4,#+1
+   \   0000005E   0xDB40             BLT.N    ??sniffer_rx_msg_5
+   \   00000060   0x0038             MOVS     R0,R7
+   \   00000062   0x2800             CMP      R0,#+0
+   \   00000064   0xD03D             BEQ.N    ??sniffer_rx_msg_5
+    109              {
+    110                tx( (u16*)&rx[2], sz );
+   \   00000066   0x0021             MOVS     R1,R4
+   \   00000068   0xB289             UXTH     R1,R1            ;; ZeroExt  R1,R1,#+16,#+16
+   \   0000006A   0x1CA8             ADDS     R0,R5,#+2
+   \   0000006C   0x47B8             BLX      R7
+   \   0000006E   0xE038             B.N      ??sniffer_rx_msg_5
+    111              }
+    112            }
+    113            else if ( rx_size == 2 && rx[ 0 ] == 'd' && rx[ 1 ] == '\r')
+   \                     ??sniffer_rx_msg_2: (+1)
+   \   00000070   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   00000072   0x2E02             CMP      R6,#+2
+   \   00000074   0xD10E             BNE.N    ??sniffer_rx_msg_6
+   \   00000076   0x7828             LDRB     R0,[R5, #+0]
+   \   00000078   0x2864             CMP      R0,#+100
+   \   0000007A   0xD10B             BNE.N    ??sniffer_rx_msg_6
+   \   0000007C   0x7868             LDRB     R0,[R5, #+1]
+   \   0000007E   0x280D             CMP      R0,#+13
+   \   00000080   0xD108             BNE.N    ??sniffer_rx_msg_6
+    114            {    
+    115              fb.cashless.display_tr = 1;
+   \   00000082   0x....             LDR.N    R0,??DataTable4_12
+   \   00000084   0xF890 0x02C0      LDRB     R0,[R0, #+704]
+   \   00000088   0xF050 0x0002      ORRS     R0,R0,#0x2
+   \   0000008C   0x....             LDR.N    R1,??DataTable4_12
+   \   0000008E   0xF881 0x02C0      STRB     R0,[R1, #+704]
+   \   00000092   0xE026             B.N      ??sniffer_rx_msg_5
+    116            }  
+    117            else if ( rx_size == 2 && rx[ 0 ] == 'b' && rx[ 1 ] == '\r')
+   \                     ??sniffer_rx_msg_6: (+1)
+   \   00000094   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   00000096   0x2E02             CMP      R6,#+2
+   \   00000098   0xD10E             BNE.N    ??sniffer_rx_msg_7
+   \   0000009A   0x7828             LDRB     R0,[R5, #+0]
+   \   0000009C   0x2862             CMP      R0,#+98
+   \   0000009E   0xD10B             BNE.N    ??sniffer_rx_msg_7
+   \   000000A0   0x7868             LDRB     R0,[R5, #+1]
+   \   000000A2   0x280D             CMP      R0,#+13
+   \   000000A4   0xD108             BNE.N    ??sniffer_rx_msg_7
+    118            {    
+    119              fb.cashless.begin_session_tr = 1;    
+   \   000000A6   0x....             LDR.N    R0,??DataTable4_12
+   \   000000A8   0xF890 0x02C0      LDRB     R0,[R0, #+704]
+   \   000000AC   0xF050 0x0004      ORRS     R0,R0,#0x4
+   \   000000B0   0x....             LDR.N    R1,??DataTable4_12
+   \   000000B2   0xF881 0x02C0      STRB     R0,[R1, #+704]
+   \   000000B6   0xE014             B.N      ??sniffer_rx_msg_5
+    120            }
+    121            else if ( rx_size == 2 && rx[ 0 ] == 'c' && rx[ 1 ] == '\r')
+   \                     ??sniffer_rx_msg_7: (+1)
+   \   000000B8   0xB2B6             UXTH     R6,R6            ;; ZeroExt  R6,R6,#+16,#+16
+   \   000000BA   0x2E02             CMP      R6,#+2
+   \   000000BC   0xD10E             BNE.N    ??sniffer_rx_msg_8
+   \   000000BE   0x7828             LDRB     R0,[R5, #+0]
+   \   000000C0   0x2863             CMP      R0,#+99
+   \   000000C2   0xD10B             BNE.N    ??sniffer_rx_msg_8
+   \   000000C4   0x7868             LDRB     R0,[R5, #+1]
+   \   000000C6   0x280D             CMP      R0,#+13
+   \   000000C8   0xD108             BNE.N    ??sniffer_rx_msg_8
+    122            {    
+    123              fb.cashless.cancel_session_tr = 1;    
+   \   000000CA   0x....             LDR.N    R0,??DataTable4_12
+   \   000000CC   0xF890 0x02C0      LDRB     R0,[R0, #+704]
+   \   000000D0   0xF050 0x0008      ORRS     R0,R0,#0x8
+   \   000000D4   0x....             LDR.N    R1,??DataTable4_12
+   \   000000D6   0xF881 0x02C0      STRB     R0,[R1, #+704]
+   \   000000DA   0xE002             B.N      ??sniffer_rx_msg_5
+    124            }  
+    125            else
+    126            {
+    127              log("sniffer rx incorrect format\r\n");
+   \                     ??sniffer_rx_msg_8: (+1)
+   \   000000DC   0x....             LDR.N    R0,??DataTable4_13
+   \   000000DE   0x.... 0x....      BL       log1
+    128            }
+    129            memset(sniffer.rx_buf, 0, sizeof(sniffer.rx_buf));
+   \                     ??sniffer_rx_msg_5: (+1)
+   \   000000E2   0xF05F 0x0820      MOVS     R8,#+32
+   \   000000E6   0xF05F 0x0900      MOVS     R9,#+0
+   \   000000EA   0x.... 0x....      LDR.W    R10,??DataTable4_8
+   \   000000EE   0x464A             MOV      R2,R9
+   \   000000F0   0x4641             MOV      R1,R8
+   \   000000F2   0x4650             MOV      R0,R10
+   \   000000F4   0x.... 0x....      BL       __aeabi_memset
+    130            sniffer.rx_size = 0;
+   \   000000F8   0x2000             MOVS     R0,#+0
+   \   000000FA   0x....             LDR.N    R1,??DataTable4_1
+   \   000000FC   0xF8A1 0x0118      STRH     R0,[R1, #+280]
+    131          }
+   \   00000100   0xE8BD 0x87F0      POP      {R4-R10,PC}      ;; return
+    132          
+
+   \                                 In section .text, align 2, keep-with-next
+    133          void sniffer_isr( void* uart )
+    134          {
+   \                     sniffer_isr: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB082             SUB      SP,SP,#+8
+   \   00000004   0x0004             MOVS     R4,R0
+    135            if ( USART_GetFlagStatus( uart, USART_FLAG_RXNE ) ) 
+   \   00000006   0x2120             MOVS     R1,#+32
+   \   00000008   0x0020             MOVS     R0,R4
+   \   0000000A   0x.... 0x....      BL       USART_GetFlagStatus
+   \   0000000E   0x2800             CMP      R0,#+0
+   \   00000010   0xD01C             BEQ.N    ??sniffer_isr_0
+    136            {
+    137              // Push a new data into the receiver buffer
+    138              volatile u8 b = USART_ReceiveData(uart);
+   \   00000012   0x0020             MOVS     R0,R4
+   \   00000014   0x.... 0x....      BL       USART_ReceiveData
+   \   00000018   0xF88D 0x0000      STRB     R0,[SP, #+0]
+    139              if ( sniffer.rx_size < sizeof(sniffer.rx_buf) ) 
+   \   0000001C   0x....             LDR.N    R0,??DataTable4_1
+   \   0000001E   0xF8B0 0x0118      LDRH     R0,[R0, #+280]
+   \   00000022   0x2820             CMP      R0,#+32
+   \   00000024   0xD20F             BCS.N    ??sniffer_isr_1
+    140              {
+    141                 sniffer.rx_buf[ sniffer.rx_size++ ] = b;
+   \   00000026   0xF89D 0x0000      LDRB     R0,[SP, #+0]
+   \   0000002A   0x....             LDR.N    R1,??DataTable4_1
+   \   0000002C   0x....             LDR.N    R2,??DataTable4_1
+   \   0000002E   0xF8B2 0x2118      LDRH     R2,[R2, #+280]
+   \   00000032   0x1851             ADDS     R1,R2,R1
+   \   00000034   0xF881 0x011A      STRB     R0,[R1, #+282]
+   \   00000038   0x....             LDR.N    R0,??DataTable4_1
+   \   0000003A   0xF8B0 0x0118      LDRH     R0,[R0, #+280]
+   \   0000003E   0x1C40             ADDS     R0,R0,#+1
+   \   00000040   0x....             LDR.N    R1,??DataTable4_1
+   \   00000042   0xF8A1 0x0118      STRH     R0,[R1, #+280]
+    142              }
+    143              OS_RetriggerTimer( &sniffer.timer );        
+   \                     ??sniffer_isr_1: (+1)
+   \   00000046   0x....             LDR.N    R0,??DataTable4_1
+   \   00000048   0x.... 0x....      BL       OS_RetriggerTimer
+    144            }
+    145          
+    146            if ( USART_GetFlagStatus( uart, USART_FLAG_TXE ) && ( USART_GetITStatus( uart, USART_IT_TXE ) == SET ) ) 
+   \                     ??sniffer_isr_0: (+1)
+   \   0000004C   0x2180             MOVS     R1,#+128
+   \   0000004E   0x0020             MOVS     R0,R4
+   \   00000050   0x.... 0x....      BL       USART_GetFlagStatus
+   \   00000054   0x2800             CMP      R0,#+0
+   \   00000056   0xD02F             BEQ.N    ??sniffer_isr_2
+   \   00000058   0xF240 0x7127      MOVW     R1,#+1831
+   \   0000005C   0x0020             MOVS     R0,R4
+   \   0000005E   0x.... 0x....      BL       USART_GetITStatus
+   \   00000062   0x2801             CMP      R0,#+1
+   \   00000064   0xD128             BNE.N    ??sniffer_isr_2
+    147            {
+    148              if( sniffer.tx_size > 0 ) 
+   \   00000066   0x....             LDR.N    R0,??DataTable4_1
+   \   00000068   0x8AC0             LDRH     R0,[R0, #+22]
+   \   0000006A   0x2800             CMP      R0,#+0
+   \   0000006C   0xD017             BEQ.N    ??sniffer_isr_3
+    149              {
+    150                volatile u8 b =  sniffer.tx_buf[ sniffer.tx_cnt++ ];
+   \   0000006E   0x....             LDR.N    R0,??DataTable4_1
+   \   00000070   0x....             LDR.N    R1,??DataTable4_1
+   \   00000072   0x8A89             LDRH     R1,[R1, #+20]
+   \   00000074   0x1808             ADDS     R0,R1,R0
+   \   00000076   0x7E00             LDRB     R0,[R0, #+24]
+   \   00000078   0xF88D 0x0000      STRB     R0,[SP, #+0]
+   \   0000007C   0x....             LDR.N    R0,??DataTable4_1
+   \   0000007E   0x8A80             LDRH     R0,[R0, #+20]
+   \   00000080   0x1C40             ADDS     R0,R0,#+1
+   \   00000082   0x....             LDR.N    R1,??DataTable4_1
+   \   00000084   0x8288             STRH     R0,[R1, #+20]
+    151                USART_SendData( uart, b );
+   \   00000086   0xF89D 0x1000      LDRB     R1,[SP, #+0]
+   \   0000008A   0xB289             UXTH     R1,R1            ;; ZeroExt  R1,R1,#+16,#+16
+   \   0000008C   0x0020             MOVS     R0,R4
+   \   0000008E   0x.... 0x....      BL       USART_SendData
+    152                sniffer.tx_size--;
+   \   00000092   0x....             LDR.N    R0,??DataTable4_1
+   \   00000094   0x8AC0             LDRH     R0,[R0, #+22]
+   \   00000096   0x1E40             SUBS     R0,R0,#+1
+   \   00000098   0x....             LDR.N    R1,??DataTable4_1
+   \   0000009A   0x82C8             STRH     R0,[R1, #+22]
+   \   0000009C   0xE00C             B.N      ??sniffer_isr_2
+    153              }
+    154              else if( sniffer.tx_size == 0 ) 
+   \                     ??sniffer_isr_3: (+1)
+   \   0000009E   0x....             LDR.N    R0,??DataTable4_1
+   \   000000A0   0x8AC0             LDRH     R0,[R0, #+22]
+   \   000000A2   0x2800             CMP      R0,#+0
+   \   000000A4   0xD108             BNE.N    ??sniffer_isr_2
+    155              {
+    156                sniffer.tx_cnt = 0;
+   \   000000A6   0x2000             MOVS     R0,#+0
+   \   000000A8   0x....             LDR.N    R1,??DataTable4_1
+   \   000000AA   0x8288             STRH     R0,[R1, #+20]
+    157                USART_ITConfig( uart, USART_IT_TXE , DISABLE );         
+   \   000000AC   0x2200             MOVS     R2,#+0
+   \   000000AE   0xF240 0x7127      MOVW     R1,#+1831
+   \   000000B2   0x0020             MOVS     R0,R4
+   \   000000B4   0x.... 0x....      BL       USART_ITConfig
+    158              }  
+    159            }  
+    160          }
+   \                     ??sniffer_isr_2: (+1)
+   \   000000B8   0xBD13             POP      {R0,R1,R4,PC}    ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4:
+   \   00000000   0x25 0x63          DC8      0x25, 0x63, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_1:
+   \   00000000   0x........         DC32     sniffer
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_2:
+   \   00000000   0x40004800         DC32     0x40004800
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_3:
+   \   00000000   0x408F4000         DC32     0x408f4000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_4:
+   \   00000000   0x........         DC32     ?_0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_5:
+   \   00000000   0x........         DC32     ?_1
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_6:
+   \   00000000   0x........         DC32     sniffer+0x18C
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_7:
+   \   00000000   0x........         DC32     sniffer+0x13C
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_8:
+   \   00000000   0x........         DC32     sniffer+0x11A
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_9:
+   \   00000000   0x........         DC32     ?_2
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_10:
+   \   00000000   0x........         DC32     fb_m_tx
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_11:
+   \   00000000   0x........         DC32     fb_s_tx
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_12:
+   \   00000000   0x........         DC32     fb
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4_13:
+   \   00000000   0x........         DC32     ?_4
+
+   \                                 In section .rodata, align 4
+   \                     ?_0:
+   \   00000000   0x5B 0x25          DC8 "[%07.1f] "
+   \              0x30 0x37    
+   \              0x2E 0x31    
+   \              0x66 0x5D    
+   \              0x20 0x00    
+   \   0000000A   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4
+   \                     ?_1:
+   \   00000000   0x25 0x2E          DC8 "%.2X "
+   \              0x32 0x58    
+   \              0x20 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4
+   \                     ?_2:
+   \   00000000   0x73 0x6E          DC8 "sniffer rx:%d "
+   \              0x69 0x66    
+   \              0x66 0x65    
+   \              0x72 0x20    
+   \              0x72 0x78    
+   \              0x3A 0x25    
+   \              0x64 0x20    
+   \              0x00         
+   \   0000000F   0x00               DC8 0
+
+   \                                 In section .rodata, align 4
+   \   00000000   0x25 0x63          DC8 "%c"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .rodata, align 4
+   \                     ?_4:
+   \   00000000   0x73 0x6E          DC8 "sniffer rx incorrect format\015\012"
+   \              0x69 0x66    
+   \              0x66 0x65    
+   \              0x72 0x20    
+   \              0x72 0x78    
+   \              0x20 0x69    
+   \              0x6E 0x63    
+   \              0x6F 0x72    
+   \              0x72 0x65    
+   \              0x63 0x74    
+   \              0x20 0x66    
+   \              0x6F 0x72    
+   \              0x6D 0x61    
+   \              0x74 0x0D    
+   \              0x0A 0x00    
+   \   0000001E   0x00 0x00          DC8 0, 0
+    161          
+    162          #endif
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   sniffer_isr
+        16   -> OS_RetriggerTimer
+        16   -> USART_GetFlagStatus
+        16   -> USART_GetITStatus
+        16   -> USART_ITConfig
+        16   -> USART_ReceiveData
+        16   -> USART_SendData
+     152   sniffer_m_rx
+       152   -> __aeabi_d2f
+       152   -> __aeabi_ddiv
+       152   -> __aeabi_f2d
+       152   -> __aeabi_memset
+       152   -> __aeabi_ui2f
+       152   -> sniffer_tx
+       152   -> sprintf
+      32   sniffer_rx_msg
+        32   -- Indirect call
+        32   -> __aeabi_memset
+        32   -> log1
+     152   sniffer_s_rx
+       152   -> __aeabi_d2f
+       152   -> __aeabi_ddiv
+       152   -> __aeabi_f2d
+       152   -> __aeabi_memset
+       152   -> __aeabi_ui2f
+       152   -> sniffer_tx
+       152   -> sprintf
+      24   sniffer_tx
+        24   -> USART_ITConfig
+        24   -> __aeabi_memmove
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable4
+       4  ??DataTable4_1
+       4  ??DataTable4_10
+       4  ??DataTable4_11
+       4  ??DataTable4_12
+       4  ??DataTable4_13
+       4  ??DataTable4_2
+       4  ??DataTable4_3
+       4  ??DataTable4_4
+       4  ??DataTable4_5
+       4  ??DataTable4_6
+       4  ??DataTable4_7
+       4  ??DataTable4_8
+       4  ??DataTable4_9
+      12  ?_0
+       8  ?_1
+      16  ?_2
+       4  ?_3
+      32  ?_4
+     480  sniffer
+     186  sniffer_isr
+     180  sniffer_m_rx
+     260  sniffer_rx_msg
+     180  sniffer_s_rx
+      84  sniffer_tx
+
+ 
+ 480 bytes in section .bss
+  72 bytes in section .rodata
+ 946 bytes in section .text
+ 
+ 946 bytes of CODE  memory
+  72 bytes of CONST memory
+ 480 bytes of DATA  memory
+
+Errors: none
+Warnings: 2

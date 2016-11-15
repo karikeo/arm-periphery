@@ -1,0 +1,94 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.50.2.10312/W32 for ARM       12/Sep/2016  16:26:12
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\dex_sample.c
+#    Command line =  
+#        C:\ilya\vendicont\arm-periphery\Application\p-types\vending\dex_sample.c
+#        -D STM32F10X_HD -D USE_STDPERIPH_DRIVER -D NDEBUG -D _FLASH_PROG -lCN
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List
+#        --remarks -o
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.3\arm\INC\c\DLib_Config_Normal.h" -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\CMSIS\Include\
+#        -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\library\STM32F10x_StdPeriph_Driver\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\rtos\embos\iar\inc\
+#        -I C:\ilya\vendicont\arm-periphery\build\iar\..\..\Inc\ -I
+#        C:\ilya\vendicont\arm-periphery\build\iar\..\..\Application\p-types\
+#        -Ohs --use_c++_inline --require_prototypes
+#    List file    =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\List\dex_sample.lst
+#    Object file  =  
+#        C:\ilya\vendicont\arm-periphery\build\iar\Output\Release\Obj\dex_sample.o
+#
+###############################################################################
+
+C:\ilya\vendicont\arm-periphery\Application\p-types\vending\dex_sample.c
+      1          #ifdef DEX_SAMPLE
+      2          
+      3          const char dex_sample[] =   
+      4          
+      5          "DXS*3142983500*VA*V1/1*1\r"
+      6          "ST*001*0001\r"
+      7          "ID1*000000*CRANE--RUS 1979 \r"
+      8          "ID5*120711*0104\r"
+      9          "CA6*56\r"
+     10          "VA1*800*16*800*16\r"
+     11          "CA3****850*885**35\r"
+     12          "CA4***85*35\r"
+     13          "EA1*LAST CLEAR*120629*0433\r"
+     14          "EA1*EGS*120705*0458*8406\r"
+     15          "EA1*EGS*120629*0433*73\r"
+     16          "EA3*0\r"
+     17          "PA1*A0*50\r"
+     18          "PA2***3*150\r"
+     19          "PA1*A2*50\r"
+     20          "PA2***1*50\r"
+     21          "PA1*A4*50\r"
+     22          "PA1*A6*50\r"
+     23          "PA1*A8*50\r"
+     24          "PA1*B0*50\r"
+     25          "PA1*B2*50\r"
+     26          "PA1*B4*50\r"
+     27          "PA2***1*50\r"
+     28          "PA1*B6*50\r"
+     29          "PA2***2*100\r"
+     30          "PA1*B8*50\r"
+     31          "PA2***1*50\r"
+     32          "PA1*C0*50\r"
+     33          "PA2***1*50\r"
+     34          "PA1*C2*50\r"
+     35          "PA2***1*50\r"
+     36          "PA1*C4*50\r"
+     37          "PA2***3*150\r"
+     38          "PA1*C6*50\r"
+     39          "PA2***2*100\r"
+     40          "PA1*C8*50\r"
+     41          "PA1*E0*50\r"
+     42          "PA1*E2*50\r"
+     43          "PA1*E4*50\r"
+     44          "PA2***1*50\r"
+     45          "PA1*E6*50\r"
+     46          "PA1*E8*50\r"
+     47          "G85*A1CF\r"
+     48          "SE*1*0001\r"
+     49          "DXE*1*1\r"
+     50          ;
+     51          #endif
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none
